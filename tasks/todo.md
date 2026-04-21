@@ -57,7 +57,7 @@
   - Also add provider-agnostic state models from `specs/pitwall-macos-clean-room.md`: provider identifiers, display names, status, confidence labels, reset windows, headline/primary/secondary values, confidence explanations, and provider-specific payload escape hatches
   - Keep the file free of credentials, provider network calls, local file reads, or provider-specific quota schemas
   - Red-phase validation: `swift test` builds `PitwallCore` with the new models and fails as expected because Step 1.3 has not introduced `PacingCalculator` yet.
-- [ ] Step 1.3: Implement pacing calculations and recommendation mapping
+- [x] Step 1.3: Implement pacing calculations and recommendation mapping
   - Files: create `Sources/PitwallCore/PacingCalculator.swift`
   - Implement weekly and session pace ratios, ignore-window handling, capped handling, daily budget, today's usage baseline behavior, and recommendation output
   - Use the Step 1.2 model types:
@@ -84,6 +84,7 @@
     - Daily budget is remaining utilization divided by clamped days remaining.
     - Today's usage should compare current weekly utilization against the closest retained snapshot before local midnight; if none exists, use the earliest same-day snapshot as an estimate; if neither exists, return unknown.
   - Keep this step deterministic and free of provider networking, credentials, local provider files, or UI concerns.
+  - Validation: `swift test` passes 10 tests after implementing `PacingCalculator` and correcting daily-budget timestamp fixtures to straddle an actual UTC local-midnight boundary.
 - [ ] Step 1.4: Add clean-room project scaffolding notes for future app targets
   - Files: create `Sources/PitwallCore/PitwallCore.swift`, modify `README.md`
   - Document how to run `swift test` and keep implementation inputs tied to specs and public/platform docs only

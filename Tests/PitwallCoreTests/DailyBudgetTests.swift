@@ -45,15 +45,15 @@ final class DailyBudgetTests: XCTestCase {
 
         let snapshots = [
             UsageSnapshot(
-                recordedAt: Date(timeIntervalSince1970: 1_799_978_400),
+                recordedAt: Date(timeIntervalSince1970: 1_800_046_800),
                 weeklyUtilizationPercent: 38.0
             ),
             UsageSnapshot(
-                recordedAt: Date(timeIntervalSince1970: 1_799_996_400),
+                recordedAt: Date(timeIntervalSince1970: 1_800_054_000),
                 weeklyUtilizationPercent: 42.0
             ),
             UsageSnapshot(
-                recordedAt: Date(timeIntervalSince1970: 1_800_003_600),
+                recordedAt: Date(timeIntervalSince1970: 1_800_061_200),
                 weeklyUtilizationPercent: 45.0
             )
         ]
@@ -69,7 +69,7 @@ final class DailyBudgetTests: XCTestCase {
 
         XCTAssertEqual(result.todayUsage.status, .exact)
         XCTAssertEqual(result.todayUsage.utilizationDeltaPercent ?? 0, 12.0, accuracy: 0.001)
-        XCTAssertEqual(result.todayUsage.baselineRecordedAt, Date(timeIntervalSince1970: 1_799_996_400))
+        XCTAssertEqual(result.todayUsage.baselineRecordedAt, Date(timeIntervalSince1970: 1_800_054_000))
     }
 
     func testTodayUsageFallsBackToEarliestSameDaySnapshot() {
@@ -80,11 +80,11 @@ final class DailyBudgetTests: XCTestCase {
 
         let snapshots = [
             UsageSnapshot(
-                recordedAt: Date(timeIntervalSince1970: 1_800_003_600),
+                recordedAt: Date(timeIntervalSince1970: 1_800_061_200),
                 weeklyUtilizationPercent: 45.0
             ),
             UsageSnapshot(
-                recordedAt: Date(timeIntervalSince1970: 1_800_025_200),
+                recordedAt: Date(timeIntervalSince1970: 1_800_063_000),
                 weeklyUtilizationPercent: 49.0
             )
         ]
@@ -100,7 +100,7 @@ final class DailyBudgetTests: XCTestCase {
 
         XCTAssertEqual(result.todayUsage.status, .estimatedFromSameDayBaseline)
         XCTAssertEqual(result.todayUsage.utilizationDeltaPercent ?? 0, 9.0, accuracy: 0.001)
-        XCTAssertEqual(result.todayUsage.baselineRecordedAt, Date(timeIntervalSince1970: 1_800_003_600))
+        XCTAssertEqual(result.todayUsage.baselineRecordedAt, Date(timeIntervalSince1970: 1_800_061_200))
     }
 
     func testTodayUsageIsUnknownWhenNoBaselineExists() {
