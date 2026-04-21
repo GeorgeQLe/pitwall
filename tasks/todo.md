@@ -45,7 +45,7 @@
   - Red-phase validation: `swift test` fails on missing `PacingCalculator`, `PacingLabel`, `RecommendedAction`, and `UsageSnapshot` symbols after the package manifest loads successfully
 
 ### Implementation
-- [ ] Step 1.2: Create the provider-agnostic core model layer
+- [x] Step 1.2: Create the provider-agnostic core model layer
   - Files: create `Sources/PitwallCore/ProviderModels.swift`
   - Include provider identifiers, provider status, confidence labels, pacing labels, actions, reset windows, usage snapshots, and provider state containers
   - Define public, Equatable model primitives required by the red tests:
@@ -56,9 +56,34 @@
     - Result containers for pace evaluation, daily budget, and today's usage with the fields referenced by the tests
   - Also add provider-agnostic state models from `specs/pitwall-macos-clean-room.md`: provider identifiers, display names, status, confidence labels, reset windows, headline/primary/secondary values, confidence explanations, and provider-specific payload escape hatches
   - Keep the file free of credentials, provider network calls, local file reads, or provider-specific quota schemas
+  - Red-phase validation: `swift test` builds `PitwallCore` with the new models and fails as expected because Step 1.3 has not introduced `PacingCalculator` yet.
 - [ ] Step 1.3: Implement pacing calculations and recommendation mapping
   - Files: create `Sources/PitwallCore/PacingCalculator.swift`
   - Implement weekly and session pace ratios, ignore-window handling, capped handling, daily budget, today's usage baseline behavior, and recommendation output
+  - Use the Step 1.2 model types:
+    - Return `PaceEvaluation` from `evaluateWeeklyPace(utilizationPercent:windowStart:resetAt:now:)` and `evaluateSessionPace(utilizationPercent:windowStart:resetAt:now:)`
+    - Return `DailyBudget` from `dailyBudget(weeklyUtilizationPercent:resetAt:now:retainedSnapshots:calendar:timeZone:)`
+  - Weekly pace rules:
+    - Ignore the first 6 hours after `windowStart` and the last 1 hour before `resetAt`, returning `.notEnoughWindow`, `.configure`, and nil ratio/expected utilization.
+    - Compute expected utilization as elapsed fraction of the full window multiplied by 100.
+    - Compute pace ratio as actual utilization divided by expected utilization.
+  - Session pace rules:
+    - Ignore the first 15 minutes after `windowStart` and the last 5 minutes before `resetAt`.
+    - Use the same expected-utilization and threshold shape as weekly pace.
+  - Threshold/action mapping:
+    - `utilizationPercent >= 100`: `.capped` and `.wait`
+    - ratio `< 0.50`: `.underusing` and `.push`
+    - ratio `0.50..<0.85`: `.behindPace` and `.push`
+    - ratio `0.85...1.15`: `.onPace` and `.push`
+    - ratio `> 1.15...1.50`: `.aheadOfPace` and `.conserve`
+    - ratio `> 1.50...2.00`: `.warning` and `.conserve`
+    - ratio `> 2.00`: `.critical` and `.wait`
+  - Daily budget rules:
+    - Remaining utilization is `max(0, 100 - weeklyUtilizationPercent)`.
+    - Days remaining is `(resetAt - now) / 86400`, clamped to a minimum of `1.0 / 24.0`.
+    - Daily budget is remaining utilization divided by clamped days remaining.
+    - Today's usage should compare current weekly utilization against the closest retained snapshot before local midnight; if none exists, use the earliest same-day snapshot as an estimate; if neither exists, return unknown.
+  - Keep this step deterministic and free of provider networking, credentials, local provider files, or UI concerns.
 - [ ] Step 1.4: Add clean-room project scaffolding notes for future app targets
   - Files: create `Sources/PitwallCore/PitwallCore.swift`, modify `README.md`
   - Document how to run `swift test` and keep implementation inputs tied to specs and public/platform docs only
