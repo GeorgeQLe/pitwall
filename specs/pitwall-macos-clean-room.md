@@ -77,10 +77,26 @@ Pacing labels:
 
 Use a user-provided session key and organization id to call the Claude usage endpoint. Treat this as unofficial and subject to breakage.
 
+Pitwall must not automatically extract cookies from the user's browser. Claude credentials are provided by the user through a guided setup screen.
+
+Setup instructions shown in-app:
+
+1. Open `https://claude.ai` in the browser where the user is signed in.
+2. Open browser developer tools.
+3. Go to the Application or Storage tab.
+4. Open Cookies for `https://claude.ai`.
+5. Copy the `sessionKey` cookie value.
+6. Copy the `lastActiveOrg` cookie value as the organization id.
+7. Paste both values into Pitwall settings.
+
+The app should explain that these values are sensitive account credentials and should only be stored locally.
+
 Required behavior:
 
 - Store session key in Keychain.
 - Store org id and account label outside Keychain.
+- Keep credential inputs write-only after saving; show saved/configured state instead of rendering the session key back into the UI.
+- Provide a "Test connection" action that validates the session key and org id without waiting for the polling interval.
 - Refresh every 5 minutes by default.
 - Handle 401/403 as expired auth.
 - Handle session key rotation if a response provides a replacement cookie.

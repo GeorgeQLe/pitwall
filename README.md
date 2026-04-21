@@ -33,6 +33,22 @@ See `CLEAN_ROOM.md` before implementing. The short version:
 - Implement fresh file names, structure, models, and UI code unless they are generic platform conventions.
 - Keep attribution factual without implying affiliation.
 
+## Claude Credential Setup
+
+Pitwall should use an explicit user-driven credential flow. It must not automatically extract cookies from the browser.
+
+For Claude support, the user will:
+
+1. Open `https://claude.ai` while signed in.
+2. Open browser developer tools.
+3. Go to the Application or Storage tab.
+4. Open Cookies for `https://claude.ai`.
+5. Copy the `sessionKey` cookie value.
+6. Copy the `lastActiveOrg` cookie value as the organization id.
+7. Paste both into Pitwall settings.
+
+The session key is sensitive and must be stored in the macOS Keychain. The UI should show only a saved/configured state after the credential is saved.
+
 ## Website
 
 Open `docs/index.html` locally or configure GitHub Pages to serve from the `docs/` folder.
