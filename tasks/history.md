@@ -2,6 +2,8 @@
 
 ## 2026-04-21
 
+- Phase 2 Step 2.7 completed: ran the provider foundation green verification and confirmed Claude parsing, Codex/Gemini detection, provider confidence, secret-store, daily budget, and pacing tests all pass.
+- Validation: `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - Phase 2 Step 2.6 completed: added `ProviderConfidenceMapper` with sanitized evidence inputs for Claude exact usage, Codex passive evidence, Gemini passive evidence, degraded telemetry fallback, and missing configuration states.
 - Validation: `swift test --filter ProviderConfidenceTests` passes 5 confidence tests. Full `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - Phase 2 Step 2.5 completed: added `GeminiLocalDetector` for injected `LocalProviderFileSnapshot` evidence, reporting safe install/auth/activity booleans, sanitized settings metadata, and observed token counts without reading the real filesystem or serializing OAuth tokens or raw chat content.

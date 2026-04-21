@@ -129,32 +129,36 @@
     - Validation: `swift test` should compile all Phase 2 tests and may reveal assertion failures in the new mapper; fix those until the confidence tests pass, then leave final all-suite green verification for Step 2.7 unless all tests pass naturally.
 
 ### Green
-- [ ] Step 2.7: Run provider foundation tests and verify all Phase 2 tests pass
+- [x] Step 2.7: Run provider foundation tests and verify all Phase 2 tests pass
   - Command: `swift test`
   - Expected result: all Phase 1 and Phase 2 XCTest cases pass with no warnings emitted.
   - Fix unexpected failures in the parser, detector, confidence, or secret-store implementations before marking green.
-  - Implementation plan for next run:
+  - Completed result:
     - Run `swift test` from the repository root.
-    - Confirm all Phase 1 and Phase 2 XCTest cases pass, including Claude parser, Codex/Gemini detector, provider confidence, secret-store, daily budget, and pacing tests.
-    - Inspect output for warnings even if the command exits zero; fix any warnings before marking this step complete.
-    - If a failure appears, treat it as an unexpected regression because Step 2.6 pre-ship validation passed the full suite on 2026-04-21.
-    - After a clean run, mark Step 2.7 complete and update the Phase 2 milestone criteria that are already proven by the green suite.
+    - Confirmed all Phase 1 and Phase 2 XCTest cases pass, including Claude parser, Codex/Gemini detector, provider confidence, secret-store, daily budget, and pacing tests.
+    - Validation on 2026-04-21: `swift test` passed 29 XCTest cases with 0 failures and no warnings emitted.
 - [ ] Step 2.8: Refactor provider foundation boundaries if needed while keeping tests green
   - Files: modify `Sources/PitwallCore/*Provider*.swift`, `Sources/PitwallCore/*Detector.swift`, `Sources/PitwallCore/SecretStore.swift`, and tests only as needed to clarify behavior without weakening coverage
   - Prefer provider-specific adapter types over inflating `ProviderModels.swift`.
   - Preserve clean-room constraints: no copied upstream source/assets/tests, no real provider networking, no credential extraction, no raw prompt/token persistence.
   - Validation: `swift test` must pass all tests with no warnings emitted.
+  - Implementation plan for next run:
+    - Read `Sources/PitwallCore/ProviderModels.swift`, `Sources/PitwallCore/ClaudeProviderModels.swift`, `Sources/PitwallCore/ClaudeUsageParser.swift`, `Sources/PitwallCore/CodexLocalDetector.swift`, `Sources/PitwallCore/GeminiLocalDetector.swift`, `Sources/PitwallCore/LocalProviderEvidence.swift`, `Sources/PitwallCore/ProviderConfidenceMapper.swift`, `Sources/PitwallCore/SecretStore.swift`, and the Phase 2 tests before editing.
+    - Audit whether any provider-specific fields or helper behavior leaked into shared models; keep shared `ProviderModels.swift` limited to provider-agnostic state, actions, confidence, reset windows, and payload escape hatches.
+    - Refactor only if there is a concrete boundary improvement, naming clarification, or duplication reduction that preserves the public behavior already covered by tests.
+    - Do not add live provider networking, real filesystem reads, Keychain production calls, browser-cookie extraction, raw prompt/token persistence, or UI behavior in this refactor step.
+    - Run `swift test` after any edits; if no refactor is needed, rerun `swift test` and mark the step complete with "no code changes needed".
 
 ### Milestone: Phase 2 Provider Data Foundations
 **Acceptance Criteria:**
-- [ ] Claude fixtures parse known fields, ignore null sections, tolerate unknown sections, and expose extra usage when present.
-- [ ] Claude auth error and network error states can be represented without losing last successful non-secret metadata.
-- [ ] Codex detection reports install/auth/activity signals without serializing token values or prompt bodies.
-- [ ] Gemini detection reports install/auth/activity signals without serializing token values or prompt bodies.
-- [ ] Confidence mapping tests cover Claude exact data, Codex passive states, Gemini passive states, degraded telemetry, and missing configuration.
-- [ ] Keychain behavior is tested through an injected fake store and no saved secret is rendered back through read-only UI state.
-- [ ] All phase tests pass
-- [ ] No regressions in previous phase tests
+- [x] Claude fixtures parse known fields, ignore null sections, tolerate unknown sections, and expose extra usage when present.
+- [x] Claude auth error and network error states can be represented without losing last successful non-secret metadata.
+- [x] Codex detection reports install/auth/activity signals without serializing token values or prompt bodies.
+- [x] Gemini detection reports install/auth/activity signals without serializing token values or prompt bodies.
+- [x] Confidence mapping tests cover Claude exact data, Codex passive states, Gemini passive states, degraded telemetry, and missing configuration.
+- [x] Keychain behavior is tested through an injected fake store and no saved secret is rendered back through read-only UI state.
+- [x] All phase tests pass
+- [x] No regressions in previous phase tests
 
 **On Completion:**
 - Deviations from plan: none recorded yet
