@@ -2,6 +2,9 @@
 
 ## 2026-04-21
 
+- Phase 2 Step 2.8 completed: audited provider foundation boundaries and kept the step as a no-code refactor because shared `ProviderModels.swift` remains provider-agnostic while Claude, Codex, Gemini, confidence, and secret-store behavior stay isolated in adapter-specific files.
+- Validation: `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
+- Phase 2 completed: all milestone acceptance criteria are satisfied, the completed phase was archived to `tasks/phases/phase-2.md`, and Phase 3 First Usable macOS Provider Parity was planned just-in-time in `tasks/todo.md` and `tasks/roadmap.md`.
 - Phase 2 Step 2.7 completed: ran the provider foundation green verification and confirmed Claude parsing, Codex/Gemini detection, provider confidence, secret-store, daily budget, and pacing tests all pass.
 - Validation: `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - Phase 2 Step 2.6 completed: added `ProviderConfidenceMapper` with sanitized evidence inputs for Claude exact usage, Codex passive evidence, Gemini passive evidence, degraded telemetry fallback, and missing configuration states.
