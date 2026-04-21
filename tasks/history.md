@@ -2,6 +2,8 @@
 
 ## 2026-04-21
 
+- Phase 2 Step 2.1 completed: added red XCTest coverage for Claude usage parsing/error normalization, Codex and Gemini passive detection sanitization, provider confidence mapping, and write-only secret-store behavior, plus Claude JSON fixtures.
+- Validation: `swift test` fails as expected for the red phase because Phase 2 implementation symbols do not exist yet (`ClaudeUsageParser`, `CodexLocalDetector`, `GeminiLocalDetector`, `ProviderConfidenceMapper`, `InMemorySecretStore`, and related models). No SwiftPM fixture warnings are emitted after declaring test resources.
 - Phase 1 Step 1.6 completed: kept provider model public names stable, refactored pacing-window configuration into private calculator internals, and added explicit weekly ratio boundary tests for `0.50`, `0.85`, `1.15`, `1.50`, and `2.00`.
 - Validation: baseline `swift test` passed 10 XCTest cases before edits; final `swift test` passes 11 XCTest cases with 0 failures and no warnings emitted.
 - Phase 1 completed: all milestone acceptance criteria are satisfied, the completed phase was archived to `tasks/phases/phase-1.md`, and Phase 2 Provider Data Foundations was planned just-in-time in `tasks/todo.md` and `tasks/roadmap.md`.

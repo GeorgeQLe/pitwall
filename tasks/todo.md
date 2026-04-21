@@ -6,7 +6,7 @@
 ## Priority Task Queue
 
 - [x] Phase 1 Foundation And Pacing Core completed and archived to `tasks/phases/phase-1.md`.
-- [x] Task pipeline is healthy; ready for `$run` to start Phase 2 Step 2.1.
+- [x] Task pipeline is healthy; ready for `$run` to start Phase 2 Step 2.2.
 
 ## Phase 2: Provider Data Foundations
 
@@ -45,7 +45,7 @@
   - Deliverable: Findings on model/API gaps before implementation.
 
 ### Tests First
-- [ ] Step 2.1: Write failing tests for provider data foundations
+- [x] Step 2.1: Write failing tests for provider data foundations
   - Files: create `Tests/PitwallCoreTests/ClaudeUsageParserTests.swift`, create `Tests/PitwallCoreTests/ProviderDetectionTests.swift`, create `Tests/PitwallCoreTests/ProviderConfidenceTests.swift`, create `Tests/PitwallCoreTests/SecretStoreTests.swift`, create fixture files under `Tests/PitwallCoreTests/Fixtures/Claude/`
   - Cover Claude usage parsing for known usage fields, null sections, unknown sections, extra usage, UTC reset timestamps, and friendly section labels.
   - Cover Claude auth and network error normalization without exposing saved secrets.
@@ -69,6 +69,13 @@
   - Represent extra usage when present without forcing every provider into Claude's quota shape.
   - Normalize auth errors, network errors, stale last-success metadata, confidence labels, reset windows, and provider actions.
   - Keep this step free of live networking, credential storage, browser-cookie extraction, local file reads, or UI.
+  - Implementation plan for next run:
+    - Read `Tests/PitwallCoreTests/ClaudeUsageParserTests.swift`, `Tests/PitwallCoreTests/Fixtures/Claude/*.json`, and `specs/pitwall-macos-clean-room.md` `### Claude` before editing.
+    - Create `Sources/PitwallCore/ClaudeProviderModels.swift` with Claude account metadata, parsed usage section, extra usage, usage snapshot, and error reason types needed by the tests.
+    - Create `Sources/PitwallCore/ClaudeUsageParser.swift` with tolerant JSON decoding for known usage sections, unknown-section tracking, UTC ISO-8601 reset parsing, and extra-usage parsing.
+    - Add Claude error normalization that returns `ProviderState` with expired/stale status, non-secret account metadata payloads, reset windows, and provider actions while never exposing session keys.
+    - Do not implement Codex, Gemini, confidence mapper, or secret-store production types in this step except for unavoidable shared-model gaps proven by the Claude tests.
+    - Validation: `swift test` should progress past Claude parser symbols while remaining red on later Phase 2 missing types until Steps 2.3-2.6 are implemented.
 - [ ] Step 2.3: Add secret storage abstraction with fake test storage
   - Files: create `Sources/PitwallCore/SecretStore.swift`, create `Sources/PitwallCore/InMemorySecretStore.swift`, modify `Tests/PitwallCoreTests/SecretStoreTests.swift`
   - Define an async-safe protocol for saving, loading, and deleting provider-owned secrets.
