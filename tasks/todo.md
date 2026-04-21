@@ -98,8 +98,8 @@
     - Used deterministic sample provider state only; real configuration storage and refresh coordination remain scoped to Steps 3.4-3.5.
     - Preserved privacy boundaries by rendering sanitized display state only and avoiding secrets, prompt text, token values, stdout, source content, or raw session/chat text.
     - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
-- [ ] Step 3.4: Add secure provider configuration storage and Claude account setup state
-  - Files: create `Sources/PitwallCore/KeychainSecretStore.swift`, create `Sources/PitwallAppSupport/ProviderConfigurationStore.swift`, create `Sources/PitwallAppSupport/ClaudeAccountSettings.swift`, modify `Sources/PitwallCore/SecretStore.swift`
+- [x] Step 3.4: Add secure provider configuration storage and Claude account setup state
+  - Files: create `Sources/PitwallCore/KeychainSecretStore.swift`, create `Sources/PitwallAppSupport/ProviderConfigurationStore.swift`, create `Sources/PitwallAppSupport/ClaudeAccountSettings.swift`, modify `Sources/PitwallCore/SecretStore.swift`, modify `Package.swift`
   - Store Claude session keys through the `ProviderSecretStore` abstraction and store non-secret account labels/org ids outside Keychain.
   - Keep credential inputs write-only after save; expose configured/missing/expired state without rendering saved secret values.
   - Do not extract browser cookies or read provider credentials from browsers or CLI auth files.
@@ -109,6 +109,13 @@
     - Add an app-support configuration store for non-secret provider enablement, Claude account labels/org ids, display preferences, and provider plan/profile metadata.
     - Model Claude credential setup so saved session keys can be replaced or deleted but never rendered back into public state or UI fields.
     - Validation: `swift build` should pass; update or add tests in Step 3.7 to prove write-only behavior through app-support configuration state.
+  - Completed notes:
+    - Added a macOS Keychain-backed `ProviderSecretStore` for provider-owned secrets and linked the core target against Security.
+    - Extended public secret state to represent configured, missing, and expired credentials while continuing to render no saved secret value.
+    - Added app-support configuration persistence for non-secret provider profiles, Claude labels/org ids, selected account, and display preferences through injected `UserDefaults`.
+    - Added Claude account setup state and save/replace/delete/expired flows that write session keys through the secret-store abstraction and keep session keys out of public state and descriptions.
+    - Did not extract browser cookies, read browser storage, read CLI auth files, call provider networks, or persist raw credential material outside the secret store.
+    - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - [ ] Step 3.5: Add refresh coordination for Claude, Codex, and Gemini
   - Files: create `Sources/PitwallCore/ClaudeUsageClient.swift`, create `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift`, create `Sources/PitwallAppSupport/LocalProviderSnapshotLoader.swift`, create `Sources/PitwallAppSupport/PollingPolicy.swift`
   - Implement Claude manual refresh and test-connection behavior using user-supplied credentials, preserving expired auth and stale network states.

@@ -23,7 +23,10 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "PitwallCore"
+            name: "PitwallCore",
+            linkerSettings: [
+                .linkedFramework("Security")
+            ]
         ),
         .target(
             name: "PitwallAppSupport",

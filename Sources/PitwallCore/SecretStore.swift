@@ -21,6 +21,7 @@ public protocol ProviderSecretStore: Sendable {
 public enum ProviderSecretStatus: String, Equatable, Sendable {
     case configured
     case missing
+    case expired
 }
 
 public struct ProviderSecretState: Equatable, CustomStringConvertible, Sendable {
@@ -53,14 +54,21 @@ public struct ProviderSecretState: Equatable, CustomStringConvertible, Sendable 
         providerId: ProviderID,
         accountId: String,
         purpose: String,
-        store: some ProviderSecretStore
+        store: some ProviderSecretStore,
+        isExpired: Bool = false
     ) async throws -> ProviderSecretState {
         let key = ProviderSecretKey(
             providerId: providerId,
             accountId: accountId,
             purpose: purpose
         )
-        let status: ProviderSecretStatus = try await store.loadSecret(for: key) == nil ? .missing : .configured
+        let hasSecret = try await store.loadSecret(for: key) != nil
+        let status: ProviderSecretStatus
+        if hasSecret {
+            status = isExpired ? .expired : .configured
+        } else {
+            status = .missing
+        }
 
         return ProviderSecretState(
             providerId: providerId,
