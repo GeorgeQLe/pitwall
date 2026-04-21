@@ -8,7 +8,7 @@
 - [x] Phase 1 Foundation And Pacing Core completed and archived to `tasks/phases/phase-1.md`.
 - [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
 - [x] Phase 3 First Usable macOS Provider Parity planned just-in-time from completed Phase 2 boundaries.
-- [x] Task pipeline is healthy; ready for `$run` to start Phase 3 Step 3.1.
+- [x] Task pipeline is healthy; ready for `$run` to start Phase 3 Step 3.3.
 
 ## Phase 3: First Usable macOS Provider Parity
 
@@ -65,7 +65,7 @@
     - Added a minimal AppKit status item shell with accessory activation policy and an `LSUIElement` plist kept for future app bundling.
     - SwiftPM excludes the plist from target resources because top-level `Info.plist` files are not supported as SwiftPM resource bundle contents.
     - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
-- [ ] Step 3.2: Add provider presentation, rotation, and status formatting support
+- [x] Step 3.2: Add provider presentation, rotation, and status formatting support
   - Files: create `Sources/PitwallAppSupport/AppProviderState.swift`, create `Sources/PitwallAppSupport/ProviderCardViewModel.swift`, create `Sources/PitwallAppSupport/MenuBarStatusFormatter.swift`, create `Sources/PitwallAppSupport/ProviderRotationController.swift`, create `Sources/PitwallAppSupport/UserPreferences.swift`
   - Build view models from `ProviderState` values for Claude, Codex, and Gemini without forcing fake precision.
   - Format menu bar text with current action guidance, confidence labels, reset time/countdown preference, pinned-provider behavior, and rotation that skips degraded providers when healthier providers exist.
@@ -76,6 +76,11 @@
     - Add deterministic rotation logic with injectable clock/time inputs so tests can cover pinned provider, automatic rotation, pause, manual override, and degraded-provider skip behavior.
     - Keep display formatting honest: exact percentages only when present, confidence/status labels when exact data is absent, and configure/wait/conserve/switch action wording from existing core enums.
     - Validation: `swift build` should pass; run `swift test` if support logic is already covered by tests or if existing tests are affected.
+  - Completed notes:
+    - Added app-support provider state, user preferences, card view models, menu bar formatting, and deterministic provider rotation.
+    - Preserved missing/skipped providers as configurable states and used confidence/status labels when exact utilization is unavailable.
+    - Rotation supports pinned providers, manual overrides, pause, bounded 5-10 second automatic intervals, and degraded-provider skipping when healthier providers exist.
+    - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - [ ] Step 3.3: Build the menu bar controller, popover, and provider cards
   - Files: create `Sources/PitwallApp/MenuBarController.swift`, create `Sources/PitwallApp/PopoverController.swift`, create `Sources/PitwallApp/Views/PopoverContentView.swift`, create `Sources/PitwallApp/Views/ProviderCardView.swift`, create `Sources/PitwallApp/Views/StatusBadgeView.swift`, create `Sources/PitwallApp/Views/ClaudeUsageRowsView.swift`
   - Show provider cards for Claude, Codex, and Gemini with status, confidence explanation, primary/secondary metrics, last updated text, reset display, and quick actions.

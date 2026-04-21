@@ -2,6 +2,8 @@
 
 ## 2026-04-21
 
+- Phase 3 Step 3.2 completed: added app-support provider state, display preferences, provider card view models, compact menu bar status formatting, and deterministic provider rotation with pinned/manual/paused behavior and degraded-provider skipping.
+- Validation: `swift build` passes. `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - Phase 3 Step 3.1 completed: added SwiftPM `PitwallAppSupport` and `PitwallApp` targets, a minimal AppKit menu bar status item shell, accessory/no-Dock activation behavior, and an `LSUIElement` plist for future app bundling.
 - Validation: `swift build` passes. `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - Phase 2 Step 2.8 completed: audited provider foundation boundaries and kept the step as a no-code refactor because shared `ProviderModels.swift` remains provider-agnostic while Claude, Codex, Gemini, confidence, and secret-store behavior stay isolated in adapter-specific files.
