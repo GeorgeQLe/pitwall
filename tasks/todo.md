@@ -8,7 +8,7 @@
 - [x] Phase 1 Foundation And Pacing Core completed and archived to `tasks/phases/phase-1.md`.
 - [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
 - [x] Phase 3 First Usable macOS Provider Parity planned just-in-time from completed Phase 2 boundaries.
-- [x] Task pipeline is healthy; ready for `$run` to start Phase 3 Step 3.3.
+- [x] Task pipeline is healthy; ready for `$run` to start Phase 3 Step 3.4.
 
 ## Phase 3: First Usable macOS Provider Parity
 
@@ -81,7 +81,7 @@
     - Preserved missing/skipped providers as configurable states and used confidence/status labels when exact utilization is unavailable.
     - Rotation supports pinned providers, manual overrides, pause, bounded 5-10 second automatic intervals, and degraded-provider skipping when healthier providers exist.
     - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
-- [ ] Step 3.3: Build the menu bar controller, popover, and provider cards
+- [x] Step 3.3: Build the menu bar controller, popover, and provider cards
   - Files: create `Sources/PitwallApp/MenuBarController.swift`, create `Sources/PitwallApp/PopoverController.swift`, create `Sources/PitwallApp/Views/PopoverContentView.swift`, create `Sources/PitwallApp/Views/ProviderCardView.swift`, create `Sources/PitwallApp/Views/StatusBadgeView.swift`, create `Sources/PitwallApp/Views/ClaudeUsageRowsView.swift`
   - Show provider cards for Claude, Codex, and Gemini with status, confidence explanation, primary/secondary metrics, last updated text, reset display, and quick actions.
   - Include current recommended action, daily budget/days remaining, refresh/settings/add-account controls, and compact trend placeholders until history exists.
@@ -92,6 +92,12 @@
     - Implement compact SwiftUI provider cards with stable sizing, plain confidence explanations, badges for stale/degraded/missing states, and quick actions.
     - Use existing provider state payloads for Claude usage rows and passive Codex/Gemini metadata without exposing raw tokens, prompts, stdout, source content, or raw session/chat text.
     - Validation: `swift build` should pass; defer regression tests to Step 3.7 unless a helper is risky enough to test immediately.
+  - Completed notes:
+    - Replaced the placeholder status menu with `MenuBarController`, a transient `NSPopover`, and SwiftUI popover content.
+    - Added provider cards, status badges, Claude usage rows, current action summary, daily budget/reset/trend placeholders, refresh/settings/add-account controls, and context-menu provider selection/rotation controls.
+    - Used deterministic sample provider state only; real configuration storage and refresh coordination remain scoped to Steps 3.4-3.5.
+    - Preserved privacy boundaries by rendering sanitized display state only and avoiding secrets, prompt text, token values, stdout, source content, or raw session/chat text.
+    - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - [ ] Step 3.4: Add secure provider configuration storage and Claude account setup state
   - Files: create `Sources/PitwallCore/KeychainSecretStore.swift`, create `Sources/PitwallAppSupport/ProviderConfigurationStore.swift`, create `Sources/PitwallAppSupport/ClaudeAccountSettings.swift`, modify `Sources/PitwallCore/SecretStore.swift`
   - Store Claude session keys through the `ProviderSecretStore` abstraction and store non-secret account labels/org ids outside Keychain.

@@ -2,6 +2,8 @@
 
 ## 2026-04-21
 
+- Phase 3 Step 3.3 completed: added a controller-backed macOS status item, transient popover, native SwiftUI provider cards, status badges, Claude usage rows, action summary, and refresh/settings/add-account controls using sanitized sample provider state.
+- Validation: `swift build` passes. `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - Phase 3 Step 3.2 completed: added app-support provider state, display preferences, provider card view models, compact menu bar status formatting, and deterministic provider rotation with pinned/manual/paused behavior and degraded-provider skipping.
 - Validation: `swift build` passes. `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - Phase 3 Step 3.1 completed: added SwiftPM `PitwallAppSupport` and `PitwallApp` targets, a minimal AppKit menu bar status item shell, accessory/no-Dock activation behavior, and an `LSUIElement` plist for future app bundling.
