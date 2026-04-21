@@ -88,7 +88,7 @@
     - Keep this step free of production Keychain calls, provider networking, UI, and any read-back surface that renders secret values.
     - Do not implement Codex, Gemini, or confidence mapper types in this step except for unavoidable compile support proven by the secret-store tests.
     - Validation: `swift test` should progress past secret-store symbols while remaining red on later Phase 2 missing detector/confidence types until Steps 2.4-2.6 are implemented.
-- [ ] Step 2.4: Add Codex passive detection models and sanitization
+- [x] Step 2.4: Add Codex passive detection models and sanitization
   - Files: create `Sources/PitwallCore/CodexLocalDetector.swift`, create `Sources/PitwallCore/LocalProviderEvidence.swift`, modify `Tests/PitwallCoreTests/ProviderDetectionTests.swift`
   - Consume injected file snapshots for `CODEX_HOME`/`~/.codex` paths, config presence, auth presence, history/session metadata, and rate-limit text.
   - Persist only safe metadata such as timestamps, byte offsets, auth presence, install/config flags, and limit/reset hints.
@@ -106,6 +106,15 @@
   - Consume injected file snapshots for `GEMINI_HOME`/`~/.gemini` paths, settings presence, OAuth presence, and local activity metadata.
   - Preserve quota/profile/auth-mode room for future telemetry without forcing Claude percentage fields.
   - Prove token values and raw chat content are excluded from returned state.
+  - Implementation plan for next run:
+    - Read `Tests/PitwallCoreTests/ProviderDetectionTests.swift`, `Sources/PitwallCore/LocalProviderEvidence.swift`, `Sources/PitwallCore/CodexLocalDetector.swift`, and the Gemini section in `specs/pitwall-macos-clean-room.md` before editing.
+    - Extend `Sources/PitwallCore/LocalProviderEvidence.swift` only for shared sanitized helpers that Gemini also needs; do not add provider-specific Gemini behavior to the shared file unless it is genuinely reusable.
+    - Create `Sources/PitwallCore/GeminiLocalDetector.swift` with a detector that consumes injected `LocalProviderFileSnapshot` values only; do not read the real filesystem, env vars, tokens, raw chats, stdout, source content, or provider credential files directly.
+    - Treat `settings.json` presence as configuration/install evidence, OAuth credential file presence as auth evidence without parsing or storing token fields, and local chat/session file presence as activity evidence without retaining `raw_chat` or message bodies.
+    - Return `ProviderState` values with safe payload booleans such as `installDetected`, `authDetected`, `activityDetected`, and any safe quota/profile metadata already expected by tests such as `tokenCountObserved`; missing configuration should produce `.missingConfiguration`, `.observedOnly`, and a configure action.
+    - Preserve future room for Gemini auth-mode/profile/quota buckets through sanitized payloads or Gemini-local types rather than adding Claude-specific percentage assumptions to `ProviderModels.swift`.
+    - Do not implement provider confidence mapping in this step except for unavoidable compile support proven by Gemini detector tests.
+    - Validation: `swift test` should progress past Gemini detector symbols while remaining red on missing `ProviderConfidenceMapper` until Step 2.6 is implemented.
 - [ ] Step 2.6: Add provider confidence mapping
   - Files: create `Sources/PitwallCore/ProviderConfidenceMapper.swift`, modify `Tests/PitwallCoreTests/ProviderConfidenceTests.swift`
   - Map Claude exact usage, Codex passive states, Gemini passive states, degraded telemetry, and missing configuration to provider-agnostic confidence labels with explanations.
