@@ -108,6 +108,13 @@
     - Do not add provider adapters, credential handling, local provider file reads, networking, production UI, or new app targets in this verification step.
 - [ ] Step 1.6: Refactor model naming and calculator boundaries if needed while keeping tests green
   - Files: modify `Sources/PitwallCore/ProviderModels.swift`, modify `Sources/PitwallCore/PacingCalculator.swift`, modify tests only as needed to clarify behavior without weakening coverage
+  - Implementation plan for next run:
+    - Run `swift test` first to confirm the Step 1.5 green baseline still passes before changing code.
+    - Review `Sources/PitwallCore/ProviderModels.swift` for naming clarity and provider-agnostic boundaries. Keep the current public model surface unless a rename materially improves downstream Phase 2 adapter usage.
+    - Review `Sources/PitwallCore/PacingCalculator.swift` for private-boundary cleanup only: candidates are extracting the weekly/session ignore-window inputs into private constants or a private window configuration, and isolating threshold/action mapping without changing public APIs.
+    - If threshold or window-boundary code is touched, strengthen tests in `Tests/PitwallCoreTests/PacingCalculatorTests.swift` around exact boundary values (`0.50`, `0.85`, `1.15`, `1.50`, `2.00`) rather than weakening existing assertions.
+    - Do not add provider adapters, credentials, local provider file reads, networking, UI, app targets, or copied upstream source/assets.
+    - Validation: `swift test` must pass all 10 existing tests plus any added clarification tests with no warnings emitted before marking the step complete.
 
 ### Milestone: Phase 1 Foundation And Pacing Core
 **Acceptance Criteria:**
