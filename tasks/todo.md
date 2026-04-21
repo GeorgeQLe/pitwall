@@ -96,9 +96,11 @@
     - Validation: `swift test` passes 10 XCTest cases with no warnings emitted.
 
 ### Green
-- [ ] Step 1.5: Run the core test suite and verify all Phase 1 tests pass
+- [x] Step 1.5: Run the core test suite and verify all Phase 1 tests pass
   - Command: `swift test`
-  - Implementation plan for next run:
+  - Completed validation:
+    - `swift test` passed 10 XCTest cases with 0 failures and no warnings emitted.
+  - Implementation plan used:
     - Run `swift test` from the repository root.
     - Inspect the full output, even on exit code 0, for warnings or skipped/failing tests.
     - Expected result: all 10 existing `PitwallCoreTests` XCTest cases pass, and no warnings are emitted.

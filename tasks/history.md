@@ -2,6 +2,8 @@
 
 ## 2026-04-21
 
+- Phase 1 Step 1.5 completed: ran the core Swift test suite and verified all current Phase 1 pacing tests pass.
+- Validation: `swift test` passes 10 XCTest cases with 0 failures and no warnings emitted.
 - Phase 1 Step 1.4 completed: added a lightweight `PitwallCore` module anchor and updated `README.md` with the current SwiftPM target, `swift test` usage, and clean-room input rules for future app targets.
 - Validation: `swift test` passes 10 XCTest cases with no warnings emitted.
 - Phase 1 Step 1.3 completed: implemented `PacingCalculator` with deterministic weekly/session pace evaluation, ignore-window handling, capped/action mapping, daily budget calculation, and today's usage baseline behavior.
