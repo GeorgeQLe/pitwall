@@ -98,6 +98,12 @@
 ### Green
 - [ ] Step 1.5: Run the core test suite and verify all Phase 1 tests pass
   - Command: `swift test`
+  - Implementation plan for next run:
+    - Run `swift test` from the repository root.
+    - Inspect the full output, even on exit code 0, for warnings or skipped/failing tests.
+    - Expected result: all 10 existing `PitwallCoreTests` XCTest cases pass, and no warnings are emitted.
+    - If failures appear, treat them as unexpected regressions from the completed Phase 1 implementation steps and fix the failing core code or test fixture before marking this step complete.
+    - Do not add provider adapters, credential handling, local provider file reads, networking, production UI, or new app targets in this verification step.
 - [ ] Step 1.6: Refactor model naming and calculator boundaries if needed while keeping tests green
   - Files: modify `Sources/PitwallCore/ProviderModels.swift`, modify `Sources/PitwallCore/PacingCalculator.swift`, modify tests only as needed to clarify behavior without weakening coverage
 
