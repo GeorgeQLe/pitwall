@@ -47,7 +47,7 @@
   - Deliverable: Review findings before final validation.
 
 ### Implementation
-- [ ] Step 3.1: Scaffold the macOS menu bar app and app-support target
+- [x] Step 3.1: Scaffold the macOS menu bar app and app-support target
   - Files: modify `Package.swift`, create `Sources/PitwallApp/PitwallApp.swift`, create `Sources/PitwallApp/AppDelegate.swift`, create `Sources/PitwallApp/Info.plist`, create `Sources/PitwallAppSupport/PitwallAppSupport.swift`
   - Add an executable macOS app target with `LSUIElement`/agent behavior so it runs as a menu bar app with no Dock icon.
   - Add a testable `PitwallAppSupport` library target for app state, formatters, and service coordination that can be covered without launching AppKit UI.
@@ -60,6 +60,11 @@
     - Create `Sources/PitwallApp/Info.plist` with `LSUIElement` set for agent-style launch.
     - Keep this step free of provider networking, credential storage changes, real filesystem scans, and production UI complexity beyond a launchable menu bar shell.
     - Validation: `swift build` should compile the package; `swift test` should continue passing existing Phase 1-2 tests.
+  - Completed notes:
+    - Added SwiftPM `PitwallAppSupport` and `PitwallApp` targets.
+    - Added a minimal AppKit status item shell with accessory activation policy and an `LSUIElement` plist kept for future app bundling.
+    - SwiftPM excludes the plist from target resources because top-level `Info.plist` files are not supported as SwiftPM resource bundle contents.
+    - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - [ ] Step 3.2: Add provider presentation, rotation, and status formatting support
   - Files: create `Sources/PitwallAppSupport/AppProviderState.swift`, create `Sources/PitwallAppSupport/ProviderCardViewModel.swift`, create `Sources/PitwallAppSupport/MenuBarStatusFormatter.swift`, create `Sources/PitwallAppSupport/ProviderRotationController.swift`, create `Sources/PitwallAppSupport/UserPreferences.swift`
   - Build view models from `ProviderState` values for Claude, Codex, and Gemini without forcing fake precision.
