@@ -90,6 +90,59 @@ final class PacingCalculatorTests: XCTestCase {
         )
     }
 
+    func testWeeklyPaceRatioBoundaryLabels() {
+        let windowStart = Date(timeIntervalSince1970: 1_800_000_000)
+        let resetAt = windowStart.addingTimeInterval(7 * 24 * 60 * 60)
+        let now = windowStart.addingTimeInterval(2 * 24 * 60 * 60)
+        let expectedUtilization = 100.0 * (2.0 / 7.0)
+
+        assertWeeklyPace(
+            utilization: expectedUtilization * 0.50,
+            now: now,
+            windowStart: windowStart,
+            resetAt: resetAt,
+            expectedRatio: 0.50,
+            expectedLabel: .behindPace,
+            expectedAction: .push
+        )
+        assertWeeklyPace(
+            utilization: expectedUtilization * 0.85,
+            now: now,
+            windowStart: windowStart,
+            resetAt: resetAt,
+            expectedRatio: 0.85,
+            expectedLabel: .onPace,
+            expectedAction: .push
+        )
+        assertWeeklyPace(
+            utilization: expectedUtilization * 1.15,
+            now: now,
+            windowStart: windowStart,
+            resetAt: resetAt,
+            expectedRatio: 1.15,
+            expectedLabel: .onPace,
+            expectedAction: .push
+        )
+        assertWeeklyPace(
+            utilization: expectedUtilization * 1.50,
+            now: now,
+            windowStart: windowStart,
+            resetAt: resetAt,
+            expectedRatio: 1.50,
+            expectedLabel: .aheadOfPace,
+            expectedAction: .conserve
+        )
+        assertWeeklyPace(
+            utilization: expectedUtilization * 2.00,
+            now: now,
+            windowStart: windowStart,
+            resetAt: resetAt,
+            expectedRatio: 2.00,
+            expectedLabel: .warning,
+            expectedAction: .conserve
+        )
+    }
+
     func testWeeklyPacingIgnoresFirstSixHoursAndLastHour() {
         let windowStart = Date(timeIntervalSince1970: 1_800_000_000)
         let resetAt = windowStart.addingTimeInterval(7 * 24 * 60 * 60)

@@ -2,6 +2,14 @@ import Foundation
 
 public struct PacingCalculator: Sendable {
     private static let secondsPerDay: TimeInterval = 24 * 60 * 60
+    private static let weeklyWindow = PacingWindow(
+        ignoreAfterStart: 6 * 60 * 60,
+        ignoreBeforeReset: 60 * 60
+    )
+    private static let sessionWindow = PacingWindow(
+        ignoreAfterStart: 15 * 60,
+        ignoreBeforeReset: 5 * 60
+    )
 
     public init() {}
 
@@ -16,8 +24,7 @@ public struct PacingCalculator: Sendable {
             windowStart: windowStart,
             resetAt: resetAt,
             now: now,
-            ignoreAfterStart: 6 * 60 * 60,
-            ignoreBeforeReset: 60 * 60
+            pacingWindow: Self.weeklyWindow
         )
     }
 
@@ -32,8 +39,7 @@ public struct PacingCalculator: Sendable {
             windowStart: windowStart,
             resetAt: resetAt,
             now: now,
-            ignoreAfterStart: 15 * 60,
-            ignoreBeforeReset: 5 * 60
+            pacingWindow: Self.sessionWindow
         )
     }
 
@@ -69,16 +75,15 @@ public struct PacingCalculator: Sendable {
         windowStart: Date,
         resetAt: Date,
         now: Date,
-        ignoreAfterStart: TimeInterval,
-        ignoreBeforeReset: TimeInterval
+        pacingWindow: PacingWindow
     ) -> PaceEvaluation {
         let remainingWindowDuration = max(0, resetAt.timeIntervalSince(now))
         let elapsedDuration = now.timeIntervalSince(windowStart)
         let fullWindowDuration = resetAt.timeIntervalSince(windowStart)
 
         guard fullWindowDuration > 0,
-              elapsedDuration >= ignoreAfterStart,
-              remainingWindowDuration >= ignoreBeforeReset else {
+              elapsedDuration >= pacingWindow.ignoreAfterStart,
+              remainingWindowDuration >= pacingWindow.ignoreBeforeReset else {
             return PaceEvaluation(
                 label: .notEnoughWindow,
                 action: .configure,
@@ -98,18 +103,21 @@ public struct PacingCalculator: Sendable {
         }
 
         let paceRatio = utilizationPercent / expectedUtilizationPercent
-        let mapping = labelAndAction(utilizationPercent: utilizationPercent, paceRatio: paceRatio)
+        let recommendation = recommendation(
+            utilizationPercent: utilizationPercent,
+            paceRatio: paceRatio
+        )
 
         return PaceEvaluation(
-            label: mapping.label,
-            action: mapping.action,
+            label: recommendation.label,
+            action: recommendation.action,
             paceRatio: paceRatio,
             expectedUtilizationPercent: expectedUtilizationPercent,
             remainingWindowDuration: remainingWindowDuration
         )
     }
 
-    private func labelAndAction(
+    private func recommendation(
         utilizationPercent: Double,
         paceRatio: Double
     ) -> (label: PacingLabel, action: RecommendedAction) {
@@ -173,4 +181,9 @@ public struct PacingCalculator: Sendable {
 
         return TodayUsage(status: .unknown)
     }
+}
+
+private struct PacingWindow: Sendable {
+    var ignoreAfterStart: TimeInterval
+    var ignoreBeforeReset: TimeInterval
 }
