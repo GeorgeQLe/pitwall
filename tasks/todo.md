@@ -85,7 +85,7 @@
     - Today's usage should compare current weekly utilization against the closest retained snapshot before local midnight; if none exists, use the earliest same-day snapshot as an estimate; if neither exists, return unknown.
   - Keep this step deterministic and free of provider networking, credentials, local provider files, or UI concerns.
   - Validation: `swift test` passes 10 tests after implementing `PacingCalculator` and correcting daily-budget timestamp fixtures to straddle an actual UTC local-midnight boundary.
-- [ ] Step 1.4: Add clean-room project scaffolding notes for future app targets
+- [x] Step 1.4: Add clean-room project scaffolding notes for future app targets
   - Files: create `Sources/PitwallCore/PitwallCore.swift`, modify `README.md`
   - Document how to run `swift test` and keep implementation inputs tied to specs and public/platform docs only
   - Implementation plan for next run:
@@ -93,7 +93,7 @@
     - Create `Sources/PitwallCore/PitwallCore.swift` as a lightweight public module anchor for future app targets. Keep it free of provider logic, credentials, local file reads, networking, UI code, assets, or copied upstream implementation details.
     - Update `README.md` to state that the current SwiftPM target is `PitwallCore`, tests run with `swift test`, and future app targets must use specs/public platform documentation as inputs rather than prior ClaudeUsage source or assets.
     - Keep this step documentation/scaffold-only; do not introduce provider adapters, app targets, credential storage, or production UI.
-    - Validation: run `swift test` and expect all existing Phase 1 tests to remain green.
+    - Validation: `swift test` passes 10 XCTest cases with no warnings emitted.
 
 ### Green
 - [ ] Step 1.5: Run the core test suite and verify all Phase 1 tests pass

@@ -2,6 +2,8 @@
 
 ## 2026-04-21
 
+- Phase 1 Step 1.4 completed: added a lightweight `PitwallCore` module anchor and updated `README.md` with the current SwiftPM target, `swift test` usage, and clean-room input rules for future app targets.
+- Validation: `swift test` passes 10 XCTest cases with no warnings emitted.
 - Phase 1 Step 1.3 completed: implemented `PacingCalculator` with deterministic weekly/session pace evaluation, ignore-window handling, capped/action mapping, daily budget calculation, and today's usage baseline behavior.
 - Corrected daily-budget test fixtures so UTC calendar tests straddle an actual UTC local-midnight boundary while preserving coverage for exact, estimated, and unknown today-usage states.
 - Validation: `swift test` passes 10 tests with no warnings emitted.

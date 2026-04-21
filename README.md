@@ -10,7 +10,8 @@ This repository is a fresh clean-room implementation. It intentionally does not 
 
 Current phase:
 
-- Product and implementation specs are being rewritten from requirements.
+- The Swift package exposes a `PitwallCore` library target for provider-agnostic pacing models and calculations.
+- Core tests can be run locally with `swift test`.
 - The initial website lives in `docs/` and can be served by GitHub Pages.
 - The first implementation target is a native macOS menu bar app.
 
@@ -32,6 +33,22 @@ See `CLEAN_ROOM.md` before implementing. The short version:
 - Use specs as product requirements only.
 - Implement fresh file names, structure, models, and UI code unless they are generic platform conventions.
 - Keep attribution factual without implying affiliation.
+
+Future app targets should be implemented from the repository specs, public provider documentation, and public Apple platform documentation. Do not use prior ClaudeUsage Swift source, Xcode project files, assets, screenshots, release artifacts, or descended fork implementation details as development inputs.
+
+## Development
+
+Pitwall currently builds as a Swift package with a single library product:
+
+- `PitwallCore`: provider-agnostic pacing models and deterministic pacing calculations.
+
+Run the core test suite with:
+
+```sh
+swift test
+```
+
+The package intentionally does not contain provider credentials, provider network clients, local provider file readers, or production UI code yet.
 
 ## Claude Credential Setup
 
