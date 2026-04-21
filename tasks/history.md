@@ -2,6 +2,8 @@
 
 ## 2026-04-21
 
+- Phase 2 Step 2.2 completed: added Claude account/usage models, tolerant Claude usage parsing for known sections/null sections/unknown keys/extra usage, UTC reset parsing, and Claude auth/network error normalization into non-secret `ProviderState` values.
+- Validation: `swift build` passes after allowing SwiftPM to write its compiler cache. `swift test` progresses past Claude parser tests and remains red as expected on later Phase 2 missing symbols (`InMemorySecretStore`, `ProviderSecretKey`, `ProviderSecretState`, `LocalProviderFileSnapshot`, `CodexLocalDetector`, `GeminiLocalDetector`, and `ProviderConfidenceMapper`).
 - Phase 2 Step 2.1 completed: added red XCTest coverage for Claude usage parsing/error normalization, Codex and Gemini passive detection sanitization, provider confidence mapping, and write-only secret-store behavior, plus Claude JSON fixtures.
 - Validation: `swift test` fails as expected for the red phase because Phase 2 implementation symbols do not exist yet (`ClaudeUsageParser`, `CodexLocalDetector`, `GeminiLocalDetector`, `ProviderConfidenceMapper`, `InMemorySecretStore`, and related models). No SwiftPM fixture warnings are emitted after declaring test resources.
 - Phase 1 Step 1.6 completed: kept provider model public names stable, refactored pacing-window configuration into private calculator internals, and added explicit weekly ratio boundary tests for `0.50`, `0.85`, `1.15`, `1.50`, and `2.00`.

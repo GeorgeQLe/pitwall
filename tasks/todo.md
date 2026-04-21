@@ -6,7 +6,7 @@
 ## Priority Task Queue
 
 - [x] Phase 1 Foundation And Pacing Core completed and archived to `tasks/phases/phase-1.md`.
-- [x] Task pipeline is healthy; ready for `$run` to start Phase 2 Step 2.2.
+- [x] Task pipeline is healthy; ready for `$run` to start Phase 2 Step 2.3.
 
 ## Phase 2: Provider Data Foundations
 
@@ -63,7 +63,7 @@
     - Red-phase validation: `swift test` should compile the manifest and fail on missing Phase 2 implementation symbols.
 
 ### Implementation
-- [ ] Step 2.2: Add Claude usage parsing and normalized provider state mapping
+- [x] Step 2.2: Add Claude usage parsing and normalized provider state mapping
   - Files: create `Sources/PitwallCore/ClaudeUsageParser.swift`, create `Sources/PitwallCore/ClaudeProviderModels.swift`, modify `Sources/PitwallCore/ProviderModels.swift` only if tests show a provider-agnostic model gap
   - Parse documented Claude usage fields with tolerant handling for unknown keys and null sections.
   - Represent extra usage when present without forcing every provider into Claude's quota shape.
@@ -81,6 +81,13 @@
   - Define an async-safe protocol for saving, loading, and deleting provider-owned secrets.
   - Provide an injected in-memory implementation for tests only; do not add real Keychain calls yet unless needed by the testable contract.
   - Ensure public provider state can report configured/missing/expired without rendering secret values.
+  - Implementation plan for next run:
+    - Read `Tests/PitwallCoreTests/SecretStoreTests.swift`, `Sources/PitwallCore/ProviderModels.swift`, and `specs/pitwall-macos-clean-room.md` Accounts and Storage sections before editing.
+    - Create `Sources/PitwallCore/SecretStore.swift` with `ProviderSecretKey`, `ProviderSecretStore`, public secret status/state types, and a `ProviderSecretState.makePublicState(...)` helper that checks configured/missing status without exposing saved values.
+    - Create `Sources/PitwallCore/InMemorySecretStore.swift` with an actor-backed or otherwise async-safe fake store for tests.
+    - Keep this step free of production Keychain calls, provider networking, UI, and any read-back surface that renders secret values.
+    - Do not implement Codex, Gemini, or confidence mapper types in this step except for unavoidable compile support proven by the secret-store tests.
+    - Validation: `swift test` should progress past secret-store symbols while remaining red on later Phase 2 missing detector/confidence types until Steps 2.4-2.6 are implemented.
 - [ ] Step 2.4: Add Codex passive detection models and sanitization
   - Files: create `Sources/PitwallCore/CodexLocalDetector.swift`, create `Sources/PitwallCore/LocalProviderEvidence.swift`, modify `Tests/PitwallCoreTests/ProviderDetectionTests.swift`
   - Consume injected file snapshots for `CODEX_HOME`/`~/.codex` paths, config presence, auth presence, history/session metadata, and rate-limit text.
