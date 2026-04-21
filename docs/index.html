@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pitwall - Pace your AI coding subscriptions</title>
+    <meta name="description" content="Pitwall helps AI coding power users pace Claude, Codex, and Gemini subscriptions without burning through limits too early.">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top"><span class="brand-mark">P</span><span>Pitwall</span></a>
+      <nav>
+        <a href="#pacing">Pacing</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#install">Install</a>
+        <a href="#license">License</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Local AI usage pacing for power users</p>
+          <h1>Pitwall</h1>
+          <p class="hero-subtitle">Know when to push, conserve, switch providers, or wait. Pitwall helps you maximize AI coding subscriptions without burning through limits too early.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="https://github.com/GeorgeQLe/pitwall">View source</a>
+            <a class="button secondary" href="#install">Install status</a>
+          </div>
+        </div>
+        <div class="product-mock" aria-label="Pitwall usage pacing preview">
+          <div class="mock-top"><span>Claude</span><strong>conserve</strong></div>
+          <div class="meter"><span style="width: 82%"></span></div>
+          <div class="mock-row"><span>Daily budget</span><strong>12% / day</strong></div>
+          <div class="mock-row"><span>Window left</span><strong>4d 3h</strong></div>
+          <div class="mock-row"><span>Best next move</span><strong>Switch to Gemini</strong></div>
+          <div class="provider-grid">
+            <span>Claude exact</span>
+            <span>Codex estimated</span>
+            <span>Gemini quota</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="signal-strip">
+        <div><strong>12% / day</strong><span>recommended pace</span></div>
+        <div><strong>4d left</strong><span>weekly window</span></div>
+        <div><strong>On pace</strong><span>use more safely</span></div>
+        <div><strong>Exact / estimated</strong><span>confidence labels</span></div>
+      </section>
+
+      <section id="pacing" class="section">
+        <p class="eyebrow">Pacing, not just metering</p>
+        <h2>Stop spending the rest of the week by Tuesday morning.</h2>
+        <div class="feature-grid">
+          <article><h3>Daily usage budget</h3><p>See how much subscription capacity you can safely use before the weekly window becomes a problem.</p></article>
+          <article><h3>Limit-debt warnings</h3><p>Understand when a heavy session may leave you capped for multiple days or pushed into extra usage.</p></article>
+          <article><h3>Provider strategy</h3><p>Compare Claude, Codex, and Gemini with honest confidence labels.</p></article>
+          <article><h3>Subscription yield</h3><p>Use enough to get your money's worth without treating every plan as unlimited.</p></article>
+        </div>
+      </section>
+
+      <section id="privacy" class="section split-band">
+        <div><p class="eyebrow">Local-first by default</p><h2>Usage signals stay on your machine.</h2></div>
+        <p>Codex and Gemini begin with passive local monitoring and optional telemetry modes. Pitwall should not collect prompt text or source code content for analytics.</p>
+      </section>
+
+      <section id="install" class="section">
+        <p class="eyebrow">Install</p>
+        <h2>Clean-room build in progress.</h2>
+        <p>The first MIT-licensed Pitwall build will be published after the macOS implementation is rebuilt from the clean-room spec.</p>
+      </section>
+
+      <section id="license" class="section legal-section">
+        <p class="eyebrow">License</p>
+        <h2>MIT from day one.</h2>
+        <p>This repository is a fresh clean-room implementation and intentionally excludes upstream-derived Swift app code and assets.</p>
+      </section>
+    </main>
+
+    <footer>
+      <span>Pitwall is independent and unaffiliated with Anthropic, OpenAI, Google, GitHub, Cursor, or ClaudeUsage.</span>
+      <a href="https://github.com/GeorgeQLe/pitwall">GitHub</a>
+    </footer>
+  </body>
+</html>
