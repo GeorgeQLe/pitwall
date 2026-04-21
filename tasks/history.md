@@ -2,6 +2,9 @@
 
 ## 2026-04-21
 
+- Phase 1 Step 1.6 completed: kept provider model public names stable, refactored pacing-window configuration into private calculator internals, and added explicit weekly ratio boundary tests for `0.50`, `0.85`, `1.15`, `1.50`, and `2.00`.
+- Validation: baseline `swift test` passed 10 XCTest cases before edits; final `swift test` passes 11 XCTest cases with 0 failures and no warnings emitted.
+- Phase 1 completed: all milestone acceptance criteria are satisfied, the completed phase was archived to `tasks/phases/phase-1.md`, and Phase 2 Provider Data Foundations was planned just-in-time in `tasks/todo.md` and `tasks/roadmap.md`.
 - Phase 1 Step 1.5 completed: ran the core Swift test suite and verified all current Phase 1 pacing tests pass.
 - Validation: `swift test` passes 10 XCTest cases with 0 failures and no warnings emitted.
 - Phase 1 Step 1.4 completed: added a lightweight `PitwallCore` module anchor and updated `README.md` with the current SwiftPM target, `swift test` usage, and clean-room input rules for future app targets.
