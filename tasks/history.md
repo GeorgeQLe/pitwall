@@ -2,6 +2,8 @@
 
 ## 2026-04-21
 
+- Phase 3 Step 3.5 completed: added injectable Claude usage refresh, polling/backoff policy, sanitized Codex/Gemini local snapshot loading, and provider refresh coordination through the existing configuration and secret-store boundaries.
+- Validation: `swift build` passes. `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - Phase 3 Step 3.4 completed: added a macOS Keychain-backed `ProviderSecretStore`, public configured/missing/expired secret state, app-support non-secret provider configuration persistence, and Claude account setup flows that save/replace/delete session keys without rendering saved credential values.
 - Validation: `swift build` passes. `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - Phase 3 Step 3.3 completed: added a controller-backed macOS status item, transient popover, native SwiftUI provider cards, status badges, Claude usage rows, action summary, and refresh/settings/add-account controls using sanitized sample provider state.

@@ -8,7 +8,7 @@
 - [x] Phase 1 Foundation And Pacing Core completed and archived to `tasks/phases/phase-1.md`.
 - [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
 - [x] Phase 3 First Usable macOS Provider Parity planned just-in-time from completed Phase 2 boundaries.
-- [x] Task pipeline is healthy; ready for `$run` to start Phase 3 Step 3.4.
+- [x] Task pipeline is healthy; ready for `$run` to start Phase 3 Step 3.6.
 
 ## Phase 3: First Usable macOS Provider Parity
 
@@ -116,7 +116,7 @@
     - Added Claude account setup state and save/replace/delete/expired flows that write session keys through the secret-store abstraction and keep session keys out of public state and descriptions.
     - Did not extract browser cookies, read browser storage, read CLI auth files, call provider networks, or persist raw credential material outside the secret store.
     - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
-- [ ] Step 3.5: Add refresh coordination for Claude, Codex, and Gemini
+- [x] Step 3.5: Add refresh coordination for Claude, Codex, and Gemini
   - Files: create `Sources/PitwallCore/ClaudeUsageClient.swift`, create `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift`, create `Sources/PitwallAppSupport/LocalProviderSnapshotLoader.swift`, create `Sources/PitwallAppSupport/PollingPolicy.swift`
   - Implement Claude manual refresh and test-connection behavior using user-supplied credentials, preserving expired auth and stale network states.
   - Bridge Codex and Gemini passive detection from allowed local metadata into provider cards through sanitized snapshots.
@@ -127,6 +127,12 @@
     - Add an injectable local snapshot loader for Codex/Gemini allowed metadata paths; sanitize snapshots before detector calls and never persist raw prompt/token/chat/stdout/source content.
     - Add refresh coordination that supports manual refresh, test connection, passive scan cadence, telemetry degraded state after repeated failures, and one-attempt manual bypass of backoff.
     - Validation: `swift build` should pass; use injected clients/loaders in Step 3.7 tests rather than live network or real user files.
+  - Completed notes:
+    - Added an injectable Claude usage HTTP client that builds the documented usage request from user-supplied session key/org id, maps 401/403 to expired auth, maps network/decoding failures to normalized errors, parses usage through `ClaudeUsageParser`, and detects replacement `sessionKey` cookies without rendering secrets.
+    - Added polling/backoff policy support for 5-minute Claude refresh, manual/test-connection bypass, reset-aware scheduling, exponential network backoff, telemetry degradation thresholds, and passive scan cadence defaults.
+    - Added a local provider snapshot loader for Codex/Gemini that reads only allowlisted metadata paths, treats auth files as presence-only, sanitizes Gemini settings/chat JSON, and avoids persisting raw prompt, token, stdout, source, or provider response content.
+    - Added a provider refresh coordinator that uses injected clients/loaders/stores to refresh Claude, test connections, update last-success metadata, preserve stale Claude state on failures, rotate replacement session keys through the secret store, and bridge passive Codex/Gemini detection into provider cards.
+    - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 - [ ] Step 3.6: Add onboarding and settings UI
   - Files: create `Sources/PitwallApp/Views/OnboardingView.swift`, create `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/ProviderEnablementView.swift`, create `Sources/PitwallApp/Views/ClaudeCredentialSetupView.swift`, create `Sources/PitwallApp/Views/DisplayPreferencesView.swift`, modify `Sources/PitwallApp/PopoverController.swift`
   - Implement first-run provider selection, skippable onboarding, Claude manual credential instructions, provider enablement, test connection, reset-time/countdown preference, rotation preference, and manual refresh actions.
