@@ -11,10 +11,12 @@ final class SecretStoreTests: XCTestCase {
         )
 
         try await store.save("sk-ant-session-secret", for: key)
-        XCTAssertEqual(try await store.loadSecret(for: key), "sk-ant-session-secret")
+        let savedSecret = try await store.loadSecret(for: key)
+        XCTAssertEqual(savedSecret, "sk-ant-session-secret")
 
         try await store.deleteSecret(for: key)
-        XCTAssertNil(try await store.loadSecret(for: key))
+        let deletedSecret = try await store.loadSecret(for: key)
+        XCTAssertNil(deletedSecret)
     }
 
     func testPublicSecretStateIsWriteOnlyAndDoesNotRenderSavedValue() async throws {

@@ -2,6 +2,9 @@
 
 ## 2026-04-21
 
+- Phase 2 Step 2.3 completed: added `ProviderSecretKey`, async `ProviderSecretStore`, write-only `ProviderSecretState`, and an actor-backed `InMemorySecretStore` for injected tests without adding production Keychain calls.
+- Adjusted secret-store XCTest assertions to await values before calling XCTest autoclosures, preserving the write-only public-state privacy check.
+- Validation: `swift build` passes. `swift test` and `swift test --filter SecretStoreTests` both still fail as expected during the red phase because SwiftPM compiles all test files and later Phase 2 symbols are not implemented yet (`ProviderConfidenceMapper`, `LocalProviderFileSnapshot`, `CodexLocalDetector`, and `GeminiLocalDetector`).
 - Phase 2 Step 2.2 completed: added Claude account/usage models, tolerant Claude usage parsing for known sections/null sections/unknown keys/extra usage, UTC reset parsing, and Claude auth/network error normalization into non-secret `ProviderState` values.
 - Validation: `swift build` passes after allowing SwiftPM to write its compiler cache. `swift test` progresses past Claude parser tests and remains red as expected on later Phase 2 missing symbols (`InMemorySecretStore`, `ProviderSecretKey`, `ProviderSecretState`, `LocalProviderFileSnapshot`, `CodexLocalDetector`, `GeminiLocalDetector`, and `ProviderConfidenceMapper`).
 - Phase 2 Step 2.1 completed: added red XCTest coverage for Claude usage parsing/error normalization, Codex and Gemini passive detection sanitization, provider confidence mapping, and write-only secret-store behavior, plus Claude JSON fixtures.
