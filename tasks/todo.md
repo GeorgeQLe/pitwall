@@ -88,6 +88,12 @@
 - [ ] Step 1.4: Add clean-room project scaffolding notes for future app targets
   - Files: create `Sources/PitwallCore/PitwallCore.swift`, modify `README.md`
   - Document how to run `swift test` and keep implementation inputs tied to specs and public/platform docs only
+  - Implementation plan for next run:
+    - Read `README.md`, `CLEAN_ROOM.md`, and `specs/pitwall-macos-clean-room.md` only for the existing clean-room rules and project positioning.
+    - Create `Sources/PitwallCore/PitwallCore.swift` as a lightweight public module anchor for future app targets. Keep it free of provider logic, credentials, local file reads, networking, UI code, assets, or copied upstream implementation details.
+    - Update `README.md` to state that the current SwiftPM target is `PitwallCore`, tests run with `swift test`, and future app targets must use specs/public platform documentation as inputs rather than prior ClaudeUsage source or assets.
+    - Keep this step documentation/scaffold-only; do not introduce provider adapters, app targets, credential storage, or production UI.
+    - Validation: run `swift test` and expect all existing Phase 1 tests to remain green.
 
 ### Green
 - [ ] Step 1.5: Run the core test suite and verify all Phase 1 tests pass
