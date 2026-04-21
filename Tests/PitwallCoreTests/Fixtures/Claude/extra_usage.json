@@ -1,0 +1,12 @@
+{
+  "seven_day": {
+    "utilization": 45.0,
+    "resets_at": "2026-02-14T16:59:59Z"
+  },
+  "extra_usage": {
+    "is_enabled": true,
+    "monthly_limit": 250.0,
+    "used_credits": 37.5,
+    "utilization": 15.0
+  }
+}

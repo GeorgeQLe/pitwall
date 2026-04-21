@@ -1,0 +1,21 @@
+{
+  "five_hour": {
+    "utilization": 7.0,
+    "resets_at": "2026-02-08T18:59:59Z"
+  },
+  "seven_day": {
+    "utilization": 31.0,
+    "resets_at": "2026-02-14T16:59:59Z"
+  },
+  "iguana_necktie": {
+    "utilization": 99.0,
+    "resets_at": null
+  },
+  "future_limit_shape": {
+    "used": 10,
+    "remaining": 90,
+    "nested": {
+      "unexpected": true
+    }
+  }
+}

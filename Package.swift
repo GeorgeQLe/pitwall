@@ -19,7 +19,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PitwallCoreTests",
-            dependencies: ["PitwallCore"]
+            dependencies: ["PitwallCore"],
+            resources: [
+                .copy("Fixtures")
+            ]
         )
     ]
 )
