@@ -101,7 +101,7 @@
     - Return `ProviderState` values with safe payload booleans such as `installDetected`, `authDetected`, `activityDetected`, and `rateLimitDetected`; missing configuration should produce `.missingConfiguration`, `.observedOnly`, and a configure action.
     - Do not implement Gemini or provider confidence mapping in this step except for unavoidable shared local-evidence support.
     - Validation: `swift test` should progress past Codex detector symbols while remaining red on later Gemini/confidence missing types until Steps 2.5-2.6 are implemented.
-- [ ] Step 2.5: Add Gemini passive detection models and sanitization
+- [x] Step 2.5: Add Gemini passive detection models and sanitization
   - Files: create `Sources/PitwallCore/GeminiLocalDetector.swift`, modify `Sources/PitwallCore/LocalProviderEvidence.swift`, modify `Tests/PitwallCoreTests/ProviderDetectionTests.swift`
   - Consume injected file snapshots for `GEMINI_HOME`/`~/.gemini` paths, settings presence, OAuth presence, and local activity metadata.
   - Preserve quota/profile/auth-mode room for future telemetry without forcing Claude percentage fields.
@@ -119,6 +119,14 @@
   - Files: create `Sources/PitwallCore/ProviderConfidenceMapper.swift`, modify `Tests/PitwallCoreTests/ProviderConfidenceTests.swift`
   - Map Claude exact usage, Codex passive states, Gemini passive states, degraded telemetry, and missing configuration to provider-agnostic confidence labels with explanations.
   - Keep provider-specific evidence as payloads or adapter-local structures instead of broadening shared models unnecessarily.
+  - Implementation plan for next run:
+    - Read `Tests/PitwallCoreTests/ProviderConfidenceTests.swift`, `Sources/PitwallCore/ProviderModels.swift`, `Sources/PitwallCore/ClaudeProviderModels.swift`, `Sources/PitwallCore/CodexLocalDetector.swift`, `Sources/PitwallCore/GeminiLocalDetector.swift`, and the confidence rules in `specs/pitwall-macos-clean-room.md`.
+    - Create `Sources/PitwallCore/ProviderConfidenceMapper.swift` with a public `ProviderConfidenceMapper`, public provider evidence input enum, and public result type matching the existing red tests.
+    - Map fresh Claude usage with current usage to `.exact` / `.configured`; passive Codex and Gemini evidence with auth plus configured plan/profile plus stronger repeat or command-summary signals to `.highConfidence`; authenticated configured passive activity without stronger quota context to `.estimated`; and activity/install-only states without enough quota context to `.observedOnly`.
+    - Map degraded telemetry to `.degraded` while preserving a fallback confidence explanation that names the sanitized failure reason without including raw provider responses.
+    - Map missing configuration to `.observedOnly`, `.missingConfiguration`, and an explanation that tells UI callers configuration is required.
+    - Keep mapper inputs small and sanitized; do not add provider-specific quota fields to `ProviderModels.swift` unless the tests prove a shared model gap.
+    - Validation: `swift test` should compile all Phase 2 tests and may reveal assertion failures in the new mapper; fix those until the confidence tests pass, then leave final all-suite green verification for Step 2.7 unless all tests pass naturally.
 
 ### Green
 - [ ] Step 2.7: Run provider foundation tests and verify all Phase 2 tests pass
