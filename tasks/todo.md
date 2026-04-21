@@ -6,7 +6,7 @@
 ## Priority Task Queue
 
 - [x] Phase 1 Foundation And Pacing Core completed and archived to `tasks/phases/phase-1.md`.
-- [x] Task pipeline is healthy; ready for `$run` to start Phase 2 Step 2.3.
+- [x] Task pipeline is healthy; ready for `$run` to start Phase 2 Step 2.7.
 
 ## Phase 2: Provider Data Foundations
 
@@ -115,7 +115,7 @@
     - Preserve future room for Gemini auth-mode/profile/quota buckets through sanitized payloads or Gemini-local types rather than adding Claude-specific percentage assumptions to `ProviderModels.swift`.
     - Do not implement provider confidence mapping in this step except for unavoidable compile support proven by Gemini detector tests.
     - Validation: `swift test` should progress past Gemini detector symbols while remaining red on missing `ProviderConfidenceMapper` until Step 2.6 is implemented.
-- [ ] Step 2.6: Add provider confidence mapping
+- [x] Step 2.6: Add provider confidence mapping
   - Files: create `Sources/PitwallCore/ProviderConfidenceMapper.swift`, modify `Tests/PitwallCoreTests/ProviderConfidenceTests.swift`
   - Map Claude exact usage, Codex passive states, Gemini passive states, degraded telemetry, and missing configuration to provider-agnostic confidence labels with explanations.
   - Keep provider-specific evidence as payloads or adapter-local structures instead of broadening shared models unnecessarily.
@@ -133,6 +133,12 @@
   - Command: `swift test`
   - Expected result: all Phase 1 and Phase 2 XCTest cases pass with no warnings emitted.
   - Fix unexpected failures in the parser, detector, confidence, or secret-store implementations before marking green.
+  - Implementation plan for next run:
+    - Run `swift test` from the repository root.
+    - Confirm all Phase 1 and Phase 2 XCTest cases pass, including Claude parser, Codex/Gemini detector, provider confidence, secret-store, daily budget, and pacing tests.
+    - Inspect output for warnings even if the command exits zero; fix any warnings before marking this step complete.
+    - If a failure appears, treat it as an unexpected regression because Step 2.6 pre-ship validation passed the full suite on 2026-04-21.
+    - After a clean run, mark Step 2.7 complete and update the Phase 2 milestone criteria that are already proven by the green suite.
 - [ ] Step 2.8: Refactor provider foundation boundaries if needed while keeping tests green
   - Files: modify `Sources/PitwallCore/*Provider*.swift`, `Sources/PitwallCore/*Detector.swift`, `Sources/PitwallCore/SecretStore.swift`, and tests only as needed to clarify behavior without weakening coverage
   - Prefer provider-specific adapter types over inflating `ProviderModels.swift`.
