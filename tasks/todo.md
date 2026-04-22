@@ -10,7 +10,8 @@
 - [x] Phase 3 First Usable macOS Provider Parity completed and archived to `tasks/phases/phase-3.md`.
 - [x] Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap planned just-in-time from completed Phase 3 boundaries.
 - [x] Phase 4 Step 4.6 completed.
-- [ ] Ready for `$run` to start Phase 4 Step 4.7.
+- [x] Phase 4 Step 4.7 completed.
+- [ ] Ready for `$run` to start Phase 4 Step 4.8.
 
 ## Phase 4: V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap
 
@@ -125,7 +126,7 @@
   - Keep UI native macOS and restrained; no marketing screens, no raw diagnostic payload display, and no saved secret rendering.
 
 ### Green
-- [ ] Step 4.7: Run Phase 4 tests and full regression validation
+- [x] Step 4.7: Run Phase 4 tests and full regression validation
   - Commands: `swift test`, `swift build`
   - Expected result: all Phase 1-4 tests pass with no warnings emitted, and the app target builds for macOS 13+.
   - Fix unexpected failures before marking green.
@@ -139,7 +140,12 @@
   - Files: modify `Sources/PitwallCore/*History*.swift`, `Sources/PitwallCore/*Diagnostics*.swift`, `Sources/PitwallCore/*GitHub*.swift`, `Sources/PitwallAppSupport/*History*.swift`, `Sources/PitwallAppSupport/*Diagnostics*.swift`, `Sources/PitwallAppSupport/*Notification*.swift`, `Sources/PitwallAppSupport/*GitHub*.swift`, `Sources/PitwallApp/Views/*`, and tests only as needed to clarify behavior without weakening coverage
   - Keep pure retention/redaction/GraphQL request logic in `PitwallCore`, app coordination and persistence in `PitwallAppSupport`, and SwiftUI/AppKit presentation in `PitwallApp`.
   - Preserve clean-room constraints, local-only diagnostics, secret privacy, and honest confidence labels.
-  - Validation: `swift test` and `swift build` must pass with no warnings emitted.
+  - Implementation plan for next run:
+    - Review the Phase 4 hardening boundaries after the Step 4.7 green pass and privacy fixes: `Sources/PitwallCore/*History*.swift`, `Sources/PitwallCore/*Diagnostics*.swift`, `Sources/PitwallCore/*GitHub*.swift`, `Sources/PitwallAppSupport/*History*.swift`, `Sources/PitwallAppSupport/*Diagnostics*.swift`, `Sources/PitwallAppSupport/*Notification*.swift`, `Sources/PitwallAppSupport/*GitHub*.swift`, `Sources/PitwallApp/MenuBarController.swift`, and `Sources/PitwallApp/Views/*`.
+    - Keep pure redaction, retention, and GraphQL request construction in `PitwallCore`; keep persistence/coordination in `PitwallAppSupport`; keep SwiftUI/AppKit rendering in `PitwallApp`.
+    - Confirm the Step 4.7 fixes stay intact: diagnostics secret-key matching must handle separator variants, GitHub fine-grained PATs must redact, and configured history retention must prune persisted derived snapshots.
+    - Make no refactor if the boundaries are already clear; record the no-op decision in history if applicable.
+    - Validation: run `swift test` and `swift build`; both must pass with no warnings emitted.
 
 ### Milestone: Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap
 **Acceptance Criteria:**

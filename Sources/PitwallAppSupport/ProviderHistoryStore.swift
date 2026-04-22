@@ -35,20 +35,28 @@ public actor ProviderHistoryStore {
 
     public func append(
         _ snapshot: ProviderHistorySnapshot,
-        now: Date
+        now: Date,
+        maximumRetentionInterval: TimeInterval = 7 * 24 * 60 * 60
     ) throws {
         var snapshots = load()
         snapshots.append(snapshot)
-        let retained = ProviderHistoryRetention(now: now).retainedSnapshots(from: snapshots)
+        let retained = ProviderHistoryRetention(
+            now: now,
+            maximumRetentionInterval: maximumRetentionInterval
+        ).retainedSnapshots(from: snapshots)
         try save(retained)
     }
 
     public func retainedSnapshots(
         providerId: ProviderID,
         accountId: String,
-        now: Date
+        now: Date,
+        maximumRetentionInterval: TimeInterval = 7 * 24 * 60 * 60
     ) -> [ProviderHistorySnapshot] {
-        ProviderHistoryRetention(now: now)
+        ProviderHistoryRetention(
+            now: now,
+            maximumRetentionInterval: maximumRetentionInterval
+        )
             .retainedSnapshots(from: load())
             .filter {
                 $0.providerId == providerId &&
@@ -59,12 +67,14 @@ public actor ProviderHistoryStore {
     public func retainedUsageSnapshots(
         providerId: ProviderID,
         accountId: String,
-        now: Date
+        now: Date,
+        maximumRetentionInterval: TimeInterval = 7 * 24 * 60 * 60
     ) -> [UsageSnapshot] {
         retainedSnapshots(
             providerId: providerId,
             accountId: accountId,
-            now: now
+            now: now,
+            maximumRetentionInterval: maximumRetentionInterval
         ).compactMap { snapshot in
             guard let weeklyUtilizationPercent = snapshot.weeklyUtilizationPercent else {
                 return nil

@@ -351,6 +351,7 @@ public struct DiagnosticsRedactor: Equatable, Sendable {
         [
             #"Bearer\s+[A-Za-z0-9._\-]+"#,
             #"sk-[A-Za-z0-9._\-]+"#,
+            #"github_pat_[A-Za-z0-9_]+"#,
             #"gh[opsu]_[A-Za-z0-9_]+"#,
             #"tok_[A-Za-z0-9_\-]+"#,
             #"acct_[A-Za-z0-9_\-]+"#,
@@ -373,7 +374,7 @@ private extension Dictionary where Key == String, Value == String {
 
 private extension String {
     var isDiagnosticSecretKey: Bool {
-        let normalized = lowercased()
+        let normalized = lowercased().filter { $0.isLetter || $0.isNumber }
         return [
             "authorization",
             "authheader",

@@ -9,6 +9,10 @@ public struct HistoryPreferences: Equatable, Sendable {
         self.isEnabled = isEnabled
         self.retentionDays = max(1, retentionDays)
     }
+
+    public var maximumRetentionInterval: TimeInterval {
+        TimeInterval(retentionDays) * 24 * 60 * 60
+    }
 }
 
 public struct DiagnosticsPreferences: Equatable, Sendable {

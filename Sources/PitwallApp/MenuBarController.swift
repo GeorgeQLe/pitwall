@@ -317,6 +317,8 @@ final class MenuBarController: NSObject {
             if !settings.history.isEnabled {
                 providerHistorySnapshots = []
                 try? await providerHistoryStore.save([])
+            } else {
+                await reloadProviderHistory()
             }
             await refreshGitHubHeatmapIfNeeded(trigger: .automatic)
             updatePopover()
@@ -440,7 +442,11 @@ final class MenuBarController: NSObject {
         }
 
         let snapshots = await providerHistoryStore.load()
-        providerHistorySnapshots = ProviderHistoryRetention(now: Date()).retainedSnapshots(from: snapshots)
+        providerHistorySnapshots = ProviderHistoryRetention(
+            now: Date(),
+            maximumRetentionInterval: phase4Settings.history.maximumRetentionInterval
+        ).retainedSnapshots(from: snapshots)
+        try? await providerHistoryStore.save(providerHistorySnapshots)
         updatePopover()
     }
 

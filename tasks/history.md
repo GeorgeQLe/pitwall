@@ -2,6 +2,10 @@
 
 ## 2026-04-21
 
+- Phase 4 Step 4.7 completed: ran the full Phase 4 green validation and fixed review-lane privacy/retention findings before shipping the step.
+- Diagnostics redaction now handles separator-style secret/raw keys such as `raw_response`, `model_response`, `session_key`, and `source_content`, and redacts fine-grained GitHub personal access tokens with the `github_pat_` prefix.
+- Configured history retention is now enforced when loading/pruning persisted derived snapshots, and provider history store APIs accept explicit maximum retention intervals with regression coverage.
+- Validation: `swift test` passes 74 XCTest cases with 0 failures and no warnings emitted. `swift build` passes with no warnings emitted.
 - Phase 4 Step 4.6 completed: wired Phase 4 history, diagnostics, notifications, and optional GitHub heatmap state into the macOS app surface.
 - Replaced the popover history placeholder with compact derived-history sparklines, added a redacted diagnostics export view, surfaced optional GitHub contribution heatmap data, and persisted Phase 4 settings plus write-only GitHub token saves through the app controller.
 - Notification scheduling now flows through the app-level refresh path with duplicate suppression, and disabled history retention clears/suppresses retained derived history display.
