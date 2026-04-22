@@ -2,6 +2,10 @@
 
 ## 2026-04-21
 
+- Phase 4 completed: all milestone acceptance criteria are satisfied, the completed phase was archived to `tasks/phases/phase-4.md`, and Phase 5 Cross-Platform V1 Parity was planned just-in-time in `tasks/todo.md` and `tasks/roadmap.md`.
+- Phase 4 Step 4.8 completed: reviewed v1 hardening boundaries after the green pass and kept the existing architecture intact because pure retention/redaction/GitHub request logic is already in `PitwallCore`, app persistence/coordination is in `PitwallAppSupport`, and SwiftUI/AppKit presentation is in `PitwallApp`.
+- Removed the obsolete `Sources/PitwallCore/RedPhaseStub.swift` red-phase placeholder now that the core target has real implementation files. Review-only lane completed locally due subagent policy.
+- Validation: `swift test` passes 74 XCTest cases with 0 failures and no warnings emitted. `swift build` passes with no warnings emitted.
 - Phase 4 Step 4.7 completed: ran the full Phase 4 green validation and fixed review-lane privacy/retention findings before shipping the step.
 - Diagnostics redaction now handles separator-style secret/raw keys such as `raw_response`, `model_response`, `session_key`, and `source_content`, and redacts fine-grained GitHub personal access tokens with the `github_pat_` prefix.
 - Configured history retention is now enforced when loading/pruning persisted derived snapshots, and provider history store APIs accept explicit maximum retention intervals with regression coverage.

@@ -369,19 +369,19 @@ Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native 
 
 ### Milestone: Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap
 **Acceptance Criteria:**
-- [ ] History retention/downsampling tests cover last-24-hours retention, hourly downsampling, and seven-day expiry.
-- [ ] Diagnostics export redacts cookies, tokens, auth headers, account ids when unnecessary, raw responses, prompts, and model responses.
-- [ ] Notifications are user-configurable and do not fire when disabled.
-- [ ] GitHub heatmap fetches the last 12 weeks through GraphQL variables and handles 401/403 as invalid token state.
-- [ ] GitHub token storage uses Keychain and never renders the token back after saving.
-- [ ] The reproduction checklist is substantially satisfied for the macOS v1 scope.
-- [ ] All phase tests pass
-- [ ] No regressions in previous phase tests
+- [x] History retention/downsampling tests cover last-24-hours retention, hourly downsampling, and seven-day expiry.
+- [x] Diagnostics export redacts cookies, tokens, auth headers, account ids when unnecessary, raw responses, prompts, and model responses.
+- [x] Notifications are user-configurable and do not fire when disabled.
+- [x] GitHub heatmap fetches the last 12 weeks through GraphQL variables and handles 401/403 as invalid token state.
+- [x] GitHub token storage uses Keychain and never renders the token back after saving.
+- [x] The reproduction checklist is substantially satisfied for the macOS v1 scope.
+- [x] All phase tests pass
+- [x] No regressions in previous phase tests
 
 **On Completion:**
-- Deviations from plan: none recorded yet
-- Tech debt / follow-ups: none recorded yet
-- Ready for next phase: no
+- Deviations from plan: removed only a stale red-phase stub; no production boundary refactor was needed after review.
+- Tech debt / follow-ups: Phase 5 cross-platform parity requires isolated worktrees or a dedicated agent team because the scope spans platform shells, storage, notifications, and shared behavior contracts.
+- Ready for next phase: yes
 
 ## Phase 5: Cross-Platform V1 Parity
 
@@ -403,3 +403,98 @@ Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native 
 
 **Parallelization:** agent-team
 **Coordination Notes:** Cross-platform parity is broad and likely needs isolated worktrees or a dedicated agent team. Shared behavior fixtures and privacy rules should be owned centrally while platform shells are developed independently.
+
+> Test strategy: tests-after
+
+### Execution Profile
+**Parallel mode:** agent-team
+**Integration owner:** main agent
+**Conflict risk:** high
+**Review gates:** correctness, tests, security, docs/API conformance, UX
+
+**Subagent lanes:**
+- Lane: phase5-architecture-owner
+  - Agent: default
+  - Role: implementer
+  - Mode: write
+  - Scope: Select and document the cross-platform approach, establish repo structure, and define shared behavior contracts.
+  - Owns: `Package.swift`, `README.md`, `docs/*`, `Sources/PitwallShared/*`, `Tests/PitwallSharedTests/*`
+  - Must not edit: `Sources/PitwallApp/*`, `Sources/PitwallAppSupport/*`, platform shell directories after they are assigned
+  - Depends on: none
+  - Deliverable: Architecture decision, shared module scaffold, and shared behavior test contract.
+- Lane: phase5-windows-shell
+  - Agent: default
+  - Role: implementer
+  - Mode: write
+  - Scope: Build the Windows tray/menu shell, provider cards, settings surface, and platform notification/storage adapters against shared contracts.
+  - Owns: `Sources/PitwallWindows/*`, `Tests/PitwallWindowsTests/*`, Windows-specific docs
+  - Must not edit: `Sources/PitwallCore/*`, `Sources/PitwallApp/*`, `Sources/PitwallLinux/*`
+  - Depends on: phase5-architecture-owner
+  - Deliverable: Windows parity patch and validation notes.
+- Lane: phase5-linux-shell
+  - Agent: default
+  - Role: implementer
+  - Mode: write
+  - Scope: Build the Linux tray/menu shell, provider cards, settings surface, and platform notification/storage adapters against shared contracts.
+  - Owns: `Sources/PitwallLinux/*`, `Tests/PitwallLinuxTests/*`, Linux-specific docs
+  - Must not edit: `Sources/PitwallCore/*`, `Sources/PitwallApp/*`, `Sources/PitwallWindows/*`
+  - Depends on: phase5-architecture-owner
+  - Deliverable: Linux parity patch and validation notes.
+- Lane: phase5-security-review
+  - Agent: explorer
+  - Role: reviewer
+  - Mode: review
+  - Scope: Review Windows/Linux credential storage, local detector sanitization, diagnostics export, and GitHub token handling for privacy regressions.
+  - Depends on: phase5-windows-shell, phase5-linux-shell
+  - Deliverable: Security/privacy review findings before final validation.
+
+### Implementation
+- Step 5.1: Select and scaffold the cross-platform architecture
+  - Files: modify `README.md`, create `docs/cross-platform-architecture.md`, modify `Package.swift` or create platform manifest files only after the selected approach is documented
+  - Decide whether Pitwall remains SwiftPM-first with platform-specific shells or adds a separate cross-platform UI runtime; document the decision and trade-offs.
+  - Preserve the existing macOS app and Phase 1-4 `PitwallCore`/`PitwallAppSupport` boundaries while making shared behavior reusable by Windows/Linux code.
+  - Define how platform-specific tray/menu, notification, and credential-storage adapters plug into shared provider semantics without weakening privacy guarantees.
+  - Implementation note for next run: this phase is `agent-team`; do not implement Step 5.1 in the shared local tree through a single `$run`. Use isolated worktrees or a dedicated agent team.
+- Step 5.2: Extract shared behavior contracts for cross-platform reuse
+  - Files: create `Sources/PitwallShared/*` or equivalent shared module files selected in Step 5.1, create `Tests/PitwallSharedTests/*`, modify `Package.swift`
+  - Reuse Phase 1-4 behavior for pacing, Claude parsing, provider confidence, history retention, diagnostics redaction, notification policy, and GitHub heatmap request/response mapping.
+  - Keep shared tests fixture-driven and free of live provider networks, live GitHub calls, real local provider files, or OS notification permission.
+- Step 5.3: Implement Windows tray/menu parity against shared contracts
+  - Files: create `Sources/PitwallWindows/*`, create `Tests/PitwallWindowsTests/*`, modify platform manifest/build files selected in Step 5.1
+  - Implement tray/menu status, provider cards, settings, manual Claude credential flow, diagnostics export, optional GitHub heatmap display, and supported notification behavior.
+  - Use Windows secure credential storage or document an explicit secure fallback before enabling saved Claude/GitHub tokens.
+- Step 5.4: Implement Linux tray/menu parity against shared contracts
+  - Files: create `Sources/PitwallLinux/*`, create `Tests/PitwallLinuxTests/*`, modify platform manifest/build files selected in Step 5.1
+  - Implement tray/menu status, provider cards, settings, manual Claude credential flow, diagnostics export, optional GitHub heatmap display, and supported notification behavior.
+  - Use Linux secure credential storage where available or document an explicit secure fallback before enabling saved Claude/GitHub tokens.
+- Step 5.5: Add platform-specific Codex/Gemini passive detection adapters
+  - Files: create platform adapter files under the Windows/Linux source directories selected in Step 5.1, create fixture tests under the matching platform test targets
+  - Keep detection prompt/token safe on each supported platform by reading only allowed metadata, treating auth files as presence-only, and returning sanitized evidence.
+  - Document platform path differences and unsupported metadata sources instead of silently broadening collection.
+
+### Green
+- Step 5.6: Write cross-platform regression tests covering acceptance criteria
+  - Files: create or modify shared/platform test targets selected in Step 5.1
+  - Cover Windows/Linux provider visibility, tray/menu formatting, credential write-only behavior, secure-storage fallback behavior, Codex/Gemini sanitization, diagnostics redaction, history retention, and GitHub heatmap parity.
+- Step 5.7: Run platform validation and verify all supported builds/tests pass
+  - Commands: platform-specific commands selected in Step 5.1 plus existing `swift test` and `swift build` for macOS regression coverage
+  - Expected result: macOS remains green, shared tests pass, and each supported Windows/Linux build or documented platform limitation is explicit.
+- Step 5.8: Refactor cross-platform boundaries if needed while keeping tests green
+  - Files: modify shared/platform boundary files only as needed to clarify ownership without weakening coverage
+  - Keep provider semantics shared, platform integrations isolated, and privacy constraints documented per platform.
+
+### Milestone: Phase 5 Cross-Platform V1 Parity
+**Acceptance Criteria:**
+- [ ] Windows and Linux builds can run a tray/menu experience with Claude, Codex, and Gemini provider parity.
+- [ ] Cross-platform implementations pass shared fixture/behavior tests for pacing, Claude parsing, provider confidence, history retention, and diagnostics redaction.
+- [ ] Credential storage uses appropriate OS secure storage or an explicitly documented secure fallback.
+- [ ] Codex/Gemini local detection remains prompt/token safe on each supported platform.
+- [ ] GitHub heatmap behavior matches macOS v1 within platform constraints.
+- [ ] Platform-specific differences are documented and do not silently weaken privacy guarantees.
+- [ ] All phase tests pass
+- [ ] No regressions in previous phase tests
+
+**On Completion:**
+- Deviations from plan: none recorded yet
+- Tech debt / follow-ups: none recorded yet
+- Ready for next phase: no
