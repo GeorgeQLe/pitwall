@@ -5,6 +5,10 @@
 
 ## Priority Task Queue
 
+- [ ] `/research-roadmap` - all five roadmap phases are checked off in `tasks/roadmap.md`; scan documentation health and maintain the priority documentation queue before post-v1 follow-ups are promoted into a new phase.
+
+## Completed Phases
+
 - [x] Phase 1 Foundation And Pacing Core completed and archived to `tasks/phases/phase-1.md`.
 - [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
 - [x] Phase 3 First Usable macOS Provider Parity completed and archived to `tasks/phases/phase-3.md`.
