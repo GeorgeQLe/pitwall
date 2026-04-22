@@ -105,6 +105,23 @@ Recorded when Phase 5 Step 5.4 landed the `PitwallLinux` SwiftPM target:
 - **Dependencies / licensing**: no new SwiftPM or system dependencies are introduced by Step 5.4. The `libsecret`, `libnotify`, and `libayatana-appindicator` bindings are wired via narrow C-interop seams in a follow-up packaging step; if any seam is swapped for a third-party binding, the dependency and its license must be recorded here before merge.
 - **CI gap (recorded, not resolved)**: no Linux CI host is configured yet. `swift build` + `swift test` on a real Linux toolchain are not part of the regression gate. Because every Linux adapter is pure Foundation, macOS `swift test` currently runs `PitwallLinuxTests` as a portability proxy (mirroring the Step 5.3 Windows approach). Wiring the real `libsecret` / `libnotify` / `libayatana-appindicator` bindings + a Linux CI runner is a known follow-up; until then, Step 5.4 is shipped with "validated cross-platform via macOS proxy" status.
 
+## Codex/Gemini Passive Detection (Step 5.5)
+
+Recorded when Phase 5 Step 5.5 landed the platform-specific Codex/Gemini passive detection adapters under `PitwallWindows` and `PitwallLinux`:
+
+- **Contract**: both platforms expose per-provider detectors (`WindowsCodexDetector`, `WindowsGeminiDetector`, `LinuxCodexDetector`, `LinuxGeminiDetector`) that return sanitized, presence-only evidence. The adapters never read file contents — only existence, byte size, and modification time (seconds since epoch) are surfaced. Token bytes never enter memory.
+- **Seam shape**: each detector takes an injected root (mirroring `WindowsStorageRoot` / `LinuxStorageRoot`) and a narrow filesystem probe protocol (`WindowsCodexFilesystemProbing`, `WindowsGeminiFilesystemProbing`, `LinuxCodexFilesystemProbing`, `LinuxGeminiFilesystemProbing`). Production implementations (filesystem readers backed by `FileManager` / Win32 attribute APIs) land in a follow-up packaging step. Tests inject fixture probes that return pre-canned metadata without touching real user directories.
+- **Suppressed fallbacks**: when the data root is inaccessible (locked profile, restricted container, unreadable permissions), the detector returns `suppressed: true` evidence with empty artifacts via `WindowsCodexSuppressedProbe` / `WindowsGeminiSuppressedProbe` / `LinuxCodexSuppressedProbe` / `LinuxGeminiSuppressedProbe`. The shell must surface the degraded state — it must not fabricate evidence.
+- **Sanitization**: returned `relativePath` fields are pinned to the caller-supplied name, so a malicious or misconfigured probe cannot echo absolute paths or token-shaped substrings back through the detector. Byte sizes are clamped to non-negative values.
+- **Windows path map**:
+  - Codex: `%APPDATA%\Codex\` — user-level artifacts (`config.toml`, `auth.json`, `history.jsonl`) plus the `sessions\` and `logs\` directories are in the roaming profile. `%LOCALAPPDATA%` is not used; Codex's CLI writes its identity and history under the roaming user profile.
+  - Gemini: `%APPDATA%\Gemini\` — `settings.json`, `oauth_creds.json`, and `tmp\**\chats\session-*.json` are in the roaming profile for the same reason.
+- **Linux path map**:
+  - Codex: `$XDG_CONFIG_HOME/codex/` with `~/.config/codex/` fallback. `$XDG_DATA_HOME` is not used: all Codex user-level artifacts live under `$XDG_CONFIG_HOME`. XDG env overrides are honored only at the shell boundary; the detector protocol takes an already-resolved root.
+  - Gemini: `$XDG_CONFIG_HOME/gemini/` with `~/.config/gemini/` fallback, same contract.
+- **Unsupported metadata sources (recorded, not resolved)**: neither platform currently exposes per-session token counts or rate-limit evidence beyond presence + size + mtime. Parsing `tmp/**/chats/session-*.json` for `tokenCount` (the macOS `GeminiLocalDetector` behavior) and scanning `logs/` for rate-limit hints (the macOS `CodexLocalDetector` behavior) requires reading file bytes, which is out of scope for Step 5.5's presence-only contract. A Step 5.6+ follow-up may add opt-in metadata extraction behind a documented prompt-safe reader.
+- **CI gap (recorded, not resolved)**: as with 5.3 / 5.4, there is no Windows / Linux CI host yet. Because the detectors are pure Foundation, macOS `swift test` exercises both suites as a portability proxy. Wiring real Windows `FindFirstFileW` / Linux `stat(2)` bindings + platform CI runners is a known follow-up.
+
 ## Deferred Decisions
 
 Explicitly punted from Step 5.1. Each downstream step must resolve its own items before closing.
