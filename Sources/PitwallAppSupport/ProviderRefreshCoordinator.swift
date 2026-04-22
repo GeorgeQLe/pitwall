@@ -28,11 +28,20 @@ public struct ProviderRefreshOutcome: Equatable, Sendable {
     }
 }
 
+private extension ISO8601DateFormatter {
+    static let pitwallAppSupport: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+}
+
 public actor ProviderRefreshCoordinator {
     private let configurationStore: ProviderConfigurationStore
     private let secretStore: any ProviderSecretStore
     private let claudeClient: any ClaudeUsageClienting
     private let snapshotLoader: any LocalProviderSnapshotLoading
+    private let historyStore: ProviderHistoryStore
     private let pollingPolicy: PollingPolicy
     private let now: @Sendable () -> Date
 
@@ -45,6 +54,7 @@ public actor ProviderRefreshCoordinator {
         secretStore: any ProviderSecretStore,
         claudeClient: any ClaudeUsageClienting = ClaudeUsageClient(),
         snapshotLoader: any LocalProviderSnapshotLoading = LocalProviderSnapshotLoader(),
+        historyStore: ProviderHistoryStore = ProviderHistoryStore(),
         pollingPolicy: PollingPolicy = PollingPolicy(),
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
@@ -52,6 +62,7 @@ public actor ProviderRefreshCoordinator {
         self.secretStore = secretStore
         self.claudeClient = claudeClient
         self.snapshotLoader = snapshotLoader
+        self.historyStore = historyStore
         self.pollingPolicy = pollingPolicy
         self.now = now
     }
@@ -160,16 +171,25 @@ public actor ProviderRefreshCoordinator {
         lastClaudeRefreshAttemptAt = refreshDate
 
         do {
+            let retainedSnapshots = await usageSnapshots(for: account.id, now: refreshDate)
             let result = try await claudeClient.fetchUsage(
                 account: account.metadata,
                 sessionKey: sessionKey,
-                retainedSnapshots: usageSnapshots(for: account.id),
+                retainedSnapshots: retainedSnapshots,
                 now: refreshDate
             )
 
             claudeFailureState = RefreshFailureState()
             if let snapshot = result.snapshot {
                 lastClaudeSnapshotByAccountId[account.id] = snapshot
+                try? await historyStore.append(
+                    historySnapshot(
+                        from: snapshot,
+                        accountId: account.id,
+                        providerState: result.providerState
+                    ),
+                    now: refreshDate
+                )
             }
             if let replacementSessionKey = result.replacementSessionKey,
                replacementSessionKey != sessionKey {
@@ -267,7 +287,20 @@ public actor ProviderRefreshCoordinator {
         return configuration.claudeAccounts.first
     }
 
-    private func usageSnapshots(for accountId: String) -> [UsageSnapshot] {
+    private func usageSnapshots(
+        for accountId: String,
+        now refreshDate: Date
+    ) async -> [UsageSnapshot] {
+        let retainedSnapshots = await historyStore.retainedUsageSnapshots(
+            providerId: .claude,
+            accountId: accountId,
+            now: refreshDate
+        )
+
+        if !retainedSnapshots.isEmpty {
+            return retainedSnapshots
+        }
+
         guard let snapshot = lastClaudeSnapshotByAccountId[accountId] else {
             return []
         }
@@ -278,6 +311,46 @@ public actor ProviderRefreshCoordinator {
                 weeklyUtilizationPercent: snapshot.weeklyUtilizationPercent
             )
         ]
+    }
+
+    private func historySnapshot(
+        from snapshot: ClaudeUsageSnapshot,
+        accountId: String,
+        providerState: ProviderState
+    ) -> ProviderHistorySnapshot {
+        ProviderHistorySnapshot(
+            accountId: accountId,
+            recordedAt: snapshot.recordedAt,
+            providerId: providerState.providerId,
+            confidence: providerState.confidence,
+            sessionUtilizationPercent: usageRowValue(named: "Session", in: providerState)?.utilization,
+            weeklyUtilizationPercent: snapshot.weeklyUtilizationPercent,
+            sessionResetAt: usageRowValue(named: "Session", in: providerState)?.resetAt,
+            weeklyResetAt: snapshot.weeklyResetAt,
+            headline: providerState.headline
+        )
+    }
+
+    private func usageRowValue(
+        named label: String,
+        in providerState: ProviderState
+    ) -> (utilization: Double, resetAt: Date?)? {
+        guard
+            let rawValue = providerState.payloads.first(where: { $0.source == "usageRows" })?
+                .values[label]
+        else {
+            return nil
+        }
+
+        let parts = rawValue.split(separator: "|", omittingEmptySubsequences: false)
+        guard let utilization = parts.first.flatMap({ Double($0) }) else {
+            return nil
+        }
+
+        let resetAt = parts.dropFirst().first.flatMap {
+            ISO8601DateFormatter.pitwallAppSupport.date(from: String($0))
+        }
+        return (utilization, resetAt)
     }
 
     private func updateClaudeAccountAfterSuccess(accountId: String, now: Date) async throws {

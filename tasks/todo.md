@@ -9,7 +9,7 @@
 - [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
 - [x] Phase 3 First Usable macOS Provider Parity completed and archived to `tasks/phases/phase-3.md`.
 - [x] Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap planned just-in-time from completed Phase 3 boundaries.
-- [ ] Ready for `$run` to start Phase 4 Step 4.2.
+- [ ] Ready for `$run` to start Phase 4 Step 4.3.
 
 ## Phase 4: V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap
 
@@ -66,7 +66,7 @@
     - Expected validation for this TDD step: `swift test` should fail because Phase 4 implementation symbols do not exist yet. Treat those failures as expected red-phase failures, but fix any unrelated syntax, fixture, or package-configuration problems before marking the step complete.
 
 ### Implementation
-- [ ] Step 4.2: Add durable provider history models and retention/downsampling
+- [x] Step 4.2: Add durable provider history models and retention/downsampling
   - Files: create `Sources/PitwallCore/ProviderHistoryModels.swift`, create `Sources/PitwallCore/ProviderHistoryRetention.swift`, create `Sources/PitwallAppSupport/ProviderHistoryStore.swift`, modify `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift` only as needed to emit derived snapshots after refresh
   - Persist derived usage snapshots only: account id, timestamp, provider id, confidence, session/weekly utilization, reset timestamps, and headline values needed for sparklines/daily-budget calculations.
   - Implement 24-hour full retention, 24-hour-to-7-day hourly downsampling, highest session/latest weekly selection, and seven-day expiry with deterministic clock inputs.
@@ -83,6 +83,14 @@
   - Export app/build metadata, enabled provider ids, provider status/confidence, redacted error states, last successful refresh timestamps, storage health, and recent diagnostic event summaries.
   - Redact cookies, tokens, auth headers, unnecessary account ids, raw responses, prompts, model responses, stdout, and source content before persistence or export.
   - Keep diagnostics local and avoid cloud upload, analytics, or hidden telemetry.
+  - Implementation plan for next run:
+    - Read `Tests/PitwallCoreTests/DiagnosticsRedactionTests.swift`, `Sources/PitwallCore/ProviderModels.swift`, `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift`, and `specs/pitwall-macos-clean-room.md` diagnostics/privacy sections.
+    - Add `DiagnosticEvent`, `StorageHealth`, `DiagnosticsExport`, `DiagnosticsExportBuilder`, and `DiagnosticsRedactor` in `PitwallCore`, keeping redaction pure and deterministic.
+    - Redact secret-bearing keys and values before persistence/export: cookies, tokens, authorization headers, unnecessary account ids, raw responses, prompts, model responses, stdout, and source content.
+    - Add `DiagnosticEventStore` in `PitwallAppSupport` with injected storage/UserDefaults or app-support file storage that stores only already-redacted diagnostic events.
+    - Add `DiagnosticsExporter` in `PitwallAppSupport` to assemble app/build metadata, enabled provider ids, provider status/confidence, last successful refresh timestamps, storage health, and recent redacted diagnostic summaries.
+    - Touch `ProviderRefreshCoordinator` only as needed to emit redacted diagnostic events for Claude auth/network failures and passive scan failures. Do not persist raw endpoint responses, prompts, stdout, source content, cookies, auth headers, or token values.
+    - Validation: run `swift build` and `swift test`. During this step, later Phase 4 red tests for notifications, settings, and GitHub heatmap are still expected to fail; fix diagnostics test failures, syntax issues, and unrelated regressions before marking the step complete.
 - [ ] Step 4.4: Add configurable local notification policy and scheduler abstraction
   - Files: create `Sources/PitwallAppSupport/NotificationPreferences.swift`, create `Sources/PitwallAppSupport/NotificationPolicy.swift`, create `Sources/PitwallAppSupport/NotificationScheduler.swift`, modify `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/NotificationPreferencesView.swift`
   - Support Claude reset, expired auth, telemetry degraded, and pacing-threshold notification decisions through injectable schedulers.
