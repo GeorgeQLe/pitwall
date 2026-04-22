@@ -3,10 +3,18 @@ import Foundation
 import PitwallAppSupport
 import PitwallCore
 
+@MainActor
 final class MenuBarController: NSObject {
+    private static let onboardingCompletedKey = "pitwall.onboarding.completed.v1"
+
     private let formatter = MenuBarStatusFormatter()
     private let rotationController = ProviderRotationController()
     private let popoverController: PopoverController
+    private let configurationStore: ProviderConfigurationStore
+    private let secretStore: any ProviderSecretStore
+    private let claudeSettings: ClaudeAccountSettings
+    private let refreshCoordinator: ProviderRefreshCoordinator
+    private let onboardingDefaults: UserDefaults
     private var statusItem: NSStatusItem?
     private var rotationTimer: Timer?
     private var appState: AppProviderState
@@ -14,6 +22,21 @@ final class MenuBarController: NSObject {
 
     override init() {
         let now = Date()
+        let configurationStore = ProviderConfigurationStore()
+        let secretStore = KeychainSecretStore()
+        let claudeSettings = ClaudeAccountSettings(
+            configurationStore: configurationStore,
+            secretStore: secretStore
+        )
+
+        self.configurationStore = configurationStore
+        self.secretStore = secretStore
+        self.claudeSettings = claudeSettings
+        self.refreshCoordinator = ProviderRefreshCoordinator(
+            configurationStore: configurationStore,
+            secretStore: secretStore
+        )
+        self.onboardingDefaults = .standard
         self.appState = Self.makeInitialAppState(now: now)
         self.preferences = UserPreferences()
         self.popoverController = PopoverController()
@@ -32,6 +55,7 @@ final class MenuBarController: NSObject {
         updateStatusTitle()
         updatePopover()
         startRotationTimer()
+        loadConfiguration()
     }
 
     func stop() {
@@ -54,22 +78,18 @@ final class MenuBarController: NSObject {
     }
 
     @objc private func refreshNow() {
-        let now = Date()
-        appState.providers = appState.providers.map { provider in
-            var updated = provider
-            updated.lastUpdatedAt = now
-            return updated
+        Task {
+            let outcome = await refreshCoordinator.refreshProviders(trigger: .manual)
+            applyRefreshOutcome(outcome)
         }
-        updatePopover()
-        updateStatusTitle()
     }
 
     @objc private func openSettings() {
-        NSApp.activate(ignoringOtherApps: true)
+        presentSettings()
     }
 
     @objc private func addAccount() {
-        NSApp.activate(ignoringOtherApps: true)
+        presentSettings()
     }
 
     @objc private func toggleRotationPause() {
@@ -105,7 +125,9 @@ final class MenuBarController: NSObject {
             withTimeInterval: 1,
             repeats: true
         ) { [weak self] _ in
-            self?.tickRotation()
+            Task { @MainActor in
+                self?.tickRotation()
+            }
         }
     }
 
@@ -159,6 +181,153 @@ final class MenuBarController: NSObject {
         )
     }
 
+    private func loadConfiguration(showOnboardingIfNeeded: Bool = true) {
+        Task {
+            let snapshot = await configurationStore.load()
+            let accounts = (try? await claudeSettings.setupStates()) ?? []
+            applyConfiguration(snapshot: snapshot, claudeAccounts: accounts)
+
+            if showOnboardingIfNeeded,
+               !onboardingDefaults.bool(forKey: Self.onboardingCompletedKey) {
+                presentOnboarding(snapshot: snapshot, claudeAccounts: accounts)
+            }
+        }
+    }
+
+    private func presentSettings() {
+        Task {
+            let snapshot = await configurationStore.load()
+            let accounts = (try? await claudeSettings.setupStates()) ?? []
+            popoverController.showSettings(
+                snapshot: snapshot,
+                claudeAccounts: accounts,
+                onSaveConfiguration: { [weak self] snapshot in
+                    await self?.saveConfiguration(snapshot) ?? "Settings controller is unavailable."
+                },
+                onSaveClaudeCredentials: { [weak self] input in
+                    await self?.saveClaudeCredentials(input) ?? "Settings controller is unavailable."
+                },
+                onDeleteClaudeCredentials: { [weak self] accountId in
+                    await self?.deleteClaudeCredentials(accountId: accountId) ?? "Settings controller is unavailable."
+                },
+                onTestClaudeConnection: { [weak self] accountId in
+                    await self?.testClaudeConnection(accountId: accountId) ?? "Settings controller is unavailable."
+                },
+                onRefresh: { [weak self] in
+                    self?.refreshNow()
+                }
+            )
+        }
+    }
+
+    private func presentOnboarding(
+        snapshot: ProviderConfigurationSnapshot,
+        claudeAccounts: [ClaudeAccountSetupState]
+    ) {
+        popoverController.showOnboarding(
+            snapshot: snapshot,
+            claudeAccounts: claudeAccounts,
+            onSaveConfiguration: { [weak self] snapshot in
+                await self?.saveConfiguration(snapshot) ?? "Onboarding controller is unavailable."
+            },
+            onSaveClaudeCredentials: { [weak self] input in
+                await self?.saveClaudeCredentials(input) ?? "Onboarding controller is unavailable."
+            },
+            onTestClaudeConnection: { [weak self] accountId in
+                await self?.testClaudeConnection(accountId: accountId) ?? "Onboarding controller is unavailable."
+            },
+            onFinish: { [weak self] in
+                self?.onboardingDefaults.set(true, forKey: Self.onboardingCompletedKey)
+                self?.popoverController.closeOnboarding()
+                self?.loadConfiguration(showOnboardingIfNeeded: false)
+            }
+        )
+    }
+
+    private func saveConfiguration(_ snapshot: ProviderConfigurationSnapshot) async -> String? {
+        do {
+            try await configurationStore.update { current in
+                ProviderConfigurationSnapshot(
+                    providerProfiles: Self.normalizedProfiles(snapshot.providerProfiles),
+                    claudeAccounts: current.claudeAccounts,
+                    selectedClaudeAccountId: current.selectedClaudeAccountId,
+                    userPreferences: snapshot.userPreferences
+                )
+            }
+            loadConfiguration(showOnboardingIfNeeded: false)
+            return nil
+        } catch {
+            return "Could not save settings: \(error.localizedDescription)"
+        }
+    }
+
+    private func saveClaudeCredentials(_ input: ClaudeCredentialInput) async -> String? {
+        do {
+            _ = try await claudeSettings.saveCredentials(input)
+            loadConfiguration(showOnboardingIfNeeded: false)
+            return nil
+        } catch {
+            return "Could not save Claude credentials: \(error.localizedDescription)"
+        }
+    }
+
+    private func deleteClaudeCredentials(accountId: String) async -> String? {
+        do {
+            try await claudeSettings.deleteCredentials(accountId: accountId)
+            loadConfiguration(showOnboardingIfNeeded: false)
+            return nil
+        } catch {
+            return "Could not delete Claude credentials: \(error.localizedDescription)"
+        }
+    }
+
+    private func testClaudeConnection(accountId: String?) async -> String {
+        let claudeState = await refreshCoordinator.testClaudeConnection(accountId: accountId)
+        replaceProviderState(claudeState)
+        updatePopover()
+        updateStatusTitle()
+
+        switch claudeState.status {
+        case .configured:
+            return "Claude connection succeeded."
+        case .expired:
+            return "Claude auth expired or invalid. Replace the saved credentials."
+        case .stale, .degraded:
+            return "Claude connection could not be verified; showing stale or degraded state."
+        case .missingConfiguration:
+            return "Claude credentials are missing."
+        }
+    }
+
+    private func applyRefreshOutcome(_ outcome: ProviderRefreshOutcome) {
+        appState = outcome.appState
+        applyRotationIfNeeded(force: true)
+        updatePopover()
+        updateStatusTitle()
+    }
+
+    private func applyConfiguration(
+        snapshot: ProviderConfigurationSnapshot,
+        claudeAccounts: [ClaudeAccountSetupState]
+    ) {
+        preferences = snapshot.userPreferences
+        appState.providers = Self.providers(
+            from: snapshot,
+            claudeAccounts: claudeAccounts,
+            existingProviders: appState.providers
+        )
+        appState.rotationPaused = preferences.providerRotationMode == .paused
+        appState.selectedProviderId = preferences.pinnedProviderId ?? appState.selectedProviderId ?? .claude
+        applyRotationIfNeeded(force: true)
+        updatePopover()
+        updateStatusTitle()
+    }
+
+    private func replaceProviderState(_ provider: ProviderState) {
+        appState.providers.removeAll { $0.providerId == provider.providerId }
+        appState.providers.append(provider)
+    }
+
     private func showContextMenu() {
         guard let button = statusItem?.button else {
             return
@@ -196,6 +365,147 @@ final class MenuBarController: NSObject {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
         item.target = target
         return item
+    }
+
+    private static func providers(
+        from snapshot: ProviderConfigurationSnapshot,
+        claudeAccounts: [ClaudeAccountSetupState],
+        existingProviders: [ProviderState]
+    ) -> [ProviderState] {
+        let profiles = normalizedProfiles(snapshot.providerProfiles)
+        return PitwallAppSupport.supportedProviders.map { providerId in
+            let profile = profiles.first(where: { $0.providerId == providerId })
+                ?? ProviderProfileConfiguration(providerId: providerId)
+
+            guard profile.isEnabled else {
+                return disabledProviderState(providerId: providerId, profile: profile)
+            }
+
+            if providerId == .claude {
+                return claudeProviderState(accounts: claudeAccounts, profile: profile)
+            }
+
+            if let existing = existingProviders.first(where: { $0.providerId == providerId }) {
+                return existing
+            }
+
+            return configurableProviderState(providerId: providerId, profile: profile)
+        }
+    }
+
+    private static func normalizedProfiles(
+        _ profiles: [ProviderProfileConfiguration]
+    ) -> [ProviderProfileConfiguration] {
+        PitwallAppSupport.supportedProviders.map { providerId in
+            profiles.first(where: { $0.providerId == providerId })
+                ?? ProviderProfileConfiguration(providerId: providerId)
+        }
+    }
+
+    private static func claudeProviderState(
+        accounts: [ClaudeAccountSetupState],
+        profile: ProviderProfileConfiguration
+    ) -> ProviderState {
+        guard let account = accounts.first else {
+            return ProviderState(
+                providerId: .claude,
+                displayName: "Claude",
+                status: .missingConfiguration,
+                confidence: .observedOnly,
+                headline: "Claude credentials missing",
+                primaryValue: "No account saved",
+                secondaryValue: profile.planProfile,
+                confidenceExplanation: "Add Claude credentials manually to enable exact provider-supplied usage. No browser cookies are read automatically.",
+                actions: [
+                    ProviderAction(kind: .configure, title: "Configure"),
+                    ProviderAction(kind: .openSettings, title: "Settings")
+                ]
+            )
+        }
+
+        let status: ProviderStatus
+        let headline: String
+        switch account.secretState.status {
+        case .configured:
+            status = .configured
+            headline = "Ready to refresh"
+        case .missing:
+            status = .missingConfiguration
+            headline = "Claude session key missing"
+        case .expired:
+            status = .expired
+            headline = "Claude auth needs replacement"
+        }
+
+        return ProviderState(
+            providerId: .claude,
+            displayName: "Claude",
+            status: status,
+            confidence: status == .configured ? .providerSupplied : .observedOnly,
+            headline: account.lastErrorDescription ?? headline,
+            primaryValue: account.label,
+            secondaryValue: account.organizationId,
+            lastUpdatedAt: account.lastSuccessfulRefreshAt,
+            confidenceExplanation: "Claude setup uses the saved Keychain credential state only. The saved session key is never rendered back into settings.",
+            actions: [
+                ProviderAction(kind: .testConnection, title: "Test"),
+                ProviderAction(kind: .refresh, title: "Refresh", isEnabled: status == .configured),
+                ProviderAction(kind: .openSettings, title: "Settings")
+            ]
+        )
+    }
+
+    private static func configurableProviderState(
+        providerId: ProviderID,
+        profile: ProviderProfileConfiguration
+    ) -> ProviderState {
+        ProviderState(
+            providerId: providerId,
+            displayName: displayName(for: providerId),
+            status: .missingConfiguration,
+            confidence: .observedOnly,
+            headline: "\(displayName(for: providerId)) setup pending",
+            primaryValue: profile.planProfile ?? "No profile selected",
+            secondaryValue: profile.authMode ?? "Passive detection available",
+            confidenceExplanation: "\(displayName(for: providerId)) remains visible as a configurable provider until local metadata or telemetry is available.",
+            actions: [
+                ProviderAction(kind: .configure, title: "Configure"),
+                ProviderAction(kind: .openSettings, title: "Settings")
+            ]
+        )
+    }
+
+    private static func disabledProviderState(
+        providerId: ProviderID,
+        profile: ProviderProfileConfiguration
+    ) -> ProviderState {
+        ProviderState(
+            providerId: providerId,
+            displayName: displayName(for: providerId),
+            status: .missingConfiguration,
+            confidence: .observedOnly,
+            headline: "\(displayName(for: providerId)) skipped",
+            primaryValue: profile.planProfile ?? "Disabled",
+            secondaryValue: "Configurable in settings",
+            confidenceExplanation: "\(displayName(for: providerId)) was skipped or disabled, but it remains visible so it can be configured later.",
+            actions: [
+                ProviderAction(kind: .configure, title: "Enable"),
+                ProviderAction(kind: .openSettings, title: "Settings")
+            ]
+        )
+    }
+
+    private static func displayName(for providerId: ProviderID) -> String {
+        switch providerId {
+        case .claude:
+            return "Claude"
+        case .codex:
+            return "Codex"
+        case .gemini:
+            return "Gemini"
+        default:
+            return providerId.rawValue.capitalized
+        }
     }
 
     private static func makeInitialAppState(now: Date) -> AppProviderState {

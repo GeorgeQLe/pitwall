@@ -8,7 +8,7 @@
 - [x] Phase 1 Foundation And Pacing Core completed and archived to `tasks/phases/phase-1.md`.
 - [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
 - [x] Phase 3 First Usable macOS Provider Parity planned just-in-time from completed Phase 2 boundaries.
-- [x] Task pipeline is healthy; ready for `$run` to start Phase 3 Step 3.6.
+- [x] Task pipeline is healthy; ready for `$run` to start Phase 3 Step 3.7.
 
 ## Phase 3: First Usable macOS Provider Parity
 
@@ -133,7 +133,7 @@
     - Added a local provider snapshot loader for Codex/Gemini that reads only allowlisted metadata paths, treats auth files as presence-only, sanitizes Gemini settings/chat JSON, and avoids persisting raw prompt, token, stdout, source, or provider response content.
     - Added a provider refresh coordinator that uses injected clients/loaders/stores to refresh Claude, test connections, update last-success metadata, preserve stale Claude state on failures, rotate replacement session keys through the secret store, and bridge passive Codex/Gemini detection into provider cards.
     - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
-- [ ] Step 3.6: Add onboarding and settings UI
+- [x] Step 3.6: Add onboarding and settings UI
   - Files: create `Sources/PitwallApp/Views/OnboardingView.swift`, create `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/ProviderEnablementView.swift`, create `Sources/PitwallApp/Views/ClaudeCredentialSetupView.swift`, create `Sources/PitwallApp/Views/DisplayPreferencesView.swift`, modify `Sources/PitwallApp/PopoverController.swift`
   - Implement first-run provider selection, skippable onboarding, Claude manual credential instructions, provider enablement, test connection, reset-time/countdown preference, rotation preference, and manual refresh actions.
   - Keep missing/skipped providers visible as configurable cards.
@@ -144,6 +144,13 @@
     - Include the spec's Claude credential guidance in concise in-app setup copy while making clear the values are sensitive and stored locally.
     - Keep forms functional but restrained; avoid visible instructional text for generic UI mechanics, and reserve explanatory copy for credential/privacy requirements.
     - Validation: `swift build` should pass before review.
+  - Completed notes:
+    - Added native SwiftUI onboarding and settings windows reachable from the menu bar app.
+    - Added provider enablement, Claude credential setup, display/reset preference, tray rotation, manual refresh, and test-connection controls.
+    - Wired settings/onboarding through `ProviderConfigurationStore`, `ClaudeAccountSettings`, `KeychainSecretStore`, and `ProviderRefreshCoordinator` without reading browser cookies or rendering saved session keys.
+    - Kept skipped/disabled providers visible as configurable provider states instead of removing them from the app.
+    - Review-only lane: completed locally because the active environment policy does not permit spawning review subagents without an explicit user request for delegated agent work; review focused on UX clarity, clean-room scope, credential privacy, and honest confidence labeling.
+    - Validation: `swift build` passes with no warnings emitted; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 
 ### Green
 - [ ] Step 3.7: Write regression tests for app support and privacy boundaries
