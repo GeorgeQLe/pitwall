@@ -6,7 +6,8 @@
 
 ## Priority Task Queue
 
-- [x] `/run` — execute Phase 6a Step 6a.1 (VERSION file + version derivation helper). Completed 2026-04-22. Next: Step 6a.2 (build-app-bundle script + Info.plist placeholder substitution).
+- [x] `/run` — execute Phase 6a Step 6a.1 (VERSION file + version derivation helper). Completed 2026-04-22.
+- [ ] `/run` — execute Phase 6a Step 6a.2 (`.app` bundle wrapper script + `Info.plist` placeholder substitution). Evidence: Step 6a.2 is fully decomposed below; reads `VERSION` (now on disk) and injects `CFBundleShortVersionString` + `CFBundleVersion` (from `git rev-list --count HEAD`) + `CFBundleExecutable` + `NSHumanReadableCopyright` into an expanded Info.plist; ad-hoc-signs `build/Pitwall.app`.
 - [ ] After Phase 6a ships: `/plan-phase 6b` — Phase 6b is deferred until the author decides to share Pitwall publicly; blocked on Apple Developer enrollment ($99/yr) and Sparkle/notary credential setup. Do not plan 6b until 6a is complete and the user confirms intent to go public.
 
 ## Completed Phases
