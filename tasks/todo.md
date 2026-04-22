@@ -6,7 +6,7 @@
 
 ## Priority Task Queue
 
-- [ ] `/run` — execute Phase 6a Step 6a.1 (VERSION file + version derivation helper). Evidence: Phase 6a implementation steps are fully decomposed below with file-level detail; test strategy is `tests-after`; execution profile is `serial` with no blocking manual tasks.
+- [x] `/run` — execute Phase 6a Step 6a.1 (VERSION file + version derivation helper). Completed 2026-04-22. Next: Step 6a.2 (build-app-bundle script + Info.plist placeholder substitution).
 - [ ] After Phase 6a ships: `/plan-phase 6b` — Phase 6b is deferred until the author decides to share Pitwall publicly; blocked on Apple Developer enrollment ($99/yr) and Sparkle/notary credential setup. Do not plan 6b until 6a is complete and the user confirms intent to go public.
 
 ## Completed Phases
@@ -56,7 +56,7 @@
 
 ### Implementation
 
-- Step 6a.1: Add the version source and an AppKit-free version derivation helper
+- [x] Step 6a.1: Add the version source and an AppKit-free version derivation helper (completed 2026-04-22)
   - Files: create `VERSION` (content `1.0.0`), create `Sources/PitwallAppSupport/PackagingVersion.swift` (pure struct: `PackagingVersion` with `shortString`, `build`, and a `PackagingVersionProvider` protocol that exposes `current() -> PackagingVersion`; include a `StaticPackagingVersionProvider` fixture for tests), modify `Sources/PitwallApp/PitwallApp.swift` (or `AppDelegate.swift`) to read the version from a build-time constant or bundle lookup so the in-app About section can display it.
   - Rationale: version is touched by both the bundle builder (writes into `Info.plist`) and the in-app About view. Centralize the in-process side in `PitwallAppSupport` behind a protocol seam so it is unit-testable without launching the app.
   - The `VERSION` file is the single source of truth for `CFBundleShortVersionString`. `CFBundleVersion` is computed at build time via `git rev-list --count HEAD`.
