@@ -2,6 +2,9 @@
 
 ## 2026-04-21
 
+- Phase 3 Step 3.7 completed: added a `PitwallAppSupportTests` target with regression coverage for menu bar formatting, reset display, provider rotation, provider card view models, provider configuration persistence, Claude credential setup privacy, and refresh coordination privacy boundaries.
+- Refresh coordination tests use injected fake Claude clients, local snapshot loaders, secret stores, and deterministic clocks; no live provider networks or real user provider files are read. Saved Claude session keys remain write-only, replacement keys rotate through the secret store only, expired auth is preserved, and stale Claude state keeps only non-secret last-success metadata.
+- Validation: `swift test` passes 51 XCTest cases with 0 failures and no warnings emitted. `swift build` passes with no warnings emitted. Review-only lane completed locally due subagent policy.
 - Phase 3 Step 3.6 completed: added native onboarding and settings windows for provider enablement, Claude manual credential setup, display preferences, tray rotation, manual refresh, and test connection wiring through the existing configuration, secret-store, and refresh coordinator boundaries. Saved Claude session keys remain write-only in UI state and skipped providers stay visible as configurable cards.
 - Validation: `swift build` passes. `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted. Review-only lane completed locally due subagent policy.
 - Phase 3 Step 3.5 completed: added injectable Claude usage refresh, polling/backoff policy, sanitized Codex/Gemini local snapshot loading, and provider refresh coordination through the existing configuration and secret-store boundaries.

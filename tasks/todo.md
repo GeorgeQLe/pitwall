@@ -153,7 +153,7 @@
     - Validation: `swift build` passes with no warnings emitted; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
 
 ### Green
-- [ ] Step 3.7: Write regression tests for app support and privacy boundaries
+- [x] Step 3.7: Write regression tests for app support and privacy boundaries
   - Files: create `Tests/PitwallAppSupportTests/MenuBarStatusFormatterTests.swift`, create `Tests/PitwallAppSupportTests/ProviderRotationControllerTests.swift`, create `Tests/PitwallAppSupportTests/ProviderCardViewModelTests.swift`, create `Tests/PitwallAppSupportTests/ProviderConfigurationStoreTests.swift`, create `Tests/PitwallAppSupportTests/ProviderRefreshCoordinatorTests.swift`
   - Cover menu bar action/confidence formatting, reset-time/countdown preference, pinned and rotating provider behavior, degraded-provider skip behavior, provider card visibility for missing Claude/Codex/Gemini states, write-only saved Claude credentials, and manual refresh not bypassing secret storage.
   - Tests should use injected stores/loaders/clients and must not call live provider networks or read real user provider files.
@@ -162,6 +162,13 @@
     - Write focused tests for the testable support target rather than screenshot/UI automation.
     - Use synthetic provider states, fake secret stores, fake Claude clients, fake local snapshot loaders, and deterministic clocks.
     - Validation: targeted app-support tests should fail only if implementation behavior is wrong; `swift test` should still avoid live networks and real provider files.
+  - Completed notes:
+    - Added a `PitwallAppSupportTests` SwiftPM test target.
+    - Added focused XCTest coverage for menu bar formatting, reset display preferences, provider rotation, provider card view models, provider configuration persistence, Claude credential setup privacy, and refresh coordination.
+    - Refresh coordinator tests use injected fake Claude clients, secret stores, local snapshot loaders, and deterministic clocks; they do not call live provider networks or read real user provider files.
+    - Verified missing/skipped providers remain visible/configurable, saved Claude session keys are write-only, replacement session keys rotate through the secret store only, expired auth is preserved, and stale Claude state keeps non-secret last-success metadata.
+    - Review-only lane: completed locally because the active environment policy does not permit spawning review subagents without an explicit user request for delegated agent work; review focused on privacy boundaries, injection seams, and app-support behavior coverage.
+    - Validation: `swift test` passes 51 XCTest cases with 0 failures and no warnings emitted; `swift build` passes with no warnings emitted.
 - [ ] Step 3.8: Run macOS app validation and verify Phase 3 tests pass
   - Commands: `swift test`, `swift build`
   - Expected result: all Phase 1-3 tests pass with no warnings emitted, and the app target builds for macOS 13+.
