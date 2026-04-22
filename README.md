@@ -15,6 +15,10 @@ Current phase:
 - The initial website lives in `docs/` and can be served by GitHub Pages.
 - The first implementation target is a native macOS menu bar app.
 
+### Cross-Platform Plans
+
+Pitwall is moving toward Windows and Linux parity after the macOS v1 feature set. Windows and Linux support is not working yet; it is planned as a set of platform-specific shells built on top of the existing `PitwallCore` Swift module. The selected approach and adapter seams are documented in `docs/cross-platform-architecture.md`.
+
 ## Why Pitwall
 
 Most quota tools tell you how close you are to a limit. Pitwall focuses on pacing:

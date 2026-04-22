@@ -10,7 +10,8 @@
 - [x] Phase 3 First Usable macOS Provider Parity completed and archived to `tasks/phases/phase-3.md`.
 - [x] Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap completed and archived to `tasks/phases/phase-4.md`.
 - [x] Phase 5 Cross-Platform V1 Parity planned just-in-time from completed Phase 4 boundaries.
-- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.1.
+- [x] Phase 5 Step 5.1 cross-platform architecture selected and documented.
+- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.2.
 
 ## Phase 5: Cross-Platform V1 Parity
 
@@ -75,7 +76,7 @@
   - Deliverable: Security/privacy review findings before final validation.
 
 ### Implementation
-- [ ] Step 5.1: Select and scaffold the cross-platform architecture
+- [x] Step 5.1: Select and scaffold the cross-platform architecture
   - Files: modify `README.md`, create `docs/cross-platform-architecture.md`, modify `Package.swift` or create platform manifest files only after the selected approach is documented
   - Decide whether Pitwall remains SwiftPM-first with platform-specific shells or adds a separate cross-platform UI runtime; document the decision and trade-offs.
   - Preserve the existing macOS app and Phase 1-4 `PitwallCore`/`PitwallAppSupport` boundaries while making shared behavior reusable by Windows/Linux code.

@@ -1,5 +1,10 @@
 # History
 
+## 2026-04-22
+
+- Phase 5 Step 5.1 completed: selected SwiftPM-first with platform-specific shells as the cross-platform architecture and documented it in `docs/cross-platform-architecture.md` (module layout, adapter seams for `ProviderSecretStore`/`NotificationScheduling`/storage/tray, per-platform privacy guardrails, build/test strategy, deferred decisions for Steps 5.2–5.5). Added a `### Cross-Platform Plans` subsection to `README.md` linking to the doc without claiming Windows/Linux support works yet. No `Package.swift` or source changes; architecture lane ran in an isolated worktree with a strict diff scope (`README.md` + `docs/cross-platform-architecture.md`).
+- Validation: `swift build` passes. `swift test` passes 74 XCTest cases with 0 failures and no regressions.
+
 ## 2026-04-21
 
 - Phase 4 completed: all milestone acceptance criteria are satisfied, the completed phase was archived to `tasks/phases/phase-4.md`, and Phase 5 Cross-Platform V1 Parity was planned just-in-time in `tasks/todo.md` and `tasks/roadmap.md`.
