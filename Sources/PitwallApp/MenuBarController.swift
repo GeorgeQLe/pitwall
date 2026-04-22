@@ -23,6 +23,8 @@ final class MenuBarController: NSObject {
     private let notificationScheduler: NotificationScheduling
     private let loginItemService: LoginItemService
     private let onboardingDefaults: UserDefaults
+    private let diagnosticEventStore: DiagnosticEventStore
+    private let packagingProbe: PackagingProbe
     private var statusItem: NSStatusItem?
     private var rotationTimer: Timer?
     private var appState: AppProviderState
@@ -49,6 +51,7 @@ final class MenuBarController: NSObject {
         self.claudeSettings = claudeSettings
         self.phase4SettingsStore = Phase4SettingsStore()
         self.providerHistoryStore = providerHistoryStore
+        self.diagnosticEventStore = diagnosticEventStore
         self.diagnosticsExporter = DiagnosticsExporter(eventStore: diagnosticEventStore)
         self.gitHubTokenManager = gitHubTokenManager
         self.gitHubHeatmapCoordinator = GitHubHeatmapCoordinator(tokenManager: gitHubTokenManager)
@@ -67,6 +70,16 @@ final class MenuBarController: NSObject {
             diagnosticEventStore: diagnosticEventStore
         )
         self.onboardingDefaults = .standard
+        let appSupportRoot = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first?
+            .appendingPathComponent("Pitwall", isDirectory: true)
+            ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+                .appendingPathComponent("Pitwall", isDirectory: true)
+        self.packagingProbe = PackagingProbe(
+            appSupportRoot: appSupportRoot,
+            secretStore: KeychainSecretStore(service: "com.pitwall.app.packaging-probe")
+        )
         self.appState = ProviderStateFactory().initialAppState(now: now)
         self.preferences = UserPreferences()
         self.phase4Settings = Phase4Settings()
@@ -93,6 +106,7 @@ final class MenuBarController: NSObject {
         updateStatusTitle()
         updatePopover()
         startRotationTimer()
+        runPackagingProbeIfNeeded()
         loadConfiguration()
     }
 
@@ -221,6 +235,15 @@ final class MenuBarController: NSObject {
                 self?.updateStatusTitle()
             }
         )
+    }
+
+    private func runPackagingProbeIfNeeded() {
+        let probe = packagingProbe
+        let eventStore = diagnosticEventStore
+        let defaults = onboardingDefaults
+        Task.detached {
+            await probe.runOnce(eventStore: eventStore, defaults: defaults)
+        }
     }
 
     private func loadConfiguration(showOnboardingIfNeeded: Bool = true) {
