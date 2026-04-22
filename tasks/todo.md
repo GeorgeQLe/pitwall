@@ -7,7 +7,8 @@
 ## Priority Task Queue
 
 - [x] `/run` — execute Phase 6a Step 6a.1 (VERSION file + version derivation helper). Completed 2026-04-22.
-- [ ] `/run` — execute Phase 6a Step 6a.2 (`.app` bundle wrapper script + `Info.plist` placeholder substitution). Evidence: Step 6a.2 is fully decomposed below; reads `VERSION` (now on disk) and injects `CFBundleShortVersionString` + `CFBundleVersion` (from `git rev-list --count HEAD`) + `CFBundleExecutable` + `NSHumanReadableCopyright` into an expanded Info.plist; ad-hoc-signs `build/Pitwall.app`.
+- [x] `/run` — execute Phase 6a Step 6a.2 (`.app` bundle wrapper script + `Info.plist` placeholder substitution). Completed 2026-04-22.
+- [ ] `/run` — execute Phase 6a Step 6a.3 (`Makefile` with build / install / uninstall / run / clean targets). Evidence: Step 6a.3 is fully decomposed below; `make build` wraps `scripts/build-app-bundle.sh` (now on disk from Step 6a.2), `make install` atomically replaces `/Applications/Pitwall.app` after `codesign --verify`, `make uninstall` invokes the app binary with `--unregister-login-item` (flag added in Step 6a.5) and removes `/Applications/Pitwall.app` while preserving Application Support + Keychain data, `make run` opens the built bundle, `make clean` removes `build/`.
 - [ ] After Phase 6a ships: `/plan-phase 6b` — Phase 6b is deferred until the author decides to share Pitwall publicly; blocked on Apple Developer enrollment ($99/yr) and Sparkle/notary credential setup. Do not plan 6b until 6a is complete and the user confirms intent to go public.
 
 ## Completed Phases
@@ -62,7 +63,7 @@
   - Rationale: version is touched by both the bundle builder (writes into `Info.plist`) and the in-app About view. Centralize the in-process side in `PitwallAppSupport` behind a protocol seam so it is unit-testable without launching the app.
   - The `VERSION` file is the single source of truth for `CFBundleShortVersionString`. `CFBundleVersion` is computed at build time via `git rev-list --count HEAD`.
 
-- Step 6a.2: Build the `.app` bundle wrapper script
+- [x] Step 6a.2: Build the `.app` bundle wrapper script (completed 2026-04-22)
   - Files: create `scripts/build-app-bundle.sh` (shell script that runs `swift build --configuration release --product PitwallApp`, constructs `build/Pitwall.app/Contents/{MacOS,Resources}`, copies the built binary to `Contents/MacOS/PitwallApp`, copies an expanded `Info.plist` with real `CFBundleShortVersionString` + `CFBundleVersion` + `CFBundleExecutable=PitwallApp` + `NSHumanReadableCopyright`, and ad-hoc signs via `codesign --sign - --deep --force --options=runtime build/Pitwall.app`), modify `Sources/PitwallApp/Info.plist` (add `CFBundleExecutable`, `NSHumanReadableCopyright`; keep `LSUIElement=true`, `LSMinimumSystemVersion=13.0`; leave version strings as `{{CFBundleShortVersionString}}` / `{{CFBundleVersion}}` placeholders the script substitutes).
   - Script must use `set -euo pipefail`, exit non-zero on any failure, and be idempotent (`rm -rf build/Pitwall.app` before re-assembling).
 
