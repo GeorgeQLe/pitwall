@@ -21,6 +21,7 @@ final class MenuBarController: NSObject {
     private let gitHubTokenManager: GitHubHeatmapTokenManager
     private let gitHubHeatmapCoordinator: GitHubHeatmapCoordinator
     private let notificationScheduler: NotificationScheduling
+    private let loginItemService: LoginItemService
     private let onboardingDefaults: UserDefaults
     private var statusItem: NSStatusItem?
     private var rotationTimer: Timer?
@@ -31,7 +32,7 @@ final class MenuBarController: NSObject {
     private var gitHubHeatmap: GitHubHeatmap?
     private var scheduledNotificationKeys: Set<String>
 
-    override init() {
+    init(loginItemService: LoginItemService? = nil) {
         let now = Date()
         let configurationStore = ProviderConfigurationStore()
         let secretStore = KeychainSecretStore()
@@ -52,6 +53,13 @@ final class MenuBarController: NSObject {
         self.gitHubTokenManager = gitHubTokenManager
         self.gitHubHeatmapCoordinator = GitHubHeatmapCoordinator(tokenManager: gitHubTokenManager)
         self.notificationScheduler = UserNotificationScheduler()
+        if let loginItemService {
+            self.loginItemService = loginItemService
+        } else if #available(macOS 13.0, *) {
+            self.loginItemService = SMAppServiceLoginItemService()
+        } else {
+            self.loginItemService = InMemoryLoginItemService()
+        }
         self.refreshCoordinator = ProviderRefreshCoordinator(
             configurationStore: configurationStore,
             secretStore: secretStore,
@@ -267,7 +275,8 @@ final class MenuBarController: NSObject {
                 },
                 onRefresh: { [weak self] in
                     self?.refreshNow()
-                }
+                },
+                loginItemService: loginItemService
             )
         }
     }

@@ -12,12 +12,15 @@ struct SettingsView: View {
     let onDeleteClaudeCredentials: (String) async -> String?
     let onTestClaudeConnection: (String?) async -> String
     let onRefresh: () -> Void
+    let loginItemService: LoginItemService?
 
     @State private var profiles: [ProviderProfileConfiguration]
     @State private var preferences: UserPreferences
     @State private var phase4Settings: Phase4Settings
     @State private var message: String?
     @State private var isSaving = false
+    @State private var launchAtLoginEnabled: Bool
+    @State private var launchAtLoginMessage: String?
 
     init(
         snapshot: ProviderConfigurationSnapshot,
@@ -30,7 +33,8 @@ struct SettingsView: View {
         onSaveClaudeCredentials: @escaping (ClaudeCredentialInput) async -> String?,
         onDeleteClaudeCredentials: @escaping (String) async -> String?,
         onTestClaudeConnection: @escaping (String?) async -> String,
-        onRefresh: @escaping () -> Void
+        onRefresh: @escaping () -> Void,
+        loginItemService: LoginItemService? = nil
     ) {
         self.claudeAccounts = claudeAccounts
         self.onSaveConfiguration = onSaveConfiguration
@@ -41,11 +45,13 @@ struct SettingsView: View {
         self.onDeleteClaudeCredentials = onDeleteClaudeCredentials
         self.onTestClaudeConnection = onTestClaudeConnection
         self.onRefresh = onRefresh
+        self.loginItemService = loginItemService
         _profiles = State(initialValue: Self.normalizedProfiles(from: snapshot.providerProfiles))
         _preferences = State(initialValue: snapshot.userPreferences)
         var initialPhase4Settings = phase4Settings
         initialPhase4Settings.notifications = snapshot.userPreferences.notificationPreferences
         _phase4Settings = State(initialValue: initialPhase4Settings)
+        _launchAtLoginEnabled = State(initialValue: loginItemService?.isEnabled ?? false)
     }
 
     var body: some View {
@@ -64,6 +70,8 @@ struct SettingsView: View {
                     )
                     Divider()
                     DisplayPreferencesView(preferences: $preferences)
+                    Divider()
+                    launchAtLoginSection
                     Divider()
                     NotificationPreferencesView(preferences: notificationPreferences)
                     Divider()
@@ -205,6 +213,44 @@ struct SettingsView: View {
         Binding(
             get: { phase4Settings.history.retentionDays },
             set: { phase4Settings.history.retentionDays = $0 }
+        )
+    }
+
+    @ViewBuilder
+    private var launchAtLoginSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Startup")
+                .font(.system(size: 14, weight: .semibold))
+
+            Toggle("Launch Pitwall at login", isOn: launchAtLoginBinding)
+                .disabled(loginItemService == nil)
+
+            if let launchAtLoginMessage {
+                Text(launchAtLoginMessage)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var launchAtLoginBinding: Binding<Bool> {
+        Binding(
+            get: { launchAtLoginEnabled },
+            set: { newValue in
+                guard let service = loginItemService else {
+                    launchAtLoginEnabled = newValue
+                    return
+                }
+                do {
+                    try service.setEnabled(newValue)
+                    launchAtLoginEnabled = service.isEnabled
+                    launchAtLoginMessage = nil
+                } catch {
+                    launchAtLoginEnabled = service.isEnabled
+                    launchAtLoginMessage = (error as? LocalizedError)?.errorDescription
+                        ?? error.localizedDescription
+                }
+            }
         )
     }
 

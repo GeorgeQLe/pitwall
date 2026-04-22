@@ -61,7 +61,8 @@ let package = Package(
             dependencies: ["PitwallAppSupport"],
             exclude: ["Info.plist"],
             linkerSettings: [
-                .linkedFramework("AppKit")
+                .linkedFramework("AppKit"),
+                .linkedFramework("ServiceManagement")
             ]
         ),
         .testTarget(

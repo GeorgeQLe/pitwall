@@ -67,7 +67,8 @@ final class PopoverController {
         onSaveClaudeCredentials: @escaping (ClaudeCredentialInput) async -> String?,
         onDeleteClaudeCredentials: @escaping (String) async -> String?,
         onTestClaudeConnection: @escaping (String?) async -> String,
-        onRefresh: @escaping () -> Void
+        onRefresh: @escaping () -> Void,
+        loginItemService: LoginItemService? = nil
     ) {
         let view = SettingsView(
             snapshot: snapshot,
@@ -80,7 +81,8 @@ final class PopoverController {
             onSaveClaudeCredentials: onSaveClaudeCredentials,
             onDeleteClaudeCredentials: onDeleteClaudeCredentials,
             onTestClaudeConnection: onTestClaudeConnection,
-            onRefresh: onRefresh
+            onRefresh: onRefresh,
+            loginItemService: loginItemService
         )
 
         settingsWindowController = showWindow(
