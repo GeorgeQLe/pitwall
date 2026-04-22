@@ -12,7 +12,8 @@
 - [x] `/run` — execute Phase 6a Step 6a.4 (wire the menu bar SF Symbol icon). Completed 2026-04-22.
 - [x] `/run` — execute Phase 6a Step 6a.5 (`SMAppService` login-item + Settings toggle). Completed 2026-04-22.
 - [x] `/run` — execute Phase 6a Step 6a.6 (first-launch Application Support + Keychain health probe). Completed 2026-04-22.
-- [ ] `/run` — execute Phase 6a Step 6a.7 (first-launch "Welcome to Pitwall" banner). Evidence: Step 6a.7 is decomposed below; create `Sources/PitwallApp/Views/WelcomeBannerView.swift` and gate rendering in `PopoverContentView` on `pitwall.welcome.v1.dismissed`.
+- [x] `/run` — execute Phase 6a Step 6a.7 (first-launch "Welcome to Pitwall" banner). Completed 2026-04-22.
+- [ ] `/run` — execute Phase 6a Step 6a.8 (install smoke-test script). Evidence: Step 6a.8 is decomposed below; create `scripts/smoke-install.sh` that builds into a tmp prefix, verifies the bundle layout + `Info.plist` version strings, runs `codesign --verify --verbose`, and tears down.
 - [ ] After Phase 6a ships: `/plan-phase 6b` — Phase 6b is deferred until the author decides to share Pitwall publicly; blocked on Apple Developer enrollment ($99/yr) and Sparkle/notary credential setup. Do not plan 6b until 6a is complete and the user confirms intent to go public.
 
 ## Completed Phases
@@ -93,7 +94,7 @@
   - Keychain round-trip uses a disposable service name (e.g., `com.pitwall.app.packaging-probe`, account `probe`, random value) and must NOT touch any production `ProviderSecretKey`.
   - No network, no upload. Redaction path remains subject to `DiagnosticsRedactor`.
 
-- Step 6a.7: Add the "Welcome to Pitwall" first-launch banner
+- [x] Step 6a.7: Add the "Welcome to Pitwall" first-launch banner (completed 2026-04-22)
   - Files: create `Sources/PitwallApp/Views/WelcomeBannerView.swift`, modify `Sources/PitwallApp/Views/PopoverContentView.swift` to conditionally render the banner gated on a `UserDefaults` key (`pitwall.welcome.v1.dismissed`).
   - Banner copy must include: "Welcome to Pitwall. You're replacing a previous menu bar app — Pitwall does not copy data from it." + "Paste your Claude `sessionKey` and `lastActiveOrg` in Settings → Claude account to get started." + "Secrets are stored in the macOS Keychain."
   - Dismiss button sets the key and hides the banner forever.
