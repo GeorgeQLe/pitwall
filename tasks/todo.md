@@ -11,7 +11,8 @@
 - [x] Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap completed and archived to `tasks/phases/phase-4.md`.
 - [x] Phase 5 Cross-Platform V1 Parity planned just-in-time from completed Phase 4 boundaries.
 - [x] Phase 5 Step 5.1 cross-platform architecture selected and documented.
-- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.2 (shared behavior contracts extraction).
+- [x] Phase 5 Step 5.2 shared behavior contracts extracted into `PitwallShared`.
+- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.3 (Windows tray/menu parity).
 
 ## Phase 5: Cross-Platform V1 Parity
 
@@ -87,7 +88,7 @@
     - Start by reading `Package.swift`, `README.md`, `CLEAN_ROOM.md`, `specs/pitwall-macos-clean-room.md`, `specs/reproduction-checklist.md`, `Sources/PitwallCore/*`, and `Sources/PitwallAppSupport/*`.
     - Document the selected cross-platform approach in `docs/cross-platform-architecture.md` before adding platform scaffolding.
     - Validation for this planning/scaffold step depends on the selected approach, but macOS regression validation must still include `swift test` and `swift build`.
-- [ ] Step 5.2: Extract shared behavior contracts for cross-platform reuse
+- [x] Step 5.2: Extract shared behavior contracts for cross-platform reuse
   - Files: create `Sources/PitwallShared/*`, create `Tests/PitwallSharedTests/*`, modify `Package.swift`, touch-up `Sources/PitwallAppSupport/*` only where strictly needed to conform to new protocols without changing macOS behavior.
   - Goal: introduce a `PitwallShared` SwiftPM target that holds cross-platform protocol contracts and pure logic from `PitwallAppSupport` that Windows/Linux shells will reuse in Steps 5.3/5.4, while keeping `PitwallCore` unchanged and `PitwallAppSupport` macOS-only for AppKit-bound code.
   - Architecture anchor: the chosen approach and adapter seams are documented in `docs/cross-platform-architecture.md`. Step 5.2 MUST honor that doc — do not re-litigate the decision. Protocols introduced here are the ones it promised: `ProviderConfigurationStorage`, `ProviderHistoryStorage`, `SettingsStorage` (and any notification-policy surface that is OS-agnostic).
