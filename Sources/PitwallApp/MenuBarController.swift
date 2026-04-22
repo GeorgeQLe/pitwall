@@ -74,6 +74,10 @@ final class MenuBarController: NSObject {
         item.button?.target = self
         item.button?.action = #selector(handleStatusItemClick(_:))
         item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        item.button?.image = NSImage(
+            systemSymbolName: "gauge.with.dots.needle.67percent",
+            accessibilityDescription: "Pitwall"
+        )
         item.button?.toolTip = "Pitwall provider pacing"
         statusItem = item
 
@@ -187,7 +191,7 @@ final class MenuBarController: NSObject {
     }
 
     private func updateStatusTitle() {
-        statusItem?.button?.title = formatter.format(appState: appState, preferences: preferences)
+        statusItem?.button?.toolTip = formatter.format(appState: appState, preferences: preferences)
     }
 
     private func updatePopover() {
