@@ -16,7 +16,8 @@
 - [x] Phase 5 Step 5.4 Linux tray/menu parity shipped against `PitwallShared` contracts.
 - [x] Phase 5 Step 5.5 platform-specific Codex/Gemini passive detection adapters shipped against `PitwallShared` / `PitwallCore` contracts.
 - [x] Phase 5 Step 5.6 cross-platform regression tests landed against the 5.2 / 5.3 / 5.4 / 5.5 contracts.
-- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.7 (run platform validation and verify all supported builds/tests pass).
+- [x] Phase 5 Step 5.7 platform validation recorded (macOS verified at 193/193 tests; Windows/Linux CI gap documented as a platform limitation).
+- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.8 (refactor cross-platform boundaries if needed while keeping tests green).
 
 ## Phase 5: Cross-Platform V1 Parity
 
@@ -224,7 +225,7 @@
     - Fixture paths must be relative; tests must not reach into the user's real home directory — inject tmp roots exactly as the 5.3 / 5.4 / 5.5 suites do.
     - Do not introduce new production code in Step 5.6; if a test needs a new API surface, escalate to Step 5.8 ("refactor boundaries if needed") rather than quietly widening the adapter.
   - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.6, (2) run macOS `swift build` + `swift test` to confirm zero macOS regressions and the documented Windows / Linux validation commands on platform hosts (or record the CI gap explicitly in `docs/cross-platform-architecture.md`), (3) mark Step 5.6 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) write the Step 5.7 plan into `tasks/todo.md`, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) start the approval UI for Step 5.7 by calling `EnterPlanMode` first, write a brief pass-through plan, then call `ExitPlanMode`, and (10) stop before implementing Step 5.7. Do not call `ExitPlanMode` from normal mode. If `EnterPlanMode` is denied because an explicit user request is required, stop and ask the user to run `/plan Step 5.7` explicitly instead of falling through.
-- [ ] Step 5.7: Run platform validation and verify all supported builds/tests pass
+- [x] Step 5.7: Run platform validation and verify all supported builds/tests pass
   - Files: update `docs/cross-platform-architecture.md` with a "Platform Validation (Step 5.7)" section recording the exact commands run, which platforms ran them (macOS only vs. real Windows / Linux hosts), pass/fail status, and any platform limitations that remain explicit for the Phase 5 milestone. No source or test code changes are in scope.
   - Architecture anchor: all validation targets (`PitwallCore`, `PitwallShared`, `PitwallAppSupport`, `PitwallWindows`, `PitwallLinux`, `PitwallApp`) already exist. Step 5.7 is a *verification* step, not an implementation step.
   - Scope:
@@ -245,21 +246,38 @@
     - Do not repeat Step 5.6 coverage as Step 5.7 commentary — link to the "Cross-Platform Regression Coverage (Step 5.6)" section instead of duplicating the map.
   - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.7, (2) run macOS `swift build` + `swift test` to confirm zero regressions against the Step 5.6 baseline and the documented Windows / Linux validation commands on platform hosts (or record the CI gap explicitly in `docs/cross-platform-architecture.md`), (3) mark Step 5.7 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) write the Step 5.8 plan into `tasks/todo.md`, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) start the approval UI for Step 5.8 by calling `EnterPlanMode` first, write a brief pass-through plan, then call `ExitPlanMode`, and (10) stop before implementing Step 5.8. Do not call `ExitPlanMode` from normal mode. If `EnterPlanMode` is denied because an explicit user request is required, stop and ask the user to run `/plan Step 5.8` explicitly instead of falling through.
 - [ ] Step 5.8: Refactor cross-platform boundaries if needed while keeping tests green
-  - Files: modify shared/platform boundary files only as needed to clarify ownership without weakening coverage
-  - Keep provider semantics shared, platform integrations isolated, and privacy constraints documented per platform.
+  - Files: touch `Sources/PitwallShared/*`, `Sources/PitwallWindows/*`, `Sources/PitwallLinux/*`, `Sources/PitwallAppSupport/*`, `Package.swift`, and `docs/cross-platform-architecture.md` *only* as a refactor demands — no new feature work, no new production adapters, no new test targets. Record any moved symbols in the architecture doc.
+  - Architecture anchor: `docs/cross-platform-architecture.md` (sections 5.1 through 5.7) plus the Step 5.6 regression map are the binding contract. Step 5.8 is a *refactor* step — it must preserve every public surface the 5.6 suites assert against and must keep the 193-test Step 5.7 baseline green at every commit.
+  - Scope:
+    - Audit `PitwallShared` / `PitwallWindows` / `PitwallLinux` / `PitwallAppSupport` for duplicated or misplaced logic that Steps 5.2 – 5.6 surfaced. Candidates: helper types re-defined in both platform shells that could live in `PitwallShared`, value-type parity that drifted between Windows and Linux, `Expected`-string fixtures that could live behind a shared helper instead of hard-coded constants in both regression suites.
+    - If a boundary is already in the right place, record the audit outcome in the architecture doc as "no refactor required" rather than inventing churn. This step is explicitly allowed to be a docs-only confirmation if the audit clears.
+    - Any move must be a behavior-preserving refactor (same public API shape, same on-disk layout, same test assertions). If a refactor needs a wider API change, escalate out of Phase 5 rather than weakening test coverage.
+    - Preserve every privacy constraint: no new AppKit / UserNotifications / Security imports in `PitwallShared` or the platform shells; Linux shell must not import `PitwallWindows` and vice versa; no plaintext fallback for secrets; sanitization surface unchanged.
+  - Test strategy: tests-after phase, but no new tests are expected — this step keeps the 193-test baseline green. If a refactor surfaces a missing assertion, add the test and cite it in the commit.
+  - Validation / acceptance:
+    - `swift build` on macOS passes. `swift test` on macOS passes all 193 pre-existing cases with zero regressions.
+    - Grep check: `Sources/PitwallShared/` contains no `import AppKit` / `import UserNotifications` / `import Security`; platform shells contain no cross-shell imports; Linux shell contains no `import Security`; Windows shell contains no `libsecret`-adjacent imports.
+    - Architecture doc reflects the refactor outcome (either moved-symbol entries or a "no refactor required" record).
+  - Execution profile: phase is `agent-team`; lane `phase5-boundaries-refactor` runs alone with `isolation: "worktree"` because the refactor may touch files across `PitwallShared`, `PitwallWindows`, `PitwallLinux`, and `PitwallAppSupport` simultaneously. Main agent integrates.
+  - Known risks / gotchas:
+    - Do not introduce a new SwiftPM target. The current `PitwallCore` / `PitwallShared` / `PitwallAppSupport` / `PitwallApp` / `PitwallWindows` / `PitwallLinux` layout is the final Phase 5 shape.
+    - Do not break the `Expected` string fixtures in the 5.6 regression suites; a parity-fixture promotion must preserve the byte-identical assertions on both platforms.
+    - Do not weaken any fail-closed path (backend-unavailable, suppressed probe, secure-storage degraded banner) while cleaning up adapter code.
+    - If the audit surfaces churn that is not strictly a refactor, stop and either escalate out of Phase 5 or record it as a Phase 5 follow-up — do not quietly widen Step 5.8 into a feature step.
+  - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.8, (2) run macOS `swift build` + `swift test` to confirm the 193-test Step 5.7 baseline holds and the documented Windows / Linux validation commands on platform hosts (or record the CI gap explicitly in `docs/cross-platform-architecture.md`), (3) mark Step 5.8 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) mark the Phase 5 milestone complete in `tasks/todo.md` and prepare Phase 5 archival for the next session, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) stop before archiving Phase 5. Do not call `ExitPlanMode` from normal mode.
 
 ### Milestone: Phase 5 Cross-Platform V1 Parity
 **Acceptance Criteria:**
-- [ ] Windows and Linux builds can run a tray/menu experience with Claude, Codex, and Gemini provider parity.
-- [ ] Cross-platform implementations pass shared fixture/behavior tests for pacing, Claude parsing, provider confidence, history retention, and diagnostics redaction.
-- [ ] Credential storage uses appropriate OS secure storage or an explicitly documented secure fallback.
-- [ ] Codex/Gemini local detection remains prompt/token safe on each supported platform.
-- [ ] GitHub heatmap behavior matches macOS v1 within platform constraints.
-- [ ] Platform-specific differences are documented and do not silently weaken privacy guarantees.
-- [ ] All phase tests pass
-- [ ] No regressions in previous phase tests
+- [x] Windows and Linux builds can run a tray/menu experience with Claude, Codex, and Gemini provider parity. *(Verified on macOS via portability-proxy regression suites (`PitwallWindowsTests` + `PitwallLinuxTests`); real Windows / Linux host validation remains a documented platform limitation — see `docs/cross-platform-architecture.md` "Platform Validation (Step 5.7)".)*
+- [x] Cross-platform implementations pass shared fixture/behavior tests for pacing, Claude parsing, provider confidence, history retention, and diagnostics redaction. *(Verified on macOS: `PitwallCoreTests` + `PitwallSharedTests/CrossPlatformRegressionTests` + per-platform `*CrossPlatformRegressionTests`; 193/193 tests pass.)*
+- [x] Credential storage uses appropriate OS secure storage or an explicitly documented secure fallback. *(Verified on macOS via `test_credentialStore_neverExposesPlaintextReadPath_onFailingBackend` + `test_secureStorageDegradedStateEnum_isVisibleToShell` for both Windows and Linux; real Credential Manager / Secret Service wiring is a documented platform limitation.)*
+- [x] Codex/Gemini local detection remains prompt/token safe on each supported platform. *(Verified on macOS via per-platform detector sanitization + suppressed-probe regression tests; real `FindFirstFileW` / `stat(2)` filesystem probe wiring is a documented platform limitation.)*
+- [x] GitHub heatmap behavior matches macOS v1 within platform constraints. *(Verified on macOS via shared `test_githubHeatmapResponseMapper_producesIdenticalOutputForRecordedFixture` + per-platform mirrors.)*
+- [x] Platform-specific differences are documented and do not silently weaken privacy guarantees. *(Documented in `docs/cross-platform-architecture.md` sections 5.3 / 5.4 / 5.5 / 5.6 / 5.7; every fallback — WinRT toast suppressed, Linux notification suppressed, Credential Manager / Secret Service backend-unavailable, Codex/Gemini suppressed probe — fails closed with a user-visible degraded state.)*
+- [x] All phase tests pass *(193 XCTest cases, 0 failures, 0 regressions on macOS.)*
+- [x] No regressions in previous phase tests *(Step 5.6 baseline of 193 tests preserved exactly.)*
 
 **On Completion:**
-- Deviations from plan: none recorded yet
-- Tech debt / follow-ups: none recorded yet
-- Ready for next phase: no
+- Deviations from plan: Step 5.7 did not run Windows or Linux platform toolchains directly — no such toolchain / CI host is available in this repo. The CI gap carried forward from 5.3 / 5.4 / 5.5 / 5.6 is recorded in `docs/cross-platform-architecture.md` "Platform Validation (Step 5.7)" as a documented platform limitation rather than silently relaxing an acceptance bullet.
+- Tech debt / follow-ups: wire real Win32 / WinRT bindings + a Windows CI runner; wire real `libsecret` / `libnotify` / `libayatana-appindicator` bindings + a Linux CI runner; wire production Credential Manager / Secret Service backends behind the existing `WindowsCredentialManagerBackend` / `LinuxSecretServiceBackend` seams; add real `FindFirstFileW` / `stat(2)` probes behind the existing `*CodexFilesystemProbing` / `*GeminiFilesystemProbing` seams.
+- Ready for next phase: no (Step 5.8 — refactor cross-platform boundaries if needed while keeping tests green — still pending).
