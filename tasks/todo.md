@@ -104,7 +104,7 @@
     - Wire preferences into settings persistence only as needed for the Step 4.4 tests; avoid implementing GitHub heatmap settings in this step.
     - Add `NotificationPreferencesView` and connect it from `SettingsView` with native controls for notification toggles and threshold selection, keeping disabled preferences suppressing every schedule path.
     - Validation: run `swift build` and `swift test`. During this step, later Phase 4 red tests for settings gaps not covered by notifications and GitHub heatmap are still expected to fail; fix notification test failures, syntax issues, and unrelated regressions before marking the step complete.
-- [ ] Step 4.5: Add optional GitHub heatmap configuration, token storage, and GraphQL fetch
+- [x] Step 4.5: Add optional GitHub heatmap configuration, token storage, and GraphQL fetch
   - Files: create `Sources/PitwallCore/GitHubHeatmapClient.swift`, create `Sources/PitwallCore/GitHubHeatmapModels.swift`, create `Sources/PitwallAppSupport/GitHubHeatmapSettings.swift`, create `Sources/PitwallAppSupport/GitHubHeatmapCoordinator.swift`, modify `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/GitHubHeatmapSettingsView.swift`
   - Store the GitHub personal access token through `ProviderSecretStore`/Keychain and store username/non-secret heatmap settings outside Keychain.
   - Use GraphQL variables for username/date inputs, display the last 12 weeks, and enforce hourly refresh limits except for manual refresh.

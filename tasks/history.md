@@ -2,6 +2,9 @@
 
 ## 2026-04-21
 
+- Phase 4 Step 4.5 completed: added optional GitHub heatmap core request/response models, GraphQL-variable request construction, 12-week response mapping, hourly automatic refresh policy with manual bypass, invalid-token mapping for 401/403, and write-only token management through `ProviderSecretStore`.
+- Added Phase 4 settings persistence for history, diagnostics, notifications, and non-secret GitHub heatmap preferences; GitHub personal access tokens stay out of `UserDefaults`. Added a native GitHub heatmap settings section that accepts new token input without rendering saved token values.
+- Validation: `swift build` passes with no warnings emitted. `swift test` passes 72 XCTest cases with 0 failures and no warnings emitted.
 - Phase 4 Step 4.4 completed: added configurable notification preferences, deterministic notification policy decisions, a scheduler protocol, a macOS `UserNotificationScheduler`, settings persistence for notification preferences, and a native settings section for reset/auth/degraded/pacing-threshold notifications.
 - Notification scheduling is testable through injected schedulers and the concrete macOS scheduler is isolated behind `NotificationScheduling`, so tests do not require live notification permission.
 - Validation: `swift build` passes with no warnings emitted. `swift test` remains red as expected because later Phase 4 red tests still reference unimplemented GitHub heatmap and Phase 4 settings symbols (`GitHubHeatmapRequest`, `GitHubHeatmapTokenManager`, `Phase4SettingsStore`, and related models); SwiftPM compiles those files before filtered notification tests can execute.
