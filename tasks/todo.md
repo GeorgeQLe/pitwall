@@ -14,7 +14,8 @@
 - [x] Phase 5 Step 5.2 shared behavior contracts extracted into `PitwallShared`.
 - [x] Phase 5 Step 5.3 Windows tray/menu parity shipped against `PitwallShared` contracts.
 - [x] Phase 5 Step 5.4 Linux tray/menu parity shipped against `PitwallShared` contracts.
-- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.5 (platform-specific Codex/Gemini passive detection adapters).
+- [x] Phase 5 Step 5.5 platform-specific Codex/Gemini passive detection adapters shipped against `PitwallShared` / `PitwallCore` contracts.
+- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.6 (cross-platform regression tests covering acceptance criteria).
 
 ## Phase 5: Cross-Platform V1 Parity
 
@@ -171,7 +172,7 @@
     - `ProviderSecretState.makePublicState` currently takes `some ProviderSecretStore`; when passing an `any ProviderSecretStore` existential, rely on Swift 5.7+ implicit existential opening exactly as the Windows Claude flow does. Keep `ProviderSecretStore` Sendable and PAT-free to preserve that.
     - Do not import `Security.framework` or WinRT symbols in Linux adapters; fence any macOS Keychain code behind `#if canImport(Security)` and any Windows Credential Manager code behind `#if os(Windows)` so nothing leaks into Linux builds.
   - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.4, (2) run macOS `swift build` + `swift test` to confirm zero macOS regressions and the documented Linux validation command on a Linux host (or record the CI gap explicitly in `docs/cross-platform-architecture.md`), (3) mark Step 5.4 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) write the Step 5.5 plan into `tasks/todo.md`, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) start the approval UI for Step 5.5 by calling `EnterPlanMode` first, write a brief pass-through plan, then call `ExitPlanMode`, and (10) stop before implementing Step 5.5. Do not call `ExitPlanMode` from normal mode. If `EnterPlanMode` is denied because an explicit user request is required, stop and ask the user to run `/plan Step 5.5` explicitly instead of falling through.
-- [ ] Step 5.5: Add platform-specific Codex/Gemini passive detection adapters
+- [x] Step 5.5: Add platform-specific Codex/Gemini passive detection adapters
   - Files: create `Sources/PitwallWindows/WindowsCodexDetector.swift` + `Sources/PitwallWindows/WindowsGeminiDetector.swift`, create `Sources/PitwallLinux/LinuxCodexDetector.swift` + `Sources/PitwallLinux/LinuxGeminiDetector.swift`, create fixture tests under `Tests/PitwallWindowsTests/` and `Tests/PitwallLinuxTests/`; update `docs/cross-platform-architecture.md` with a "Codex/Gemini Passive Detection (Step 5.5)" section that records per-platform path maps and any unsupported metadata sources.
   - Architecture anchor: `PitwallCore` already defines the Codex/Gemini passive-detection contract (authoritative presence-only semantics, sanitized evidence, prompt-safe reads). Step 5.5 adds *platform-specific path resolvers and metadata readers* behind narrow backend seams on Windows and Linux. It must not reach into `PitwallCore` detector internals and must not depend on `PitwallAppSupport`; Linux must not depend on `PitwallWindows` and vice versa.
   - Scope:
@@ -199,8 +200,29 @@
 
 ### Green
 - [ ] Step 5.6: Write cross-platform regression tests covering acceptance criteria
-  - Files: create or modify shared/platform test targets selected in Step 5.1
-  - Cover Windows/Linux provider visibility, tray/menu formatting, credential write-only behavior, secure-storage fallback behavior, Codex/Gemini sanitization, diagnostics redaction, history retention, and GitHub heatmap parity.
+  - Files: add or extend regression test suites under `Tests/PitwallSharedTests/`, `Tests/PitwallWindowsTests/`, and `Tests/PitwallLinuxTests/` (no new source modules). Update `docs/cross-platform-architecture.md` with a "Cross-Platform Regression Coverage (Step 5.6)" section recording which acceptance bullets are covered by which suites and any gaps kept open for Step 5.7.
+  - Architecture anchor: all contracts the regression suite asserts against already exist — `PitwallShared.NotificationPolicy`, `PitwallShared.ProviderConfiguration`, `PitwallShared.UserPreferences`, `PitwallCore` detector semantics, and the per-platform adapters shipped in 5.3 / 5.4 / 5.5. Step 5.6 adds *tests only*; it must not introduce new production code paths or reach into adapter internals beyond the public surfaces.
+  - Scope:
+    - Provider visibility parity: on each platform, `ProviderConfigurationStore` round-trips Claude/Codex/Gemini enablement and selection; disabled providers never appear in the tray view model. Assert Windows + Linux produce the same tray view-model shape for a shared input fixture.
+    - Tray/menu formatting parity: reuse a shared `MenuBarStatusFormatter`-shaped fixture set and assert `WindowsStatusFormatter` + `LinuxStatusFormatter` emit byte-identical tooltips and card labels for each state.
+    - Credential write-only behavior: assert `WindowsCredentialManagerSecretStore` and `LinuxSecretServiceStore` never surface a plaintext read path; failing backends return `nil` (reads) and throw `backendUnavailable` (writes). No degraded in-memory fallback.
+    - Secure-storage fallback: assert the shell surfaces the "secure storage unavailable" banner path via a visible degraded state enum on both platforms (no silent persistence).
+    - Codex/Gemini sanitization: reuse the fixture probes shipped in Step 5.5 and assert no absolute path, no token-shaped substring (`sk-…`, `ghp_…`, `ya29.…`, `AIza…`), and no file-content byte appears in the returned evidence on either platform.
+    - Diagnostics redaction parity: assert `WindowsDiagnosticsExporter` and `LinuxDiagnosticsExporter` emit the same redacted key set for the same `DiagnosticsInput` fixture (via `DiagnosticsRedactor`).
+    - History retention parity: assert `WindowsProviderHistoryStore` and `LinuxProviderHistoryStore` apply the same `ProviderHistoryRetention` windowing to a shared fixture.
+    - GitHub heatmap parity: assert `GitHubHeatmapClient` produces identical `GitHubHeatmapModels` output on each platform for a recorded fixture.
+  - Test strategy: tests-only phase. New suites live under the existing test targets — no new SwiftPM targets. Where a shared fixture exists in `Tests/PitwallCoreTests/Fixtures/`, prefer copying the reference into the platform test bundle (or promoting it into a new shared resources folder if needed) rather than duplicating bytes across suites.
+  - Validation / acceptance:
+    - `swift build` and `swift test` on macOS pass with the new suites added. Pre-existing test count (167) grows; zero regressions. Document the new total in `tasks/history.md` on commit.
+    - On Windows / Linux hosts (or documented CI gap), platform builds and test suites pass. Because every adapter is pure Foundation, macOS `swift test` runs both platform suites as a portability proxy (mirroring the 5.3 / 5.4 / 5.5 precedent).
+    - Grep check: new test files contain no `import AppKit` / `import UserNotifications` / `import Security` / `import PitwallAppSupport`; Linux tests do not import `PitwallWindows` and vice versa.
+  - Execution profile: phase is `agent-team`; lanes `phase5-shared-regression`, `phase5-windows-regression`, and `phase5-linux-regression` can run in parallel with `isolation: "worktree"` since they don't overlap on files. The main agent integrates the final merge + doc update.
+  - Known risks / gotchas:
+    - Do not weaken existing sanitization tests by duplicating weaker variants. Use the strictest assertions (no absolute path, no token-shaped substring, no content bytes) on both platforms.
+    - Do not let the regression suite become a macOS-only harness. Every new test must run on Windows + Linux hosts without a platform shim.
+    - Fixture paths must be relative; tests must not reach into the user's real home directory — inject tmp roots exactly as the 5.3 / 5.4 / 5.5 suites do.
+    - Do not introduce new production code in Step 5.6; if a test needs a new API surface, escalate to Step 5.8 ("refactor boundaries if needed") rather than quietly widening the adapter.
+  - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.6, (2) run macOS `swift build` + `swift test` to confirm zero macOS regressions and the documented Windows / Linux validation commands on platform hosts (or record the CI gap explicitly in `docs/cross-platform-architecture.md`), (3) mark Step 5.6 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) write the Step 5.7 plan into `tasks/todo.md`, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) start the approval UI for Step 5.7 by calling `EnterPlanMode` first, write a brief pass-through plan, then call `ExitPlanMode`, and (10) stop before implementing Step 5.7. Do not call `ExitPlanMode` from normal mode. If `EnterPlanMode` is denied because an explicit user request is required, stop and ask the user to run `/plan Step 5.7` explicitly instead of falling through.
 - [ ] Step 5.7: Run platform validation and verify all supported builds/tests pass
   - Commands: platform-specific commands selected in Step 5.1 plus existing `swift test` and `swift build` for macOS regression coverage
   - Expected result: macOS remains green, shared tests pass, and each supported Windows/Linux build or documented platform limitation is explicit.
