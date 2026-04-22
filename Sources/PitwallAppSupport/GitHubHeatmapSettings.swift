@@ -1,5 +1,6 @@
 import Foundation
 import PitwallCore
+import PitwallShared
 
 public struct HistoryPreferences: Equatable, Sendable {
     public var isEnabled: Bool

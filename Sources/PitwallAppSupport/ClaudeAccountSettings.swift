@@ -1,5 +1,6 @@
 import Foundation
 import PitwallCore
+import PitwallShared
 
 public struct ClaudeCredentialInput: Equatable, Sendable {
     public var accountId: String

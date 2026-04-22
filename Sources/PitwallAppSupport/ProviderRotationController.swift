@@ -1,5 +1,6 @@
 import Foundation
 import PitwallCore
+import PitwallShared
 
 public struct ProviderRotationDecision: Equatable, Sendable {
     public var selectedProviderId: ProviderID?

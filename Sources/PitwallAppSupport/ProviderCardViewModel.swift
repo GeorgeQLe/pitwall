@@ -1,5 +1,6 @@
 import Foundation
 import PitwallCore
+import PitwallShared
 
 public struct ProviderCardViewModel: Equatable, Sendable {
     public var providerId: ProviderID

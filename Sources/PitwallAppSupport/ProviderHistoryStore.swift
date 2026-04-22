@@ -1,7 +1,8 @@
 import Foundation
 import PitwallCore
+import PitwallShared
 
-public actor ProviderHistoryStore {
+public actor ProviderHistoryStore: ProviderHistoryStorage {
     private let userDefaults: UserDefaults
     private let storageKey: String
     private let encoder = JSONEncoder()

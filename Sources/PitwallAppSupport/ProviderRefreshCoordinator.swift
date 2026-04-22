@@ -1,5 +1,6 @@
 import Foundation
 import PitwallCore
+import PitwallShared
 
 public protocol ClaudeUsageClienting: Sendable {
     func fetchUsage(

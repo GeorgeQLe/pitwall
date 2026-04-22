@@ -1,5 +1,6 @@
 import Foundation
 import PitwallCore
+import PitwallShared
 
 public struct MenuBarStatusFormatter: Sendable {
     public init() {}

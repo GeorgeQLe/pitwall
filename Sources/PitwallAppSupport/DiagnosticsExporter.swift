@@ -1,5 +1,6 @@
 import Foundation
 import PitwallCore
+import PitwallShared
 
 public struct DiagnosticsExporter: Sendable {
     private let eventStore: DiagnosticEventStore
