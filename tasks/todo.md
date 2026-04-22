@@ -1,35 +1,36 @@
 # Todo - Pitwall
 
-> Current phase: 3 of 5 - First Usable macOS Provider Parity
+> Current phase: 4 of 5 - V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap
 > Source roadmap: `tasks/roadmap.md`
 
 ## Priority Task Queue
 
 - [x] Phase 1 Foundation And Pacing Core completed and archived to `tasks/phases/phase-1.md`.
 - [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
-- [x] Phase 3 First Usable macOS Provider Parity planned just-in-time from completed Phase 2 boundaries.
-- [x] Task pipeline is healthy; ready for `$run` to start Phase 3 Step 3.7.
+- [x] Phase 3 First Usable macOS Provider Parity completed and archived to `tasks/phases/phase-3.md`.
+- [x] Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap planned just-in-time from completed Phase 3 boundaries.
+- [ ] Ready for `$run` to start Phase 4 Step 4.1.
 
-## Phase 3: First Usable macOS Provider Parity
+## Phase 4: V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap
 
-> Test strategy: tests-after
+> Test strategy: tdd
 
-**Goal:** Ship the first usable native macOS menu bar app where Claude, Codex, and Gemini all appear as first-class provider cards with honest confidence labels.
+**Goal:** Complete the macOS v1 feature set with durable local history, redacted diagnostics, configurable notifications, and optional GitHub contribution heatmap support.
 
 **Scope:**
-- Create a native macOS menu bar app with no Dock icon.
-- Add first-run onboarding, provider enablement, settings, manual refresh, pinned/rotating provider status, and configurable reset-time display.
-- Implement Claude manual credential setup, test connection, live refresh, expired-auth handling, and stale-state display.
-- Surface Codex and Gemini passive states beside Claude, including configure actions and confidence explanations.
-- Show provider cards, current recommended action, daily budget, reset countdowns, and compact trend placeholders where history is not ready.
+- Persist provider usage snapshots and apply the specified 24-hour/7-day retention and downsampling rules.
+- Add session and weekly sparklines backed by derived snapshot data.
+- Add local notifications for resets, expired auth, telemetry degradation, and user-configured pacing thresholds.
+- Implement redacted diagnostics export.
+- Add optional GitHub contribution heatmap with username/token configuration, Keychain token storage, GraphQL variable use, and hourly refresh limits.
 
 **Acceptance Criteria:**
-- The app launches as a menu bar app on macOS 13+ with no Dock icon.
-- A user can configure Claude credentials manually and test the connection without browser-cookie extraction.
-- Claude, Codex, and Gemini are all visible in the popover/settings as first-class providers, even when some are missing configuration.
-- Menu bar text and provider cards show action guidance and confidence labels rather than fake precision.
-- Manual refresh works and does not bypass secret-storage or privacy constraints.
-- First-run onboarding can be skipped, and skipped providers remain configurable rather than fatal.
+- History retention/downsampling tests cover last-24-hours retention, hourly downsampling, and seven-day expiry.
+- Diagnostics export redacts cookies, tokens, auth headers, account ids when unnecessary, raw responses, prompts, and model responses.
+- Notifications are user-configurable and do not fire when disabled.
+- GitHub heatmap fetches the last 12 weeks through GraphQL variables and handles 401/403 as invalid token state.
+- GitHub token storage uses Keychain and never renders the token back after saving.
+- The reproduction checklist is substantially satisfied for the macOS v1 scope.
 
 ### Execution Profile
 **Parallel mode:** review-only
@@ -38,186 +39,82 @@
 **Review gates:** correctness, tests, security, docs/API conformance, UX
 
 **Subagent lanes:**
-- Lane: macos-ux-privacy-review
+- Lane: phase4-privacy-review
   - Agent: explorer
   - Role: reviewer
   - Mode: review
-  - Scope: Review the Phase 3 app shell, onboarding/settings flow, and provider card UI against the clean-room spec for UX clarity, credential privacy, and honest confidence labeling after implementation.
-  - Depends on: Step 3.6
+  - Scope: Review history, diagnostics, notifications, and GitHub heatmap changes after implementation for privacy regressions, secret handling, clean-room scope, and acceptance-criteria coverage.
+  - Depends on: Step 4.6
   - Deliverable: Review findings before final validation.
 
-### Implementation
-- [x] Step 3.1: Scaffold the macOS menu bar app and app-support target
-  - Files: modify `Package.swift`, create `Sources/PitwallApp/PitwallApp.swift`, create `Sources/PitwallApp/AppDelegate.swift`, create `Sources/PitwallApp/Info.plist`, create `Sources/PitwallAppSupport/PitwallAppSupport.swift`
-  - Add an executable macOS app target with `LSUIElement`/agent behavior so it runs as a menu bar app with no Dock icon.
-  - Add a testable `PitwallAppSupport` library target for app state, formatters, and service coordination that can be covered without launching AppKit UI.
-  - Keep the app scaffold clean-room and generated from Swift/AppKit conventions plus the project spec only.
+### Tests First
+- [ ] Step 4.1: Write failing tests for v1 hardening, history, diagnostics, notifications, and GitHub heatmap
+  - Files: create `Tests/PitwallCoreTests/HistoryRetentionTests.swift`, create `Tests/PitwallCoreTests/DiagnosticsRedactionTests.swift`, create `Tests/PitwallCoreTests/GitHubHeatmapTests.swift`, create `Tests/PitwallAppSupportTests/NotificationPolicyTests.swift`, create `Tests/PitwallAppSupportTests/Phase4SettingsTests.swift`
+  - Cover history retention/downsampling: keep all snapshots for the last 24 hours, downsample 24 hours to 7 days to one per hour, retain highest session utilization and latest weekly utilization per hourly bucket, and drop snapshots older than 7 days.
+  - Cover derived-only history snapshots: provider/account ids, timestamps, confidence, session/weekly utilization, reset timestamps, and headline values only; no prompt text, token values, raw responses, cookies, or auth headers.
+  - Cover diagnostics export redaction for cookies, tokens, auth headers, account ids when unnecessary, raw endpoint responses, prompts, and model responses while preserving provider status, confidence, last success timestamps, storage health, and redacted error summaries.
+  - Cover notification policy behavior for reset, expired auth, telemetry degraded, and pacing-threshold events, including disabled notification preferences and injectable scheduler tests that do not require OS notification permission.
+  - Cover GitHub heatmap behavior with injected transport: GraphQL variables instead of string interpolation, last-12-weeks response mapping, hourly refresh limiting with manual bypass, 401/403 invalid-token state, and Keychain-backed token state that never renders the saved token.
+  - Cover settings persistence for history, diagnostics, notifications, and GitHub heatmap preferences without storing GitHub tokens in `UserDefaults`.
+  - Tests MUST fail at this point because Phase 4 implementation symbols do not exist yet.
   - Implementation plan for next run:
-    - Read `Package.swift`, `README.md`, `Sources/PitwallCore/ProviderModels.swift`, and the `Menu Bar`, `Popover`, `Settings`, and `Onboarding` sections in `specs/pitwall-macos-clean-room.md`.
-    - Modify `Package.swift` to add a `PitwallAppSupport` library target, a `PitwallApp` executable target, and a future `PitwallAppSupportTests` test target placeholder only if needed by SwiftPM.
-    - Create `Sources/PitwallAppSupport/PitwallAppSupport.swift` as a small module anchor that imports `PitwallCore`.
-    - Create `Sources/PitwallApp/PitwallApp.swift` and `Sources/PitwallApp/AppDelegate.swift` with a minimal AppKit/SwiftUI app lifecycle that initializes a menu bar item and suppresses the Dock icon.
-    - Create `Sources/PitwallApp/Info.plist` with `LSUIElement` set for agent-style launch.
-    - Keep this step free of provider networking, credential storage changes, real filesystem scans, and production UI complexity beyond a launchable menu bar shell.
-    - Validation: `swift build` should compile the package; `swift test` should continue passing existing Phase 1-2 tests.
-  - Completed notes:
-    - Added SwiftPM `PitwallAppSupport` and `PitwallApp` targets.
-    - Added a minimal AppKit status item shell with accessory activation policy and an `LSUIElement` plist kept for future app bundling.
-    - SwiftPM excludes the plist from target resources because top-level `Info.plist` files are not supported as SwiftPM resource bundle contents.
-    - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
-- [x] Step 3.2: Add provider presentation, rotation, and status formatting support
-  - Files: create `Sources/PitwallAppSupport/AppProviderState.swift`, create `Sources/PitwallAppSupport/ProviderCardViewModel.swift`, create `Sources/PitwallAppSupport/MenuBarStatusFormatter.swift`, create `Sources/PitwallAppSupport/ProviderRotationController.swift`, create `Sources/PitwallAppSupport/UserPreferences.swift`
-  - Build view models from `ProviderState` values for Claude, Codex, and Gemini without forcing fake precision.
-  - Format menu bar text with current action guidance, confidence labels, reset time/countdown preference, pinned-provider behavior, and rotation that skips degraded providers when healthier providers exist.
-  - Preserve skipped or missing providers as configurable states rather than fatal errors.
-  - Implementation plan for future run:
-    - Read the new app scaffold from Step 3.1 plus `Sources/PitwallCore/ProviderModels.swift` and `Sources/PitwallCore/PacingCalculator.swift`.
-    - Define UI-facing provider card and menu bar status models in `PitwallAppSupport`, not `PitwallCore`, unless a provider-agnostic model gap is proven.
-    - Add deterministic rotation logic with injectable clock/time inputs so tests can cover pinned provider, automatic rotation, pause, manual override, and degraded-provider skip behavior.
-    - Keep display formatting honest: exact percentages only when present, confidence/status labels when exact data is absent, and configure/wait/conserve/switch action wording from existing core enums.
-    - Validation: `swift build` should pass; run `swift test` if support logic is already covered by tests or if existing tests are affected.
-  - Completed notes:
-    - Added app-support provider state, user preferences, card view models, menu bar formatting, and deterministic provider rotation.
-    - Preserved missing/skipped providers as configurable states and used confidence/status labels when exact utilization is unavailable.
-    - Rotation supports pinned providers, manual overrides, pause, bounded 5-10 second automatic intervals, and degraded-provider skipping when healthier providers exist.
-    - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
-- [x] Step 3.3: Build the menu bar controller, popover, and provider cards
-  - Files: create `Sources/PitwallApp/MenuBarController.swift`, create `Sources/PitwallApp/PopoverController.swift`, create `Sources/PitwallApp/Views/PopoverContentView.swift`, create `Sources/PitwallApp/Views/ProviderCardView.swift`, create `Sources/PitwallApp/Views/StatusBadgeView.swift`, create `Sources/PitwallApp/Views/ClaudeUsageRowsView.swift`
-  - Show provider cards for Claude, Codex, and Gemini with status, confidence explanation, primary/secondary metrics, last updated text, reset display, and quick actions.
-  - Include current recommended action, daily budget/days remaining, refresh/settings/add-account controls, and compact trend placeholders until history exists.
-  - Keep UI code native macOS SwiftUI/AppKit and avoid landing-page or marketing-style composition.
-  - Implementation plan for future run:
-    - Read `Sources/PitwallAppSupport/*` from Step 3.2 and the spec's `Menu Bar` and `Popover` sections.
-    - Wire `MenuBarController` to `NSStatusItem`, a popover controller, and menu actions for refresh, settings, pause rotation, provider selection, and quit.
-    - Implement compact SwiftUI provider cards with stable sizing, plain confidence explanations, badges for stale/degraded/missing states, and quick actions.
-    - Use existing provider state payloads for Claude usage rows and passive Codex/Gemini metadata without exposing raw tokens, prompts, stdout, source content, or raw session/chat text.
-    - Validation: `swift build` should pass; defer regression tests to Step 3.7 unless a helper is risky enough to test immediately.
-  - Completed notes:
-    - Replaced the placeholder status menu with `MenuBarController`, a transient `NSPopover`, and SwiftUI popover content.
-    - Added provider cards, status badges, Claude usage rows, current action summary, daily budget/reset/trend placeholders, refresh/settings/add-account controls, and context-menu provider selection/rotation controls.
-    - Used deterministic sample provider state only; real configuration storage and refresh coordination remain scoped to Steps 3.4-3.5.
-    - Preserved privacy boundaries by rendering sanitized display state only and avoiding secrets, prompt text, token values, stdout, source content, or raw session/chat text.
-    - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
-- [x] Step 3.4: Add secure provider configuration storage and Claude account setup state
-  - Files: create `Sources/PitwallCore/KeychainSecretStore.swift`, create `Sources/PitwallAppSupport/ProviderConfigurationStore.swift`, create `Sources/PitwallAppSupport/ClaudeAccountSettings.swift`, modify `Sources/PitwallCore/SecretStore.swift`, modify `Package.swift`
-  - Store Claude session keys through the `ProviderSecretStore` abstraction and store non-secret account labels/org ids outside Keychain.
-  - Keep credential inputs write-only after save; expose configured/missing/expired state without rendering saved secret values.
-  - Do not extract browser cookies or read provider credentials from browsers or CLI auth files.
-  - Implementation plan for future run:
-    - Read `Sources/PitwallCore/SecretStore.swift`, `Sources/PitwallCore/InMemorySecretStore.swift`, `Tests/PitwallCoreTests/SecretStoreTests.swift`, and the spec's `Claude`, `Accounts`, `Secret Storage`, and `Settings` sections.
-    - Add a macOS `KeychainSecretStore` implementation behind the existing `ProviderSecretStore` protocol, keeping the in-memory fake for tests.
-    - Add an app-support configuration store for non-secret provider enablement, Claude account labels/org ids, display preferences, and provider plan/profile metadata.
-    - Model Claude credential setup so saved session keys can be replaced or deleted but never rendered back into public state or UI fields.
-    - Validation: `swift build` should pass; update or add tests in Step 3.7 to prove write-only behavior through app-support configuration state.
-  - Completed notes:
-    - Added a macOS Keychain-backed `ProviderSecretStore` for provider-owned secrets and linked the core target against Security.
-    - Extended public secret state to represent configured, missing, and expired credentials while continuing to render no saved secret value.
-    - Added app-support configuration persistence for non-secret provider profiles, Claude labels/org ids, selected account, and display preferences through injected `UserDefaults`.
-    - Added Claude account setup state and save/replace/delete/expired flows that write session keys through the secret-store abstraction and keep session keys out of public state and descriptions.
-    - Did not extract browser cookies, read browser storage, read CLI auth files, call provider networks, or persist raw credential material outside the secret store.
-    - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
-- [x] Step 3.5: Add refresh coordination for Claude, Codex, and Gemini
-  - Files: create `Sources/PitwallCore/ClaudeUsageClient.swift`, create `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift`, create `Sources/PitwallAppSupport/LocalProviderSnapshotLoader.swift`, create `Sources/PitwallAppSupport/PollingPolicy.swift`
-  - Implement Claude manual refresh and test-connection behavior using user-supplied credentials, preserving expired auth and stale network states.
-  - Bridge Codex and Gemini passive detection from allowed local metadata into provider cards through sanitized snapshots.
-  - Respect polling/backoff defaults, manual-refresh bypass for one attempt, and privacy constraints around prompt/token/raw-response persistence.
-  - Implementation plan for future run:
-    - Read `Sources/PitwallCore/ClaudeUsageParser.swift`, `Sources/PitwallCore/CodexLocalDetector.swift`, `Sources/PitwallCore/GeminiLocalDetector.swift`, `Sources/PitwallCore/LocalProviderEvidence.swift`, and spec sections for `Claude`, `Polling`, `Codex`, and `Gemini`.
-    - Add a small injectable Claude HTTP client that builds the documented request from user-provided session key/org id, parses success through `ClaudeUsageParser`, maps 401/403 to expired auth, and maps network failures to stale state with backoff.
-    - Add an injectable local snapshot loader for Codex/Gemini allowed metadata paths; sanitize snapshots before detector calls and never persist raw prompt/token/chat/stdout/source content.
-    - Add refresh coordination that supports manual refresh, test connection, passive scan cadence, telemetry degraded state after repeated failures, and one-attempt manual bypass of backoff.
-    - Validation: `swift build` should pass; use injected clients/loaders in Step 3.7 tests rather than live network or real user files.
-  - Completed notes:
-    - Added an injectable Claude usage HTTP client that builds the documented usage request from user-supplied session key/org id, maps 401/403 to expired auth, maps network/decoding failures to normalized errors, parses usage through `ClaudeUsageParser`, and detects replacement `sessionKey` cookies without rendering secrets.
-    - Added polling/backoff policy support for 5-minute Claude refresh, manual/test-connection bypass, reset-aware scheduling, exponential network backoff, telemetry degradation thresholds, and passive scan cadence defaults.
-    - Added a local provider snapshot loader for Codex/Gemini that reads only allowlisted metadata paths, treats auth files as presence-only, sanitizes Gemini settings/chat JSON, and avoids persisting raw prompt, token, stdout, source, or provider response content.
-    - Added a provider refresh coordinator that uses injected clients/loaders/stores to refresh Claude, test connections, update last-success metadata, preserve stale Claude state on failures, rotate replacement session keys through the secret store, and bridge passive Codex/Gemini detection into provider cards.
-    - Validation: `swift build` passes; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
-- [x] Step 3.6: Add onboarding and settings UI
-  - Files: create `Sources/PitwallApp/Views/OnboardingView.swift`, create `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/ProviderEnablementView.swift`, create `Sources/PitwallApp/Views/ClaudeCredentialSetupView.swift`, create `Sources/PitwallApp/Views/DisplayPreferencesView.swift`, modify `Sources/PitwallApp/PopoverController.swift`
-  - Implement first-run provider selection, skippable onboarding, Claude manual credential instructions, provider enablement, test connection, reset-time/countdown preference, rotation preference, and manual refresh actions.
-  - Keep missing/skipped providers visible as configurable cards.
-  - Ensure saved secrets are never rendered back into settings fields.
-  - Implementation plan for future run:
-    - Read app-support configuration/refresh types from Steps 3.4-3.5 and spec sections for `Settings` and `Onboarding`.
-    - Build native macOS settings and onboarding screens with controls for provider enablement, Claude manual credential setup, test connection, display preferences, polling interval, and rotation behavior.
-    - Include the spec's Claude credential guidance in concise in-app setup copy while making clear the values are sensitive and stored locally.
-    - Keep forms functional but restrained; avoid visible instructional text for generic UI mechanics, and reserve explanatory copy for credential/privacy requirements.
-    - Validation: `swift build` should pass before review.
-  - Completed notes:
-    - Added native SwiftUI onboarding and settings windows reachable from the menu bar app.
-    - Added provider enablement, Claude credential setup, display/reset preference, tray rotation, manual refresh, and test-connection controls.
-    - Wired settings/onboarding through `ProviderConfigurationStore`, `ClaudeAccountSettings`, `KeychainSecretStore`, and `ProviderRefreshCoordinator` without reading browser cookies or rendering saved session keys.
-    - Kept skipped/disabled providers visible as configurable provider states instead of removing them from the app.
-    - Review-only lane: completed locally because the active environment policy does not permit spawning review subagents without an explicit user request for delegated agent work; review focused on UX clarity, clean-room scope, credential privacy, and honest confidence labeling.
-    - Validation: `swift build` passes with no warnings emitted; `swift test` passes 29 XCTest cases with 0 failures and no warnings emitted.
+    - Read `specs/pitwall-macos-clean-room.md` sections `Notifications`, `History`, `GitHub Heatmap`, `Diagnostics`, and `Verification`.
+    - Read `specs/reproduction-checklist.md` to align tests with the remaining macOS v1 privacy and storage gates.
+    - Read current patterns in `Tests/PitwallCoreTests/ProviderConfidenceTests.swift`, `Tests/PitwallCoreTests/ProviderDetectionTests.swift`, `Tests/PitwallAppSupportTests/ProviderRefreshCoordinatorTests.swift`, and `Tests/PitwallAppSupportTests/ProviderConfigurationStoreTests.swift`.
+    - Add red-phase XCTest files only; do not implement production symbols in Step 4.1.
+    - Use deterministic dates, injected transports/schedulers/stores, and synthetic provider states. Do not call GitHub, provider networks, Keychain, UserNotifications, or real local provider files.
+    - Expected validation for this TDD step: `swift test` should fail because Phase 4 implementation symbols do not exist yet. Treat those failures as expected red-phase failures, but fix any unrelated syntax, fixture, or package-configuration problems before marking the step complete.
+
+### Implementation
+- [ ] Step 4.2: Add durable provider history models and retention/downsampling
+  - Files: create `Sources/PitwallCore/ProviderHistoryModels.swift`, create `Sources/PitwallCore/ProviderHistoryRetention.swift`, create `Sources/PitwallAppSupport/ProviderHistoryStore.swift`, modify `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift` only as needed to emit derived snapshots after refresh
+  - Persist derived usage snapshots only: account id, timestamp, provider id, confidence, session/weekly utilization, reset timestamps, and headline values needed for sparklines/daily-budget calculations.
+  - Implement 24-hour full retention, 24-hour-to-7-day hourly downsampling, highest session/latest weekly selection, and seven-day expiry with deterministic clock inputs.
+  - Keep raw provider responses, prompt text, model responses, token values, stdout, source content, cookies, and auth headers out of history storage.
+- [ ] Step 4.3: Add diagnostics redaction and export support
+  - Files: create `Sources/PitwallCore/DiagnosticsRedactor.swift`, create `Sources/PitwallAppSupport/DiagnosticsExporter.swift`, create `Sources/PitwallAppSupport/DiagnosticEventStore.swift`, modify `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift` only as needed to emit redacted diagnostic events
+  - Export app/build metadata, enabled provider ids, provider status/confidence, redacted error states, last successful refresh timestamps, storage health, and recent diagnostic event summaries.
+  - Redact cookies, tokens, auth headers, unnecessary account ids, raw responses, prompts, model responses, stdout, and source content before persistence or export.
+  - Keep diagnostics local and avoid cloud upload, analytics, or hidden telemetry.
+- [ ] Step 4.4: Add configurable local notification policy and scheduler abstraction
+  - Files: create `Sources/PitwallAppSupport/NotificationPreferences.swift`, create `Sources/PitwallAppSupport/NotificationPolicy.swift`, create `Sources/PitwallAppSupport/NotificationScheduler.swift`, modify `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/NotificationPreferencesView.swift`
+  - Support Claude reset, expired auth, telemetry degraded, and pacing-threshold notification decisions through injectable schedulers.
+  - Keep notifications user-configurable and ensure disabled preferences suppress all scheduling.
+  - Avoid requiring live macOS notification permission for tests; concrete OS scheduling should be isolated behind the scheduler protocol.
+- [ ] Step 4.5: Add optional GitHub heatmap configuration, token storage, and GraphQL fetch
+  - Files: create `Sources/PitwallCore/GitHubHeatmapClient.swift`, create `Sources/PitwallCore/GitHubHeatmapModels.swift`, create `Sources/PitwallAppSupport/GitHubHeatmapSettings.swift`, create `Sources/PitwallAppSupport/GitHubHeatmapCoordinator.swift`, modify `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/GitHubHeatmapSettingsView.swift`
+  - Store the GitHub personal access token through `ProviderSecretStore`/Keychain and store username/non-secret heatmap settings outside Keychain.
+  - Use GraphQL variables for username/date inputs, display the last 12 weeks, and enforce hourly refresh limits except for manual refresh.
+  - Treat 401/403 as invalid or expired token state and never render saved tokens back into UI state.
+- [ ] Step 4.6: Wire history, diagnostics, notifications, and heatmap into the macOS app surface
+  - Files: modify `Sources/PitwallApp/MenuBarController.swift`, modify `Sources/PitwallApp/PopoverController.swift`, modify `Sources/PitwallApp/Views/PopoverContentView.swift`, modify `Sources/PitwallApp/Views/ProviderCardView.swift`, modify `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/DiagnosticsExportView.swift`, create `Sources/PitwallApp/Views/GitHubHeatmapView.swift`, create `Sources/PitwallApp/Views/HistorySparklineView.swift`
+  - Replace "History pending" placeholders with compact sparklines backed by derived snapshots when available.
+  - Add settings controls for diagnostics export, notification preferences, and optional GitHub heatmap configuration.
+  - Keep UI native macOS and restrained; no marketing screens, no raw diagnostic payload display, and no saved secret rendering.
 
 ### Green
-- [x] Step 3.7: Write regression tests for app support and privacy boundaries
-  - Files: create `Tests/PitwallAppSupportTests/MenuBarStatusFormatterTests.swift`, create `Tests/PitwallAppSupportTests/ProviderRotationControllerTests.swift`, create `Tests/PitwallAppSupportTests/ProviderCardViewModelTests.swift`, create `Tests/PitwallAppSupportTests/ProviderConfigurationStoreTests.swift`, create `Tests/PitwallAppSupportTests/ProviderRefreshCoordinatorTests.swift`
-  - Cover menu bar action/confidence formatting, reset-time/countdown preference, pinned and rotating provider behavior, degraded-provider skip behavior, provider card visibility for missing Claude/Codex/Gemini states, write-only saved Claude credentials, and manual refresh not bypassing secret storage.
-  - Tests should use injected stores/loaders/clients and must not call live provider networks or read real user provider files.
-  - Implementation plan for future run:
-    - Add `PitwallAppSupportTests` to `Package.swift` if Step 3.1 did not add it.
-    - Write focused tests for the testable support target rather than screenshot/UI automation.
-    - Use synthetic provider states, fake secret stores, fake Claude clients, fake local snapshot loaders, and deterministic clocks.
-    - Validation: targeted app-support tests should fail only if implementation behavior is wrong; `swift test` should still avoid live networks and real provider files.
-  - Completed notes:
-    - Added a `PitwallAppSupportTests` SwiftPM test target.
-    - Added focused XCTest coverage for menu bar formatting, reset display preferences, provider rotation, provider card view models, provider configuration persistence, Claude credential setup privacy, and refresh coordination.
-    - Refresh coordinator tests use injected fake Claude clients, secret stores, local snapshot loaders, and deterministic clocks; they do not call live provider networks or read real user provider files.
-    - Verified missing/skipped providers remain visible/configurable, saved Claude session keys are write-only, replacement session keys rotate through the secret store only, expired auth is preserved, and stale Claude state keeps non-secret last-success metadata.
-    - Review-only lane: completed locally because the active environment policy does not permit spawning review subagents without an explicit user request for delegated agent work; review focused on privacy boundaries, injection seams, and app-support behavior coverage.
-    - Validation: `swift test` passes 51 XCTest cases with 0 failures and no warnings emitted; `swift build` passes with no warnings emitted.
-- [x] Step 3.8: Run macOS app validation and verify Phase 3 tests pass
+- [ ] Step 4.7: Run Phase 4 tests and full regression validation
   - Commands: `swift test`, `swift build`
-  - Expected result: all Phase 1-3 tests pass with no warnings emitted, and the app target builds for macOS 13+.
+  - Expected result: all Phase 1-4 tests pass with no warnings emitted, and the app target builds for macOS 13+.
   - Fix unexpected failures before marking green.
-  - Implementation plan for future run:
-    - Run `swift test` and inspect output for warnings as well as failures.
-    - Run `swift build` and inspect output for warnings as well as failures.
-    - Fix any regressions in app support, provider privacy boundaries, app target compilation, or previous Phase 1-2 tests before marking this step complete.
-  - Completed notes:
-    - Ran the Phase 3 validation commands and inspected output for warnings as well as failures.
-    - `swift test` passed all 51 XCTest cases with 0 failures and no compiler/test warnings emitted.
-    - `swift build` passed with no warnings emitted and confirmed the macOS 13+ app target still builds.
-    - No source changes were needed.
-- [x] Step 3.9: Refactor app boundaries if needed while keeping tests green
-  - Files: modify `Sources/PitwallAppSupport/*`, `Sources/PitwallApp/Views/*`, `Sources/PitwallApp/MenuBarController.swift`, `Sources/PitwallApp/PopoverController.swift`, and tests only as needed to clarify behavior without weakening coverage
-  - Keep provider logic in `PitwallCore`/`PitwallAppSupport` and presentation code in `PitwallApp`.
-  - Preserve clean-room constraints, secret privacy, and honest confidence labels.
+- [ ] Step 4.8: Refactor v1 hardening boundaries if needed while keeping tests green
+  - Files: modify `Sources/PitwallCore/*History*.swift`, `Sources/PitwallCore/*Diagnostics*.swift`, `Sources/PitwallCore/*GitHub*.swift`, `Sources/PitwallAppSupport/*History*.swift`, `Sources/PitwallAppSupport/*Diagnostics*.swift`, `Sources/PitwallAppSupport/*Notification*.swift`, `Sources/PitwallAppSupport/*GitHub*.swift`, `Sources/PitwallApp/Views/*`, and tests only as needed to clarify behavior without weakening coverage
+  - Keep pure retention/redaction/GraphQL request logic in `PitwallCore`, app coordination and persistence in `PitwallAppSupport`, and SwiftUI/AppKit presentation in `PitwallApp`.
+  - Preserve clean-room constraints, local-only diagnostics, secret privacy, and honest confidence labels.
   - Validation: `swift test` and `swift build` must pass with no warnings emitted.
-  - Implementation plan for future run:
-    - Start from the current clean validation baseline: Step 3.8 recorded `swift test` passing 51 XCTest cases and `swift build` passing with no warnings.
-    - Review `Sources/PitwallApp/MenuBarController.swift`, `Sources/PitwallApp/PopoverController.swift`, and `Sources/PitwallApp/Views/*` for provider/networking/configuration behavior that should live in `PitwallAppSupport`.
-    - Review `Sources/PitwallAppSupport/AppProviderState.swift`, `ProviderCardViewModel.swift`, `MenuBarStatusFormatter.swift`, `ProviderRotationController.swift`, `ProviderConfigurationStore.swift`, `ClaudeAccountSettings.swift`, `ProviderRefreshCoordinator.swift`, `LocalProviderSnapshotLoader.swift`, and `PollingPolicy.swift` for UI-only rendering details that should stay in `PitwallApp`.
-    - Confirm `Sources/PitwallCore/*` remains provider-data/domain focused: no AppKit/SwiftUI imports, no menu/popover concepts, no UI copy that belongs in presentation, and no direct reads of real provider credential files.
-    - Preserve these boundaries while auditing: provider logic belongs in `PitwallCore`/`PitwallAppSupport`; AppKit/SwiftUI composition belongs in `PitwallApp`; secrets remain behind `ProviderSecretStore`; saved Claude credentials are never rendered; Codex/Gemini snapshots remain sanitized/passive only.
-    - Refactor only if the audit finds concrete boundary leakage, misleading naming, avoidable duplication, or untested behavior that can be improved without weakening existing coverage.
-    - If refactoring, update or add focused app-support tests under `Tests/PitwallAppSupportTests/` for any moved behavior; avoid screenshot/UI automation in this step.
-    - Do not add Phase 4 features such as durable history, diagnostics export, notifications, GitHub heatmap, production packaging, or new provider APIs.
-    - Validation: run `swift test` and `swift build`, inspect output for warnings as well as failures, and fix any unexpected regression before marking complete.
-    - If no refactor is needed, rerun validation and mark this step complete with "no code changes needed" plus the validation results.
-  - Completed notes:
-    - Audited the Phase 3 app/app-support/core boundaries and found provider-state construction embedded in the AppKit menu bar controller.
-    - Added `ProviderStateFactory` in `PitwallAppSupport` for profile normalization, initial sanitized placeholder app state, and configured/skipped/missing provider-state construction.
-    - Simplified `MenuBarController` so AppKit status item, popover, timer, and callback coordination stay in `PitwallApp` while provider/configuration behavior is testable in app support.
-    - Added focused app-support tests for provider visibility, skipped-provider configurability, passive state preservation, Claude credential privacy labels, expired refresh disabling, and sanitized placeholder state.
-    - Review-only lane: completed locally because the active environment policy does not permit spawning review subagents without an explicit user request for delegated agent work; review focused on boundary placement, clean-room scope, credential privacy, and honest confidence labeling.
-    - Validation: `swift test` passes 56 XCTest cases with 0 failures and no warnings emitted; `swift build` passes with no warnings emitted.
 
-### Milestone: Phase 3 First Usable macOS Provider Parity
+### Milestone: Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap
 **Acceptance Criteria:**
-- [x] The app launches as a menu bar app on macOS 13+ with no Dock icon.
-- [x] A user can configure Claude credentials manually and test the connection without browser-cookie extraction.
-- [x] Claude, Codex, and Gemini are all visible in the popover/settings as first-class providers, even when some are missing configuration.
-- [x] Menu bar text and provider cards show action guidance and confidence labels rather than fake precision.
-- [x] Manual refresh works and does not bypass secret-storage or privacy constraints.
-- [x] First-run onboarding can be skipped, and skipped providers remain configurable rather than fatal.
-- [x] All phase tests pass
-- [x] No regressions in previous phase tests
+- [ ] History retention/downsampling tests cover last-24-hours retention, hourly downsampling, and seven-day expiry.
+- [ ] Diagnostics export redacts cookies, tokens, auth headers, account ids when unnecessary, raw responses, prompts, and model responses.
+- [ ] Notifications are user-configurable and do not fire when disabled.
+- [ ] GitHub heatmap fetches the last 12 weeks through GraphQL variables and handles 401/403 as invalid token state.
+- [ ] GitHub token storage uses Keychain and never renders the token back after saving.
+- [ ] The reproduction checklist is substantially satisfied for the macOS v1 scope.
+- [ ] All phase tests pass
+- [ ] No regressions in previous phase tests
 
 **On Completion:**
-- Deviations from plan: Review-only lane completed locally because subagent spawning requires explicit user delegation in the active environment.
-- Tech debt / follow-ups: no Phase 3 follow-ups recorded
-- Ready for next phase: yes
+- Deviations from plan: none recorded yet
+- Tech debt / follow-ups: none recorded yet
+- Ready for next phase: no
