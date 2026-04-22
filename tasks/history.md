@@ -2,6 +2,10 @@
 
 ## 2026-04-21
 
+- Phase 4 Step 4.6 completed: wired Phase 4 history, diagnostics, notifications, and optional GitHub heatmap state into the macOS app surface.
+- Replaced the popover history placeholder with compact derived-history sparklines, added a redacted diagnostics export view, surfaced optional GitHub contribution heatmap data, and persisted Phase 4 settings plus write-only GitHub token saves through the app controller.
+- Notification scheduling now flows through the app-level refresh path with duplicate suppression, and disabled history retention clears/suppresses retained derived history display.
+- Validation: `swift test` passes 72 XCTest cases with 0 failures and no warnings emitted. `swift build` passes with no warnings emitted.
 - Phase 4 Step 4.5 completed: added optional GitHub heatmap core request/response models, GraphQL-variable request construction, 12-week response mapping, hourly automatic refresh policy with manual bypass, invalid-token mapping for 401/403, and write-only token management through `ProviderSecretStore`.
 - Added Phase 4 settings persistence for history, diagnostics, notifications, and non-secret GitHub heatmap preferences; GitHub personal access tokens stay out of `UserDefaults`. Added a native GitHub heatmap settings section that accepts new token input without rendering saved token values.
 - Validation: `swift build` passes with no warnings emitted. `swift test` passes 72 XCTest cases with 0 failures and no warnings emitted.

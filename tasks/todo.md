@@ -9,7 +9,8 @@
 - [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
 - [x] Phase 3 First Usable macOS Provider Parity completed and archived to `tasks/phases/phase-3.md`.
 - [x] Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap planned just-in-time from completed Phase 3 boundaries.
-- [ ] Ready for `$run` to start Phase 4 Step 4.6.
+- [x] Phase 4 Step 4.6 completed.
+- [ ] Ready for `$run` to start Phase 4 Step 4.7.
 
 ## Phase 4: V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap
 
@@ -117,7 +118,7 @@
     - Add `GitHubHeatmapCoordinator` with injected transport/clock, hourly automatic refresh limiting, manual bypass, invalid-token state handling, and no live GitHub calls in tests.
     - Add `GitHubHeatmapSettingsView` and connect it from `SettingsView`, ensuring saved token values are never rendered back into UI state after save.
     - Validation: run `swift build` and `swift test`. During this step, later Phase 4 UI wiring tests or gaps for Step 4.6 may still be expected; fix all GitHub heatmap/settings test failures, syntax issues, and unrelated regressions before marking the step complete.
-- [ ] Step 4.6: Wire history, diagnostics, notifications, and heatmap into the macOS app surface
+- [x] Step 4.6: Wire history, diagnostics, notifications, and heatmap into the macOS app surface
   - Files: modify `Sources/PitwallApp/MenuBarController.swift`, modify `Sources/PitwallApp/PopoverController.swift`, modify `Sources/PitwallApp/Views/PopoverContentView.swift`, modify `Sources/PitwallApp/Views/ProviderCardView.swift`, modify `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/DiagnosticsExportView.swift`, create `Sources/PitwallApp/Views/GitHubHeatmapView.swift`, create `Sources/PitwallApp/Views/HistorySparklineView.swift`
   - Replace "History pending" placeholders with compact sparklines backed by derived snapshots when available.
   - Add settings controls for diagnostics export, notification preferences, and optional GitHub heatmap configuration.
@@ -128,6 +129,12 @@
   - Commands: `swift test`, `swift build`
   - Expected result: all Phase 1-4 tests pass with no warnings emitted, and the app target builds for macOS 13+.
   - Fix unexpected failures before marking green.
+  - Implementation plan for next run:
+    - Run `swift test` and inspect the full output even if the command exits zero; fix any unexpected Phase 1-4 regression, warning, or skipped app-support failure before marking this step complete.
+    - Run `swift build` and inspect the app target output for warnings, especially around SwiftUI/AppKit wiring, actor isolation, notification scheduling, diagnostics export, and GitHub heatmap UI integration.
+    - If either command fails, make the smallest targeted fix, then rerun only the failing validation command until it passes cleanly.
+    - Re-check the Step 4.6 app-surface privacy boundaries while validating: saved GitHub tokens and Claude session keys must remain write-only, diagnostics export must stay redacted/local-only, and history sparklines must use derived snapshots only.
+    - Expected validation for this green step: both commands pass with no warnings; failures are unexpected regressions, not red-phase failures.
 - [ ] Step 4.8: Refactor v1 hardening boundaries if needed while keeping tests green
   - Files: modify `Sources/PitwallCore/*History*.swift`, `Sources/PitwallCore/*Diagnostics*.swift`, `Sources/PitwallCore/*GitHub*.swift`, `Sources/PitwallAppSupport/*History*.swift`, `Sources/PitwallAppSupport/*Diagnostics*.swift`, `Sources/PitwallAppSupport/*Notification*.swift`, `Sources/PitwallAppSupport/*GitHub*.swift`, `Sources/PitwallApp/Views/*`, and tests only as needed to clarify behavior without weakening coverage
   - Keep pure retention/redaction/GraphQL request logic in `PitwallCore`, app coordination and persistence in `PitwallAppSupport`, and SwiftUI/AppKit presentation in `PitwallApp`.
