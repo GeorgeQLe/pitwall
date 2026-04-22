@@ -2,6 +2,9 @@
 
 ## 2026-04-21
 
+- Phase 3 Step 3.9 completed: audited app boundaries and moved provider-state construction out of `MenuBarController` into a testable `ProviderStateFactory` in `PitwallAppSupport`.
+- Added app-support tests for provider visibility, skipped-provider configurability, passive state preservation, Claude credential privacy labels, expired refresh disabling, and sanitized placeholder state. Review-only lane completed locally due subagent policy.
+- Validation: `swift test` passes 56 XCTest cases with 0 failures and no warnings emitted. `swift build` passes with no warnings emitted.
 - Phase 3 Step 3.8 completed: ran macOS app validation for the first usable provider parity phase and confirmed all Phase 1-3 regression tests and app target compilation pass cleanly.
 - Validation: `swift test` passes 51 XCTest cases with 0 failures and no warnings emitted. `swift build` passes with no warnings emitted. No source changes were needed.
 - Phase 3 Step 3.7 completed: added a `PitwallAppSupportTests` target with regression coverage for menu bar formatting, reset display, provider rotation, provider card view models, provider configuration persistence, Claude credential setup privacy, and refresh coordination privacy boundaries.

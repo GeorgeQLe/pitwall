@@ -182,7 +182,7 @@
     - `swift test` passed all 51 XCTest cases with 0 failures and no compiler/test warnings emitted.
     - `swift build` passed with no warnings emitted and confirmed the macOS 13+ app target still builds.
     - No source changes were needed.
-- [ ] Step 3.9: Refactor app boundaries if needed while keeping tests green
+- [x] Step 3.9: Refactor app boundaries if needed while keeping tests green
   - Files: modify `Sources/PitwallAppSupport/*`, `Sources/PitwallApp/Views/*`, `Sources/PitwallApp/MenuBarController.swift`, `Sources/PitwallApp/PopoverController.swift`, and tests only as needed to clarify behavior without weakening coverage
   - Keep provider logic in `PitwallCore`/`PitwallAppSupport` and presentation code in `PitwallApp`.
   - Preserve clean-room constraints, secret privacy, and honest confidence labels.
@@ -198,19 +198,26 @@
     - Do not add Phase 4 features such as durable history, diagnostics export, notifications, GitHub heatmap, production packaging, or new provider APIs.
     - Validation: run `swift test` and `swift build`, inspect output for warnings as well as failures, and fix any unexpected regression before marking complete.
     - If no refactor is needed, rerun validation and mark this step complete with "no code changes needed" plus the validation results.
+  - Completed notes:
+    - Audited the Phase 3 app/app-support/core boundaries and found provider-state construction embedded in the AppKit menu bar controller.
+    - Added `ProviderStateFactory` in `PitwallAppSupport` for profile normalization, initial sanitized placeholder app state, and configured/skipped/missing provider-state construction.
+    - Simplified `MenuBarController` so AppKit status item, popover, timer, and callback coordination stay in `PitwallApp` while provider/configuration behavior is testable in app support.
+    - Added focused app-support tests for provider visibility, skipped-provider configurability, passive state preservation, Claude credential privacy labels, expired refresh disabling, and sanitized placeholder state.
+    - Review-only lane: completed locally because the active environment policy does not permit spawning review subagents without an explicit user request for delegated agent work; review focused on boundary placement, clean-room scope, credential privacy, and honest confidence labeling.
+    - Validation: `swift test` passes 56 XCTest cases with 0 failures and no warnings emitted; `swift build` passes with no warnings emitted.
 
 ### Milestone: Phase 3 First Usable macOS Provider Parity
 **Acceptance Criteria:**
-- [ ] The app launches as a menu bar app on macOS 13+ with no Dock icon.
-- [ ] A user can configure Claude credentials manually and test the connection without browser-cookie extraction.
-- [ ] Claude, Codex, and Gemini are all visible in the popover/settings as first-class providers, even when some are missing configuration.
-- [ ] Menu bar text and provider cards show action guidance and confidence labels rather than fake precision.
-- [ ] Manual refresh works and does not bypass secret-storage or privacy constraints.
-- [ ] First-run onboarding can be skipped, and skipped providers remain configurable rather than fatal.
-- [ ] All phase tests pass
-- [ ] No regressions in previous phase tests
+- [x] The app launches as a menu bar app on macOS 13+ with no Dock icon.
+- [x] A user can configure Claude credentials manually and test the connection without browser-cookie extraction.
+- [x] Claude, Codex, and Gemini are all visible in the popover/settings as first-class providers, even when some are missing configuration.
+- [x] Menu bar text and provider cards show action guidance and confidence labels rather than fake precision.
+- [x] Manual refresh works and does not bypass secret-storage or privacy constraints.
+- [x] First-run onboarding can be skipped, and skipped providers remain configurable rather than fatal.
+- [x] All phase tests pass
+- [x] No regressions in previous phase tests
 
 **On Completion:**
-- Deviations from plan: none recorded yet
-- Tech debt / follow-ups: none recorded yet
-- Ready for next phase: no
+- Deviations from plan: Review-only lane completed locally because subagent spawning requires explicit user delegation in the active environment.
+- Tech debt / follow-ups: no Phase 3 follow-ups recorded
+- Ready for next phase: yes
