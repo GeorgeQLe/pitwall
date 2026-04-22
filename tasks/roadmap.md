@@ -501,6 +501,8 @@ Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native 
 
 ## Phase 6a: macOS Local Install
 
+> Test strategy: tests-after
+
 **Goal:** Turn the existing `PitwallApp` SwiftPM executable into a `.app` bundle the author can drop into `/Applications` with a single `make install`, so Pitwall can replace the legacy ClaudeUsage menu bar as a daily driver without any Apple Developer Program cost.
 
 **Scope:**
@@ -530,6 +532,91 @@ Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native 
 **Parallelization:** serial
 
 **Coordination Notes:** Touches `Package.swift`, `Sources/PitwallApp/Info.plist`, `Sources/PitwallApp/MenuBarController.swift`, `Sources/PitwallApp/Views/SettingsView.swift`, new `scripts/build-app-bundle.sh`, new `Makefile`, new `VERSION` file. Tight file coupling around the app bundle wiring makes serial execution the correct mode; no agent-team benefit here.
+
+### Execution Profile
+**Parallel mode:** serial
+**Integration owner:** main agent
+**Conflict risk:** medium
+**Review gates:** correctness, tests, security, UX
+
+**Subagent lanes:** none
+
+### Implementation
+
+- Step 6a.1: Add the version source and an AppKit-free version derivation helper
+  - Files: create `VERSION` (content `1.0.0`), create `Sources/PitwallAppSupport/PackagingVersion.swift` (pure struct: `PackagingVersion` with `shortString`, `build`, and a `PackagingVersionProvider` protocol that exposes `current() -> PackagingVersion`; include a `StaticPackagingVersionProvider` fixture implementation for tests), modify `Sources/PitwallApp/PitwallApp.swift` (or `AppDelegate.swift`) to read the version from a build-time-generated constant or bundle lookup.
+  - Rationale: version is touched by both the bundle builder (writes into `Info.plist`) and the in-app About view (reads at runtime). Centralize the in-process side in `PitwallAppSupport` behind a protocol seam so it is unit-testable without launching the app.
+  - The `VERSION` file is the single source of truth for `CFBundleShortVersionString`. `CFBundleVersion` is computed at build time via `git rev-list --count HEAD`.
+
+- Step 6a.2: Build the `.app` bundle wrapper script
+  - Files: create `scripts/build-app-bundle.sh` (shell script that runs `swift build --configuration release --product PitwallApp`, then constructs `build/Pitwall.app/Contents/{MacOS,Resources}`, copies the built binary to `Contents/MacOS/PitwallApp`, copies an expanded `Info.plist` with real `CFBundleShortVersionString` + `CFBundleVersion` + `CFBundleExecutable=PitwallApp` + `NSHumanReadableCopyright`, and ad-hoc signs via `codesign --sign - --deep --force --options=runtime build/Pitwall.app`), modify `Sources/PitwallApp/Info.plist` (add `CFBundleExecutable`, `NSHumanReadableCopyright`, ensure `LSUIElement=true` and `LSMinimumSystemVersion=13.0` remain; leave version strings as literal placeholders `{{CFBundleShortVersionString}}` / `{{CFBundleVersion}}` that the script substitutes).
+  - Script must exit non-zero on any failure (`set -euo pipefail`).
+  - Script must be idempotent: wipes `build/Pitwall.app/` before re-assembling.
+
+- Step 6a.3: Add the `Makefile` with build / install / uninstall / run targets
+  - Files: create `Makefile` at repo root.
+  - `make build` → runs `scripts/build-app-bundle.sh`.
+  - `make install` → depends on `build`; `cp -R build/Pitwall.app /Applications/Pitwall.app` (using `rm -rf /Applications/Pitwall.app` first if it exists); verifies `codesign --verify --verbose /Applications/Pitwall.app`; prints success message with "Open Pitwall from /Applications — it will appear in your menu bar."
+  - `make uninstall` → removes `/Applications/Pitwall.app`; runs a `swift run` command against a small `scripts/unregister-login-item.swift` one-liner (or invokes the app binary with a `--unregister-login-item` flag added in Step 6a.5) to unregister `SMAppService.mainApp`; prints note that Application Support + Keychain data are preserved.
+  - `make run` → `open build/Pitwall.app` after build.
+  - Include a `make clean` target that removes `build/`.
+
+- Step 6a.4: Wire the menu bar SF Symbol icon
+  - Files: modify `Sources/PitwallApp/MenuBarController.swift`.
+  - Replace whatever current image the status item uses with `NSImage(systemSymbolName: "gauge.with.dots.needle.67percent", accessibilityDescription: "Pitwall")`.
+  - Keep `NSImage.isTemplate` off (SF Symbols auto-adapt via the system's template handling); confirm both light and dark menu bar render correctly by visual check on macOS.
+  - Do **not** introduce a bespoke `.imageset` or `.icns` asset in Phase 6a — that is reserved for a possible 6b upgrade.
+
+- Step 6a.5: Wire the `SMAppService` login-item and Settings toggle
+  - Files: create `Sources/PitwallAppSupport/LoginItemService.swift` (protocol `LoginItemService` with `isEnabled: Bool { get }`, `setEnabled(_:) throws`, and a `SMAppServiceLoginItemService` implementation that wraps `SMAppService.mainApp.register()` / `.unregister()` + `status` read; plus an `InMemoryLoginItemService` fixture for tests), modify `Sources/PitwallApp/Views/SettingsView.swift` (bind the existing Launch-at-Login `Toggle` to the service; show a friendly error state if `setEnabled` throws), modify `Sources/PitwallApp/AppDelegate.swift` if needed to inject the service.
+  - Add a `--unregister-login-item` CLI entry point to `PitwallApp`'s `main` that immediately calls `SMAppService.mainApp.unregister()` and exits 0 — used by `make uninstall` so it can clean up without leaving the app running.
+  - Link requirement: `.linkedFramework("ServiceManagement")` added to the `PitwallApp` target's `linkerSettings` in `Package.swift`.
+
+- Step 6a.6: Add the first-launch Application Support + Keychain health probe
+  - Files: create `Sources/PitwallAppSupport/PackagingProbe.swift` (`PackagingProbeResult` struct with `appSupportWritable: Bool`, `keychainRoundTripSucceeded: Bool`, `errors: [String]`; `PackagingProbe` struct takes a `FileManager`, an app-support root URL, and a `ProviderSecretStore` reference for the round-trip test; `runOnce(eventStore: DiagnosticEventStore, defaults: UserDefaults, firstLaunchKey: String)` method that returns early if the key is already set and otherwise runs both probes, appends two events to `DiagnosticEventStore`, and sets the key), modify `Sources/PitwallApp/MenuBarController.swift` or `AppDelegate.swift` to call `runOnce(...)` exactly once during app startup.
+  - The Keychain round-trip writes a disposable item (e.g., service `com.pitwall.app.packaging-probe`, account `probe`, random value), reads it back, compares, and deletes it. It must NOT touch any production `ProviderSecretKey`.
+  - Events logged through the existing Phase 4 `DiagnosticEventStore`; redaction remains subject to `DiagnosticsRedactor`.
+
+- Step 6a.7: Add the "Welcome to Pitwall" first-launch banner
+  - Files: create `Sources/PitwallApp/Views/WelcomeBannerView.swift` (SwiftUI view shown above the popover content on first launch), modify `Sources/PitwallApp/Views/PopoverContentView.swift` to conditionally render the banner based on a `UserDefaults` key (e.g., `pitwall.welcome.v1.dismissed`), modify `Sources/PitwallAppSupport/` if a state flag needs to live outside the view.
+  - Banner copy (final copy may be adjusted during implementation, but must include):
+    - "Welcome to Pitwall. You're replacing a previous menu bar app — Pitwall does not copy data from it."
+    - "Paste your Claude `sessionKey` and `lastActiveOrg` in Settings → Claude account to get started."
+    - "Secrets are stored in the macOS Keychain."
+  - Dismiss button sets the `UserDefaults` key and hides the banner forever.
+
+- Step 6a.8: Add the install smoke-test script
+  - Files: create `scripts/smoke-install.sh` that (a) runs `scripts/build-app-bundle.sh` into a tmp `$TMPDIR/pitwall-smoke`, (b) asserts the bundle structure (`Contents/MacOS/PitwallApp` exists and is executable, `Contents/Info.plist` contains both version strings filled in), (c) runs `codesign --verify --verbose` against the tmp bundle, (d) runs `mdls`-style `defaults read` to confirm `CFBundleShortVersionString` matches `VERSION`, (e) tears down.
+  - Script must exit non-zero on any failure; safe to run in CI later without an Apple Developer account.
+
+### Green
+
+- Step 6a.9: Write regression tests covering the new code paths
+  - Files: create `Tests/PitwallAppSupportTests/PackagingVersionTests.swift` (asserts `PackagingVersion.shortString` matches `VERSION`-file content when read through the provider protocol; asserts `build` is a positive integer), create `Tests/PitwallAppSupportTests/LoginItemServiceTests.swift` (uses `InMemoryLoginItemService` to assert `setEnabled(true)` toggles the stored state exactly once; `setEnabled(false)` toggles back; idempotent calls do not double-register), create `Tests/PitwallAppSupportTests/PackagingProbeTests.swift` (injects an in-memory `FileManager` seam + `InMemorySecretStore` + fresh `UserDefaults`; asserts first `runOnce` call writes exactly two `DiagnosticEventStore` entries and sets the `UserDefaults` key; asserts second `runOnce` call is a no-op; asserts an Application Support write failure is logged as `appSupportWritable: false` with an error string; asserts a Keychain round-trip value mismatch is logged as `keychainRoundTripSucceeded: false`).
+  - Reuse `InMemorySecretStore` from Phase 2 where possible — do not duplicate.
+  - No XCUITest or snapshot tests; the banner view is exercised indirectly through the popover view model in a small unit test that flips the `UserDefaults` key.
+
+- Step 6a.10: Run the full test suite and packaging smoke checks
+  - Commands: `swift build`, `swift test` (confirm Phase 5's 193-test baseline plus the new Phase 6a tests all pass, zero regressions), `scripts/smoke-install.sh` (exits 0), `make build` then manual verification of `build/Pitwall.app` via `open`, `make install` and visual confirmation that the menu bar icon appears in `/Applications/Pitwall.app`, `make uninstall` and verification the app is gone while Application Support + Keychain items persist.
+  - Record the test count in `tasks/history.md` as the new Phase 6a baseline.
+
+- Step 6a.11: Refactor while keeping tests green if needed
+  - Files: touch only the new Phase 6a files + `Sources/PitwallApp/Views/SettingsView.swift` / `MenuBarController.swift` / `AppDelegate.swift`.
+  - No refactor of Phase 1-5 code. If a Phase 6a step exposes a gap in a Phase 1-5 contract, record it as a post-6a follow-up rather than widening 6a.
+
+### Milestone: Phase 6a macOS Local Install
+**Acceptance Criteria:** (preserve from above — do not rewrite)
+- [ ] `make install` on a clean macOS 13+ system produces `/Applications/Pitwall.app`; `codesign --verify --verbose` exits 0.
+- [ ] Double-clicking `Pitwall.app` launches without a Gatekeeper block (bundle was never quarantined because it was built locally).
+- [ ] Menu bar shows the SF Symbol icon; clicking opens the Phase 3 popover without change.
+- [ ] "Launch at Login" toggle in `SettingsView` flips `SMAppService.mainApp` state; verified by reboot.
+- [ ] `make uninstall` removes the bundle and unregisters the login-item; Application Support + Keychain items remain intact (verified via `ls` + `security find-generic-password`); reinstall restores prior state.
+- [ ] First-launch health check writes two `DiagnosticEventStore` events on first install and does not repeat on subsequent launches.
+- [ ] `CFBundleShortVersionString` / `CFBundleVersion` are derived at build time, not hard-coded; one source of truth for version bumps.
+- [ ] macOS `swift build` + `swift test` still pass at the Phase 5 baseline (193/193) with zero regressions after Phase 6a lands.
+- [ ] No new `import AppKit` / `import UserNotifications` / `import Security` in `PitwallShared` or platform shells (Phase 5 privacy fences preserved).
+- [ ] All phase tests pass (Phase 6a adds `PackagingVersionTests`, `LoginItemServiceTests`, `PackagingProbeTests`).
+- [ ] No regressions in previous phase tests.
 
 **On Completion** (fill in when phase is done):
 - Deviations from plan: [none, or describe]
