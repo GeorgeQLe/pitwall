@@ -648,13 +648,7 @@ Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native 
 - [ ] `Pitwall.app` runs under hardened runtime with no sandbox entitlement and no entitlement beyond what Phase 1-5 behavior requires.
 - [ ] All Phase 1-6a tests continue to pass on macOS with zero regressions.
 
-**Manual Tasks:**
-- Enroll in the Apple Developer Program ($99/yr) _(blocks: Step 6b.1)_.
-- Request + install Developer ID Application certificate from Apple Developer portal _(blocks: Step 6b.1)_.
-- Generate app-specific password at appleid.apple.com for `notarytool` _(blocks: the first notarization submission)_.
-- Generate Sparkle EdDSA key pair; store private key in password manager _(blocks: the first appcast signature)_.
-- Publish `appcast.xml` hosting URL (GitHub Pages or raw file path) _(blocks: the first Sparkle update check)_.
-- Create self-hosted Homebrew tap repo `georgele/homebrew-pitwall` OR submit to `homebrew-cask` _(blocks: the first `brew install --cask` verification)_.
+**Manual Tasks:** see `tasks/manual-todo.md` → "Phase 6b — macOS Public Release prerequisites" (Apple Developer enrollment, Developer ID cert, `notarytool` credentials, Sparkle EdDSA key, `appcast.xml` hosting, Homebrew tap). All are blockers for Step 6b.1 or later.
 
 **Parallelization:** serial
 

@@ -175,20 +175,17 @@
 
 ## Phase 6b: macOS Public Release (deferred)
 
-Not scoped for immediate execution. See `tasks/roadmap.md` → Phase 6b for goals, scope, acceptance criteria, and manual-task prerequisites. Plan just-in-time via `/plan-phase 6b` only after Phase 6a ships and the user confirms intent to distribute publicly.
+Not scoped for immediate execution. See `tasks/roadmap.md` → Phase 6b for goals, scope, and acceptance criteria, and `tasks/manual-todo.md` → "Phase 6b — macOS Public Release prerequisites" for the human-gated blockers. Plan just-in-time via `/plan-phase 6b` only after Phase 6a ships, the manual-todo prerequisites are resolved, and the user confirms intent to distribute publicly.
 
 ## Post-v1 / Post-packaging Follow-ups (not scheduled)
 
-Documented platform limitations carried forward from the Phase 5 CI gap. They do not have an owning phase yet; promote into a new phase when ready.
+Documented platform limitations carried forward from the Phase 5 CI gap. They do not have an owning phase yet; promote into a new phase when ready. Each code-gated item below is blocked on a human-gated prerequisite tracked in `tasks/manual-todo.md` → "Cross-platform parity prerequisites" (Windows CI host, Linux CI host, end-to-end hardware UX validation).
 
-- Wire a real Windows CI runner and `swift build --triple x86_64-unknown-windows-msvc` + `swift test` on a Windows host.
-- Wire a real Linux CI runner and `swift build` + `swift test` on a Linux host.
-- Wire production Windows Credential Manager behind `WindowsCredentialManagerBackend`.
-- Wire production `libsecret` / Secret Service behind `LinuxSecretServiceBackend`.
-- Wire production WinRT `ToastNotificationManager` behind `WindowsToastDelivering`.
-- Wire production `libnotify` / `org.freedesktop.Notifications` D-Bus behind `LinuxNotificationDelivering`.
-- Wire production Win32 `Shell_NotifyIcon` tray glue on top of `WindowsTrayMenuViewModel`.
-- Wire production `libayatana-appindicator` glue (plus "no tray available" fallback) on top of `LinuxTrayMenuViewModel`.
-- Wire real filesystem probes for Codex/Gemini presence on Windows (`FindFirstFileW`) and Linux (`stat(2)`) behind existing `*FilesystemProbing` seams.
-- End-to-end tray + notification UX validation on real Windows / Linux desktop sessions.
+- Wire production Windows Credential Manager behind `WindowsCredentialManagerBackend`. _Blocked on: Windows CI host._
+- Wire production `libsecret` / Secret Service behind `LinuxSecretServiceBackend`. _Blocked on: Linux CI host._
+- Wire production WinRT `ToastNotificationManager` behind `WindowsToastDelivering`. _Blocked on: Windows CI host._
+- Wire production `libnotify` / `org.freedesktop.Notifications` D-Bus behind `LinuxNotificationDelivering`. _Blocked on: Linux CI host._
+- Wire production Win32 `Shell_NotifyIcon` tray glue on top of `WindowsTrayMenuViewModel`. _Blocked on: Windows CI host._
+- Wire production `libayatana-appindicator` glue (plus "no tray available" fallback) on top of `LinuxTrayMenuViewModel`. _Blocked on: Linux CI host._
+- Wire real filesystem probes for Codex/Gemini presence on Windows (`FindFirstFileW`) and Linux (`stat(2)`) behind existing `*FilesystemProbing` seams. _Blocked on: Windows + Linux CI hosts._
 - Windows + Linux packaging specs analogous to `specs/pitwall-macos-packaging.md`, once real platform backends are wired.
