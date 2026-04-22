@@ -12,6 +12,7 @@ struct SettingsView: View {
 
     @State private var profiles: [ProviderProfileConfiguration]
     @State private var preferences: UserPreferences
+    @State private var gitHubHeatmapSettings: GitHubHeatmapSettings
     @State private var message: String?
     @State private var isSaving = false
 
@@ -32,6 +33,7 @@ struct SettingsView: View {
         self.onRefresh = onRefresh
         _profiles = State(initialValue: Self.normalizedProfiles(from: snapshot.providerProfiles))
         _preferences = State(initialValue: snapshot.userPreferences)
+        _gitHubHeatmapSettings = State(initialValue: GitHubHeatmapSettings())
     }
 
     var body: some View {
@@ -52,6 +54,8 @@ struct SettingsView: View {
                     DisplayPreferencesView(preferences: $preferences)
                     Divider()
                     NotificationPreferencesView(preferences: notificationPreferences)
+                    Divider()
+                    GitHubHeatmapSettingsView(settings: $gitHubHeatmapSettings)
                 }
                 .padding(.trailing, 6)
             }
