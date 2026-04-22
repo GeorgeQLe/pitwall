@@ -13,7 +13,8 @@
 - [x] Phase 5 Step 5.1 cross-platform architecture selected and documented.
 - [x] Phase 5 Step 5.2 shared behavior contracts extracted into `PitwallShared`.
 - [x] Phase 5 Step 5.3 Windows tray/menu parity shipped against `PitwallShared` contracts.
-- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.4 (Linux tray/menu parity).
+- [x] Phase 5 Step 5.4 Linux tray/menu parity shipped against `PitwallShared` contracts.
+- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.5 (platform-specific Codex/Gemini passive detection adapters).
 
 ## Phase 5: Cross-Platform V1 Parity
 
@@ -145,7 +146,7 @@
     - Credential Manager interop must fail closed: a failed save must not silently succeed, and a missing credential must return "not configured," never a degraded default that leaks state.
     - Do not import `Security.framework` symbols in Windows adapters; keep any Keychain code macOS-only via `#if canImport(Security)` fences.
   - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.3, (2) run macOS `swift build` + `swift test` to confirm zero macOS regressions and the documented Windows validation command on a Windows host (or record the CI gap explicitly), (3) mark Step 5.3 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) write the Step 5.4 plan into `tasks/todo.md`, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) start the approval UI for Step 5.4 by calling `EnterPlanMode` first, write a brief pass-through plan, then call `ExitPlanMode`, and (10) stop before implementing Step 5.4.
-- [ ] Step 5.4: Implement Linux tray/menu parity against shared contracts
+- [x] Step 5.4: Implement Linux tray/menu parity against shared contracts
   - Files: create `Sources/PitwallLinux/*`, create `Tests/PitwallLinuxTests/*`, modify `Package.swift` to add the `PitwallLinux` target (library, conditional equivalent so macOS builds ignore it — mirror the Step 5.3 treatment of `PitwallWindows`), update `docs/cross-platform-architecture.md` only if the Linux shell discovers a concrete seam that is missing from the current doc.
   - Architecture anchor: the cross-platform architecture doc (`docs/cross-platform-architecture.md`) plus the `PitwallShared` contracts shipped in Step 5.2 (`ProviderConfigurationStorage`, `ProviderHistoryStorage`, `SettingsStorage`, `NotificationScheduling`, `NotificationPolicy`, `UserPreferences`, `NotificationPreferences`) are the binding contract. The Linux shell consumes these protocols; it must not reach into `PitwallCore` storage internals and must not depend on `PitwallAppSupport` or `PitwallWindows`.
   - Scope:
@@ -171,9 +172,30 @@
     - Do not import `Security.framework` or WinRT symbols in Linux adapters; fence any macOS Keychain code behind `#if canImport(Security)` and any Windows Credential Manager code behind `#if os(Windows)` so nothing leaks into Linux builds.
   - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.4, (2) run macOS `swift build` + `swift test` to confirm zero macOS regressions and the documented Linux validation command on a Linux host (or record the CI gap explicitly in `docs/cross-platform-architecture.md`), (3) mark Step 5.4 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) write the Step 5.5 plan into `tasks/todo.md`, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) start the approval UI for Step 5.5 by calling `EnterPlanMode` first, write a brief pass-through plan, then call `ExitPlanMode`, and (10) stop before implementing Step 5.5. Do not call `ExitPlanMode` from normal mode. If `EnterPlanMode` is denied because an explicit user request is required, stop and ask the user to run `/plan Step 5.5` explicitly instead of falling through.
 - [ ] Step 5.5: Add platform-specific Codex/Gemini passive detection adapters
-  - Files: create platform adapter files under the Windows/Linux source directories selected in Step 5.1, create fixture tests under the matching platform test targets
-  - Keep detection prompt/token safe on each supported platform by reading only allowed metadata, treating auth files as presence-only, and returning sanitized evidence.
-  - Document platform path differences and unsupported metadata sources instead of silently broadening collection.
+  - Files: create `Sources/PitwallWindows/WindowsCodexDetector.swift` + `Sources/PitwallWindows/WindowsGeminiDetector.swift`, create `Sources/PitwallLinux/LinuxCodexDetector.swift` + `Sources/PitwallLinux/LinuxGeminiDetector.swift`, create fixture tests under `Tests/PitwallWindowsTests/` and `Tests/PitwallLinuxTests/`; update `docs/cross-platform-architecture.md` with a "Codex/Gemini Passive Detection (Step 5.5)" section that records per-platform path maps and any unsupported metadata sources.
+  - Architecture anchor: `PitwallCore` already defines the Codex/Gemini passive-detection contract (authoritative presence-only semantics, sanitized evidence, prompt-safe reads). Step 5.5 adds *platform-specific path resolvers and metadata readers* behind narrow backend seams on Windows and Linux. It must not reach into `PitwallCore` detector internals and must not depend on `PitwallAppSupport`; Linux must not depend on `PitwallWindows` and vice versa.
+  - Scope:
+    - Windows Codex detector — resolve `%APPDATA%\Codex\` (or the documented equivalent once confirmed) via an injected root, enumerate auth artifacts as presence-only booleans, read only size / mtime metadata, and return sanitized evidence to the shared detector contract. No file-content reads; no token bytes enter memory.
+    - Windows Gemini detector — same shape against `%APPDATA%\Gemini\` (or the documented equivalent). Path resolution is injected, mirroring `WindowsStorageRoot`.
+    - Linux Codex detector — resolve `$XDG_CONFIG_HOME/codex/` with `~/.config/codex/` fallback, presence-only reads, injected root, same sanitization rules.
+    - Linux Gemini detector — resolve `$XDG_CONFIG_HOME/gemini/` with `~/.config/gemini/` fallback, same shape.
+    - Narrow backend seams per detector (`WindowsCodexFilesystemProbing`, `LinuxCodexFilesystemProbing`, etc.) so tests inject a fixture probe; production wires the real filesystem reader. The probe must surface only allowed metadata (existence, size, mtime) — never raw bytes.
+    - Per-platform suppressed fallback (`WindowsCodexSuppressedProbe` / `LinuxCodexSuppressedProbe`) for environments where the directory is inaccessible; the shell surfaces the degraded state, it does not fabricate evidence.
+    - Fixture tests covering: presence-only contract (no file bytes leaked), sanitization (path redaction, no token-shaped substrings echoed back), injected-root usage (tests never touch real user home), and suppressed-probe fail-closed behavior.
+  - Test strategy: tests-after phase, but ship unit tests alongside the adapters covering presence-only contract and sanitization. Cross-platform regression lands in Step 5.6.
+  - Validation / acceptance:
+    - `swift build` on macOS still passes. `swift test` on macOS still passes all 144 pre-existing tests (112 pre-5.4 + 32 `PitwallLinuxTests`). Zero macOS regressions.
+    - On Windows / Linux hosts (or documented CI gap), platform builds and test suites pass. Because adapters stay pure Foundation, macOS runs exercise both suites as a portability proxy, mirroring 5.3 / 5.4.
+    - Grep check: `Sources/PitwallWindows/`-new + `Sources/PitwallLinux/`-new detectors contain no `import AppKit` / `import UserNotifications` / `import Security` / `import PitwallAppSupport`; Linux detectors do not import `PitwallWindows` and vice versa.
+    - Sanitization tests assert no token-shaped substring or full path appears in returned evidence.
+  - Execution profile: phase is `agent-team`; the `phase5-windows-shell` and `phase5-linux-shell` lanes each own their respective detector files and tests. Dispatch two `Agent` calls with `isolation: "worktree"` (one per platform) that can run in parallel since they do not overlap on files. The main agent integrates.
+  - Known risks / gotchas:
+    - Do not read the *contents* of Codex / Gemini auth files. Treat them as presence-only. Anything beyond size/mtime must be surfaced to the main agent as a scope question before coding.
+    - Path resolution on Linux must honor `XDG_CONFIG_HOME` env override only at the shell boundary; the detector protocol takes an already-resolved root (mirror `LinuxStorageRoot`).
+    - Windows path on `%APPDATA%` vs. `%LOCALAPPDATA%` may differ between Codex/Gemini builds; record the final choice in `docs/cross-platform-architecture.md` before merge.
+    - Do not import `Security.framework` or WinRT symbols in Linux adapters, and do not import `libsecret`-adjacent symbols in Windows adapters.
+    - Detector evidence must sanitize absolute paths so diagnostics exports do not leak user home directories.
+  - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.5, (2) run macOS `swift build` + `swift test` to confirm zero macOS regressions and the documented Windows / Linux validation commands on platform hosts (or record the CI gap explicitly in `docs/cross-platform-architecture.md`), (3) mark Step 5.5 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) write the Step 5.6 plan into `tasks/todo.md`, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) start the approval UI for Step 5.6 by calling `EnterPlanMode` first, write a brief pass-through plan, then call `ExitPlanMode`, and (10) stop before implementing Step 5.6. Do not call `ExitPlanMode` from normal mode. If `EnterPlanMode` is denied because an explicit user request is required, stop and ask the user to run `/plan Step 5.6` explicitly instead of falling through.
 
 ### Green
 - [ ] Step 5.6: Write cross-platform regression tests covering acceptance criteria
