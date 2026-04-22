@@ -1,3 +1,6 @@
+# Pitwall Phase 6a Archive — macOS Local Install
+
+> Archived 2026-04-22 after Step 6a.11 closed as "no refactor required". Test baseline at close: 212 / 212. Source snapshot from `tasks/todo.md` at archival time.
 
 ## Phase 6a: macOS Local Install
 
