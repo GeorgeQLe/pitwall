@@ -122,6 +122,46 @@ Recorded when Phase 5 Step 5.5 landed the platform-specific Codex/Gemini passive
 - **Unsupported metadata sources (recorded, not resolved)**: neither platform currently exposes per-session token counts or rate-limit evidence beyond presence + size + mtime. Parsing `tmp/**/chats/session-*.json` for `tokenCount` (the macOS `GeminiLocalDetector` behavior) and scanning `logs/` for rate-limit hints (the macOS `CodexLocalDetector` behavior) requires reading file bytes, which is out of scope for Step 5.5's presence-only contract. A Step 5.6+ follow-up may add opt-in metadata extraction behind a documented prompt-safe reader.
 - **CI gap (recorded, not resolved)**: as with 5.3 / 5.4, there is no Windows / Linux CI host yet. Because the detectors are pure Foundation, macOS `swift test` exercises both suites as a portability proxy. Wiring real Windows `FindFirstFileW` / Linux `stat(2)` bindings + platform CI runners is a known follow-up.
 
+## Cross-Platform Regression Coverage (Step 5.6)
+
+Recorded when Phase 5 Step 5.6 landed the tests-only cross-platform regression suites. The acceptance bullets from the Phase 5 milestone map to the following suites:
+
+- **Provider visibility parity (Claude/Codex/Gemini enable + selection; disabled providers never reach the tray view model)**:
+  - `Tests/PitwallWindowsTests/WindowsCrossPlatformRegressionTests.swift::test_providerVisibility_roundTripAndDisabledProviderIsHidden`
+  - `Tests/PitwallLinuxTests/LinuxCrossPlatformRegressionTests.swift::test_providerVisibility_roundTripAndDisabledProviderIsHidden`
+  - Shared-layer anchor: `Tests/PitwallSharedTests/CrossPlatformRegressionTests.swift::test_providerVisibility_disabledProvidersDoNotReachViewModel`
+- **Tray/menu formatting parity (`WindowsStatusFormatter` and `LinuxStatusFormatter` emit byte-identical tooltips + card labels for the shared fixture)**:
+  - `WindowsCrossPlatformRegressionTests::test_statusFormatter_matchesSharedExpectedStrings` + `::test_trayBuilder_emitsCardsMatchingSharedExpectedLabels`
+  - `LinuxCrossPlatformRegressionTests::test_statusFormatter_matchesSharedExpectedStrings` + `::test_trayBuilder_emitsCardsMatchingSharedExpectedLabels`
+  - Parity is enforced by hard-coding the same `Expected` string constants in both platform suites; drift on either side fails the sibling test.
+- **Credential write-only behavior + secure-storage fallback enum (no plaintext read path; writes throw `backendUnavailable`; reads return `nil`; no silent on-disk fallback)**:
+  - `WindowsCrossPlatformRegressionTests::test_credentialStore_neverExposesPlaintextReadPath_onFailingBackend` + `::test_secureStorageDegradedStateEnum_isVisibleToShell`
+  - `LinuxCrossPlatformRegressionTests::test_credentialStore_neverExposesPlaintextReadPath_onFailingBackend` + `::test_secureStorageDegradedStateEnum_isVisibleToShell`
+- **Codex/Gemini sanitization (no absolute path, no token-shaped substring `sk-…` / `ghp_…` / `ya29.…` / `AIza…`, no file-content bytes in returned evidence)**:
+  - `WindowsCrossPlatformRegressionTests::test_codexDetector_sanitizesAbsolutePathsAndTokenShapedSubstrings` + `::test_geminiDetector_sanitizesAbsolutePathsAndTokenShapedSubstrings` + `::test_detectors_suppressedWhenProbeUnavailable_noFabricatedEvidence`
+  - `LinuxCrossPlatformRegressionTests::test_codexDetector_sanitizesAbsolutePathsAndTokenShapedSubstrings` + `::test_geminiDetector_sanitizesAbsolutePathsAndTokenShapedSubstrings` + `::test_detectors_suppressedWhenProbeUnavailable_noFabricatedEvidence`
+- **Diagnostics redaction parity (`WindowsDiagnosticsExporter` + `LinuxDiagnosticsExporter` emit the same redacted key set via the shared `DiagnosticsRedactor` for the same `DiagnosticsInput` fixture)**:
+  - `WindowsCrossPlatformRegressionTests::test_diagnosticsExport_redactedKeySet_matchesSharedDiagnosticsContract`
+  - `LinuxCrossPlatformRegressionTests::test_diagnosticsExport_redactedKeySet_matchesSharedDiagnosticsContract`
+  - Shared-layer anchor: `CrossPlatformRegressionTests::test_diagnosticsRedactor_redactsKnownTokenKeys`.
+- **History retention parity (`WindowsProviderHistoryStore` + `LinuxProviderHistoryStore` apply the same `ProviderHistoryRetention` window to a shared snapshot fixture)**:
+  - `WindowsCrossPlatformRegressionTests::test_historyStore_appliesSharedRetentionFixture`
+  - `LinuxCrossPlatformRegressionTests::test_historyStore_appliesSharedRetentionFixture`
+  - Shared-layer anchor: `CrossPlatformRegressionTests::test_providerHistoryRetention_windowsAndDownsamplesOnSharedFixture`.
+- **GitHub heatmap parity (`GitHubHeatmapResponseMapper` produces identical `GitHubHeatmapModels` output on each platform for a recorded fixture)**:
+  - `WindowsCrossPlatformRegressionTests::test_githubHeatmapClient_producesIdenticalMappingForRecordedFixture`
+  - `LinuxCrossPlatformRegressionTests::test_githubHeatmapClient_producesIdenticalMappingForRecordedFixture`
+  - Shared-layer anchor: `CrossPlatformRegressionTests::test_githubHeatmapResponseMapper_producesIdenticalOutputForRecordedFixture`.
+
+Notes on constraints honored by this step:
+
+- No new production code was added; the suites consume only the public adapter surfaces shipped in 5.2 / 5.3 / 5.4 / 5.5.
+- No new SwiftPM targets; suites live under the existing `PitwallSharedTests`, `PitwallWindowsTests`, and `PitwallLinuxTests` test targets.
+- New test files contain no `import AppKit` / `import UserNotifications` / `import Security` / `import PitwallAppSupport`; Linux tests do not import `PitwallWindows` and vice versa. "Parity" between Windows and Linux is asserted by each platform suite comparing its own adapter output to the same hard-coded `Expected` constants, not by a cross-shell import.
+- Fixture roots are injected as tmp directories; no test touches the user's real home directory, `%APPDATA%`, or XDG paths.
+- **CI gap carried forward**: as with 5.3 / 5.4 / 5.5, no Windows / Linux CI host is configured yet. Because every adapter plus these regression suites are pure Foundation, macOS `swift test` runs `PitwallWindowsTests` and `PitwallLinuxTests` as a portability proxy. Step 5.7 inherits this gap.
+- **Gap kept open for Step 5.7 / 5.8**: the regression suites do not exercise real Win32 / WinRT / `libsecret` / `libnotify` / `libayatana-appindicator` bindings. Those seams remain injected stubs until platform CI runners and production backend wiring land. Step 5.7 records whether macOS `swift test` alone satisfies the phase acceptance gate or whether the CI gap must be closed before Phase 5 ships.
+
 ## Deferred Decisions
 
 Explicitly punted from Step 5.1. Each downstream step must resolve its own items before closing.
