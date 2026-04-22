@@ -10,7 +10,9 @@
 - [x] `/run` — execute Phase 6a Step 6a.2 (`.app` bundle wrapper script + `Info.plist` placeholder substitution). Completed 2026-04-22.
 - [x] `/run` — execute Phase 6a Step 6a.3 (`Makefile` with build / install / uninstall / run / clean targets). Completed 2026-04-22.
 - [x] `/run` — execute Phase 6a Step 6a.4 (wire the menu bar SF Symbol icon). Completed 2026-04-22.
-- [ ] `/run` — execute Phase 6a Step 6a.5 (`SMAppService` login-item + Settings toggle). Evidence: Step 6a.5 is decomposed below; add `Sources/PitwallAppSupport/LoginItemService.swift`, wire the Launch-at-Login toggle in `SettingsView`, handle `--unregister-login-item` CLI flag, and add `ServiceManagement` to `PitwallApp` linker settings in `Package.swift`.
+- [x] `/run` — execute Phase 6a Step 6a.5 (`SMAppService` login-item + Settings toggle). Completed 2026-04-22.
+- [x] `/run` — execute Phase 6a Step 6a.6 (first-launch Application Support + Keychain health probe). Completed 2026-04-22.
+- [ ] `/run` — execute Phase 6a Step 6a.7 (first-launch "Welcome to Pitwall" banner). Evidence: Step 6a.7 is decomposed below; create `Sources/PitwallApp/Views/WelcomeBannerView.swift` and gate rendering in `PopoverContentView` on `pitwall.welcome.v1.dismissed`.
 - [ ] After Phase 6a ships: `/plan-phase 6b` — Phase 6b is deferred until the author decides to share Pitwall publicly; blocked on Apple Developer enrollment ($99/yr) and Sparkle/notary credential setup. Do not plan 6b until 6a is complete and the user confirms intent to go public.
 
 ## Completed Phases
@@ -86,7 +88,7 @@
   - Files: create `Sources/PitwallAppSupport/LoginItemService.swift` (`LoginItemService` protocol with `isEnabled: Bool { get }` and `setEnabled(_:) throws`; `SMAppServiceLoginItemService` implementation wrapping `SMAppService.mainApp`; `InMemoryLoginItemService` fixture for tests), modify `Sources/PitwallApp/Views/SettingsView.swift` to bind the existing Launch-at-Login `Toggle` through the service and surface a friendly error state if `setEnabled` throws, modify `Sources/PitwallApp/AppDelegate.swift` or `PitwallApp.swift` to inject the service and to handle a `--unregister-login-item` CLI flag that immediately calls `SMAppService.mainApp.unregister()` and exits 0.
   - `Package.swift`: add `.linkedFramework("ServiceManagement")` to `PitwallApp`'s `linkerSettings`.
 
-- Step 6a.6: Add the first-launch Application Support + Keychain health probe
+- [x] Step 6a.6: Add the first-launch Application Support + Keychain health probe (completed 2026-04-22)
   - Files: create `Sources/PitwallAppSupport/PackagingProbe.swift` (`PackagingProbeResult` struct; `PackagingProbe` takes a `FileManager`, an app-support root URL, and a `ProviderSecretStore` reference for the round-trip test; `runOnce(eventStore:, defaults:, firstLaunchKey:)` returns early if the `UserDefaults` key is set, otherwise runs both probes, appends two `DiagnosticEventStore` events, and sets the key), modify `Sources/PitwallApp/MenuBarController.swift` or `AppDelegate.swift` to call `runOnce(...)` exactly once at startup.
   - Keychain round-trip uses a disposable service name (e.g., `com.pitwall.app.packaging-probe`, account `probe`, random value) and must NOT touch any production `ProviderSecretKey`.
   - No network, no upload. Redaction path remains subject to `DiagnosticsRedactor`.
