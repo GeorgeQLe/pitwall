@@ -516,15 +516,15 @@ Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native 
 - Short "Welcome to Pitwall" first-launch banner explaining that ClaudeUsage data is not migrated and the user should paste their `sessionKey` + `lastActiveOrg` into the existing onboarding flow.
 
 **Acceptance Criteria:**
-- [ ] `make install` on a clean macOS 13+ system produces `/Applications/Pitwall.app`; `codesign --verify --verbose` exits 0.
-- [ ] Double-clicking `Pitwall.app` launches without a Gatekeeper block (bundle was never quarantined because it was built locally).
-- [ ] Menu bar shows the SF Symbol icon; clicking opens the Phase 3 popover without change.
-- [ ] "Launch at Login" toggle in `SettingsView` flips `SMAppService.mainApp` state; verified by reboot.
-- [ ] `make uninstall` removes the bundle and unregisters the login-item; Application Support + Keychain items remain intact (verified via `ls` + `security find-generic-password`); reinstall restores prior state.
-- [ ] First-launch health check writes two `DiagnosticEventStore` events on first install and does not repeat on subsequent launches.
-- [ ] `CFBundleShortVersionString` / `CFBundleVersion` are derived at build time, not hard-coded; one source of truth for version bumps.
-- [ ] macOS `swift build` + `swift test` still pass at the Phase 5 baseline (193/193) with zero regressions after Phase 6a lands.
-- [ ] No new `import AppKit` / `import UserNotifications` / `import Security` in `PitwallShared` or platform shells (Phase 5 privacy fences preserved).
+- [x] `make install` on a clean macOS 13+ system produces `/Applications/Pitwall.app`; `codesign --verify --verbose` exits 0.
+- [x] Double-clicking `Pitwall.app` launches without a Gatekeeper block (bundle was never quarantined because it was built locally).
+- [x] Menu bar shows the SF Symbol icon; clicking opens the Phase 3 popover without change.
+- [x] "Launch at Login" toggle in `SettingsView` flips `SMAppService.mainApp` state; verified by reboot.
+- [x] `make uninstall` removes the bundle and unregisters the login-item; Application Support + Keychain items remain intact (verified via `ls` + `security find-generic-password`); reinstall restores prior state.
+- [x] First-launch health check writes two `DiagnosticEventStore` events on first install and does not repeat on subsequent launches.
+- [x] `CFBundleShortVersionString` / `CFBundleVersion` are derived at build time, not hard-coded; one source of truth for version bumps.
+- [x] macOS `swift build` + `swift test` still pass at the Phase 5 baseline (193/193) with zero regressions after Phase 6a lands.
+- [x] No new `import AppKit` / `import UserNotifications` / `import Security` in `PitwallShared` or platform shells (Phase 5 privacy fences preserved).
 
 **Manual Tasks:**
 - None. Phase 6a is fully automatable on the author's Mac; no Apple Developer enrollment, no notary credentials, no Sparkle keys.
@@ -606,22 +606,22 @@ Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native 
 
 ### Milestone: Phase 6a macOS Local Install
 **Acceptance Criteria:** (preserve from above — do not rewrite)
-- [ ] `make install` on a clean macOS 13+ system produces `/Applications/Pitwall.app`; `codesign --verify --verbose` exits 0.
-- [ ] Double-clicking `Pitwall.app` launches without a Gatekeeper block (bundle was never quarantined because it was built locally).
-- [ ] Menu bar shows the SF Symbol icon; clicking opens the Phase 3 popover without change.
-- [ ] "Launch at Login" toggle in `SettingsView` flips `SMAppService.mainApp` state; verified by reboot.
-- [ ] `make uninstall` removes the bundle and unregisters the login-item; Application Support + Keychain items remain intact (verified via `ls` + `security find-generic-password`); reinstall restores prior state.
-- [ ] First-launch health check writes two `DiagnosticEventStore` events on first install and does not repeat on subsequent launches.
-- [ ] `CFBundleShortVersionString` / `CFBundleVersion` are derived at build time, not hard-coded; one source of truth for version bumps.
-- [ ] macOS `swift build` + `swift test` still pass at the Phase 5 baseline (193/193) with zero regressions after Phase 6a lands.
-- [ ] No new `import AppKit` / `import UserNotifications` / `import Security` in `PitwallShared` or platform shells (Phase 5 privacy fences preserved).
-- [ ] All phase tests pass (Phase 6a adds `PackagingVersionTests`, `LoginItemServiceTests`, `PackagingProbeTests`).
-- [ ] No regressions in previous phase tests.
+- [x] `make install` on a clean macOS 13+ system produces `/Applications/Pitwall.app`; `codesign --verify --verbose` exits 0.
+- [x] Double-clicking `Pitwall.app` launches without a Gatekeeper block (bundle was never quarantined because it was built locally).
+- [x] Menu bar shows the SF Symbol icon; clicking opens the Phase 3 popover without change.
+- [x] "Launch at Login" toggle in `SettingsView` flips `SMAppService.mainApp` state; verified by reboot.
+- [x] `make uninstall` removes the bundle and unregisters the login-item; Application Support + Keychain items remain intact (verified via `ls` + `security find-generic-password`); reinstall restores prior state.
+- [x] First-launch health check writes two `DiagnosticEventStore` events on first install and does not repeat on subsequent launches.
+- [x] `CFBundleShortVersionString` / `CFBundleVersion` are derived at build time, not hard-coded; one source of truth for version bumps.
+- [x] macOS `swift build` + `swift test` still pass at the Phase 5 baseline (193/193) with zero regressions after Phase 6a lands.
+- [x] No new `import AppKit` / `import UserNotifications` / `import Security` in `PitwallShared` or platform shells (Phase 5 privacy fences preserved).
+- [x] All phase tests pass (Phase 6a adds `PackagingVersionTests`, `LoginItemServiceTests`, `PackagingProbeTests`).
+- [x] No regressions in previous phase tests.
 
-**On Completion** (fill in when phase is done):
-- Deviations from plan: [none, or describe]
-- Tech debt / follow-ups: [none, or list]
-- Ready for next phase: yes/no
+**On Completion:**
+- Deviations from plan: none. Step 6a.11 closed as "no refactor required" (analogous to Phase 5 Step 5.8's docs-only close) — Phase 6a surface was already tight.
+- Tech debt / follow-ups: none beyond the already-tracked Phase 5 post-v1 platform-limitation backlog. `AppDelegate.packagingVersion` is intentionally held as an anchor for a future in-app About section.
+- Ready for next phase: Phase 6a ships as a local-install macOS daily-driver. Phase 6b remains deferred and blocked on Apple Developer Program enrollment + Sparkle/notary credential setup; plan just-in-time via `/plan-phase 6b` only when the author confirms intent to distribute publicly.
 
 ## Phase 6b: macOS Public Release
 

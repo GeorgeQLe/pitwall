@@ -1,32 +1,3 @@
-# Todo - Pitwall
-
-> Current phase: 6a of 6b — macOS Local Install (packaging phase, appended post-v1).
-> Source roadmap: `tasks/roadmap.md`
-> Project: Pitwall — clean-room macOS menu bar app for Claude/Codex/Gemini usage pacing.
-
-## Priority Task Queue
-
-- [x] `/run` — execute Phase 6a Step 6a.1 (VERSION file + version derivation helper). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.2 (`.app` bundle wrapper script + `Info.plist` placeholder substitution). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.3 (`Makefile` with build / install / uninstall / run / clean targets). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.4 (wire the menu bar SF Symbol icon). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.5 (`SMAppService` login-item + Settings toggle). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.6 (first-launch Application Support + Keychain health probe). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.7 (first-launch "Welcome to Pitwall" banner). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.8 (install smoke-test script). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.9 (regression tests covering new code paths: `PackagingVersionTests`, `LoginItemServiceTests`, `PackagingProbeTests`). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.10 (full test suite + packaging smoke checks; visual confirmation of menu-bar install/uninstall). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.11 (refactor while keeping tests green if needed). Completed 2026-04-22 — closed as "no refactor required"; 212/212 tests green.
-- [ ] After Phase 6a ships: `/plan-phase 6b` — Phase 6b is deferred until the author decides to share Pitwall publicly; blocked on Apple Developer enrollment ($99/yr) and Sparkle/notary credential setup. Do not plan 6b until 6a is complete and the user confirms intent to go public.
-
-## Completed Phases
-
-- [x] Phase 1 Foundation And Pacing Core completed and archived to `tasks/phases/phase-1.md`.
-- [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
-- [x] Phase 3 First Usable macOS Provider Parity completed and archived to `tasks/phases/phase-3.md`.
-- [x] Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap completed and archived to `tasks/phases/phase-4.md`.
-- [x] Phase 5 Cross-Platform V1 Parity completed and archived to `tasks/phases/phase-5.md`.
-- [x] Phase 6a macOS Local Install completed and archived to `tasks/phases/phase-6a.md`.
 
 ## Phase 6a: macOS Local Install
 
@@ -173,22 +144,3 @@
 - Tech debt / follow-ups: none beyond the already-tracked Phase 5 post-v1 platform-limitation backlog. `AppDelegate.packagingVersion` is intentionally held as an anchor for a future in-app About section.
 - Ready for next phase: Phase 6a ships as the macOS daily-driver local install. Phase 6b remains deferred behind Apple Developer enrollment + Sparkle/notary credentials.
 
-## Phase 6b: macOS Public Release (deferred)
-
-Not scoped for immediate execution. See `tasks/roadmap.md` → Phase 6b for goals, scope, acceptance criteria, and manual-task prerequisites. Plan just-in-time via `/plan-phase 6b` only after Phase 6a ships and the user confirms intent to distribute publicly.
-
-## Post-v1 / Post-packaging Follow-ups (not scheduled)
-
-Documented platform limitations carried forward from the Phase 5 CI gap. They do not have an owning phase yet; promote into a new phase when ready.
-
-- Wire a real Windows CI runner and `swift build --triple x86_64-unknown-windows-msvc` + `swift test` on a Windows host.
-- Wire a real Linux CI runner and `swift build` + `swift test` on a Linux host.
-- Wire production Windows Credential Manager behind `WindowsCredentialManagerBackend`.
-- Wire production `libsecret` / Secret Service behind `LinuxSecretServiceBackend`.
-- Wire production WinRT `ToastNotificationManager` behind `WindowsToastDelivering`.
-- Wire production `libnotify` / `org.freedesktop.Notifications` D-Bus behind `LinuxNotificationDelivering`.
-- Wire production Win32 `Shell_NotifyIcon` tray glue on top of `WindowsTrayMenuViewModel`.
-- Wire production `libayatana-appindicator` glue (plus "no tray available" fallback) on top of `LinuxTrayMenuViewModel`.
-- Wire real filesystem probes for Codex/Gemini presence on Windows (`FindFirstFileW`) and Linux (`stat(2)`) behind existing `*FilesystemProbing` seams.
-- End-to-end tray + notification UX validation on real Windows / Linux desktop sessions.
-- Windows + Linux packaging specs analogous to `specs/pitwall-macos-packaging.md`, once real platform backends are wired.
