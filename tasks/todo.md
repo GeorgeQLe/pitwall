@@ -11,7 +11,7 @@
 - [x] Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap completed and archived to `tasks/phases/phase-4.md`.
 - [x] Phase 5 Cross-Platform V1 Parity planned just-in-time from completed Phase 4 boundaries.
 - [x] Phase 5 Step 5.1 cross-platform architecture selected and documented.
-- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.2.
+- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.2 (shared behavior contracts extraction).
 
 ## Phase 5: Cross-Platform V1 Parity
 
@@ -88,9 +88,37 @@
     - Document the selected cross-platform approach in `docs/cross-platform-architecture.md` before adding platform scaffolding.
     - Validation for this planning/scaffold step depends on the selected approach, but macOS regression validation must still include `swift test` and `swift build`.
 - [ ] Step 5.2: Extract shared behavior contracts for cross-platform reuse
-  - Files: create `Sources/PitwallShared/*` or equivalent shared module files selected in Step 5.1, create `Tests/PitwallSharedTests/*`, modify `Package.swift`
-  - Reuse Phase 1-4 behavior for pacing, Claude parsing, provider confidence, history retention, diagnostics redaction, notification policy, and GitHub heatmap request/response mapping.
-  - Keep shared tests fixture-driven and free of live provider networks, live GitHub calls, real local provider files, or OS notification permission.
+  - Files: create `Sources/PitwallShared/*`, create `Tests/PitwallSharedTests/*`, modify `Package.swift`, touch-up `Sources/PitwallAppSupport/*` only where strictly needed to conform to new protocols without changing macOS behavior.
+  - Goal: introduce a `PitwallShared` SwiftPM target that holds cross-platform protocol contracts and pure logic from `PitwallAppSupport` that Windows/Linux shells will reuse in Steps 5.3/5.4, while keeping `PitwallCore` unchanged and `PitwallAppSupport` macOS-only for AppKit-bound code.
+  - Architecture anchor: the chosen approach and adapter seams are documented in `docs/cross-platform-architecture.md`. Step 5.2 MUST honor that doc — do not re-litigate the decision. Protocols introduced here are the ones it promised: `ProviderConfigurationStorage`, `ProviderHistoryStorage`, `SettingsStorage` (and any notification-policy surface that is OS-agnostic).
+  - Scope:
+    - Add `PitwallShared` target to `Package.swift` (library, platforms: `.macOS(.v14)` plus allow Linux/Windows via `.when(platforms:)` where needed). Depend on `PitwallCore`. No dependency on `PitwallAppSupport`.
+    - Define protocols in `Sources/PitwallShared/`:
+      - `ProviderConfigurationStorage` — read/write non-secret provider configuration (replaces direct `FileManager` + `NSSearchPathForDirectoriesInDomains` use).
+      - `ProviderHistoryStorage` — append/read retained history entries.
+      - `SettingsStorage` — user preferences (display, pinning, pacing).
+      - Keep them value-type-friendly and `Sendable` where reasonable. No `Foundation.URL` assumptions that are macOS-only; prefer `String` path/keys plus helper types so Windows/Linux can implement against `%APPDATA%` / XDG.
+    - Extract pure policy/decision logic currently sitting in `PitwallAppSupport` that has no AppKit/UserNotifications dependency into `PitwallShared`. Candidates surfaced by 5.1: notification scheduling *policy* (not the macOS scheduler), provider state factory helpers, formatting helpers. Audit first; only move what is genuinely portable — do not drag `NSUserNotification`/AppKit-adjacent code across.
+    - In `PitwallAppSupport`, replace direct storage calls with dependency-injected `PitwallShared` protocols. The existing macOS `FileManager` implementations become `AppSupportProviderConfigurationStorage`, etc., living alongside the AppKit shell (still in `PitwallAppSupport`). Behavior and on-disk layout MUST NOT change for macOS.
+    - Fixture-driven shared tests in `Tests/PitwallSharedTests/`:
+      - In-memory fakes for each protocol (mirror the pattern set by `InMemorySecretStore` in `PitwallCore`).
+      - Round-trip tests: configuration write/read, history append/retention-window, settings persistence.
+      - Policy tests for any moved notification policy (dedupe windows, quiet hours decision logic) using deterministic clock injection.
+      - No live filesystem, no real provider sockets, no OS notification permission.
+  - Test strategy: phase-level is `tests-after`, but this step lands its own shared-target tests alongside the extraction (the "Green" Step 5.6 covers *cross-platform regression* tests, not shared-target unit tests). Write fixture tests for every new protocol and every moved function.
+  - Validation / acceptance:
+    - `swift build` passes with the new target.
+    - `swift test` passes all pre-existing 74 tests plus the new `PitwallSharedTests` cases. Zero macOS regressions.
+    - `Sources/PitwallShared/` compiles without importing AppKit, UserNotifications, or any macOS-only framework. Grep check: no `import AppKit` / `import UserNotifications` in `PitwallShared`.
+    - `Sources/PitwallAppSupport/` still builds and the macOS AppKit shell still behaves identically.
+    - `Package.swift` keeps a single manifest (no per-platform manifest split).
+  - Execution profile: phase is `agent-team`; only the `phase5-architecture-owner` lane owns the files touched here (`Package.swift`, `Sources/PitwallShared/*`, `Tests/PitwallSharedTests/*`). `Sources/PitwallAppSupport/*` is owned by other lanes' "must not edit" fence — the architecture lane may make the minimum conformance edits required here, but must record each such edit in the commit message so Steps 5.3/5.4 reviewers can see them. Dispatch one `Agent` call with `isolation: "worktree"`; no parallel lanes in this step. Integration, macOS regression (`swift build` + `swift test`), and task-doc updates run on the main agent exactly as in 5.1.
+  - Known risks / gotchas:
+    - `NSSearchPathForDirectoriesInDomains` is Foundation and works on Swift-on-Linux but returns different roots. The protocol must NOT leak macOS path semantics — design around injected roots, not hard-coded directory lookups inside the protocol.
+    - Avoid importing `AppKit` transitively through helper types (e.g., do not move `NSImage`-adjacent formatters into `PitwallShared`).
+    - Keep Codable/`JSONEncoder` use on the `Foundation` subset that's available cross-platform. Test that shared tests still pass with `--enable-test-discovery` (default).
+    - Do not remove `PitwallAppSupport` symbols that `PitwallApp` depends on; re-export or keep thin shims where needed.
+  - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.2, (2) run `swift build` + `swift test` and confirm all tests pass, (3) mark Step 5.2 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) write the Step 5.3 plan into `tasks/todo.md`, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) start the approval UI for Step 5.3 by calling `EnterPlanMode` first, write a brief pass-through plan, then call `ExitPlanMode`, and (10) stop before implementing Step 5.3. Do not call `ExitPlanMode` from normal mode. If `EnterPlanMode` is denied, stop and ask the user to explicitly run `/plan Step 5.3` instead of falling through.
 - [ ] Step 5.3: Implement Windows tray/menu parity against shared contracts
   - Files: create `Sources/PitwallWindows/*`, create `Tests/PitwallWindowsTests/*`, modify platform manifest/build files selected in Step 5.1
   - Implement tray/menu status, provider cards, settings, manual Claude credential flow, diagnostics export, optional GitHub heatmap display, and supported notification behavior.
