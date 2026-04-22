@@ -2,6 +2,8 @@
 
 ## 2026-04-21
 
+- Phase 3 Step 3.8 completed: ran macOS app validation for the first usable provider parity phase and confirmed all Phase 1-3 regression tests and app target compilation pass cleanly.
+- Validation: `swift test` passes 51 XCTest cases with 0 failures and no warnings emitted. `swift build` passes with no warnings emitted. No source changes were needed.
 - Phase 3 Step 3.7 completed: added a `PitwallAppSupportTests` target with regression coverage for menu bar formatting, reset display, provider rotation, provider card view models, provider configuration persistence, Claude credential setup privacy, and refresh coordination privacy boundaries.
 - Refresh coordination tests use injected fake Claude clients, local snapshot loaders, secret stores, and deterministic clocks; no live provider networks or real user provider files are read. Saved Claude session keys remain write-only, replacement keys rotate through the secret store only, expired auth is preserved, and stale Claude state keeps only non-secret last-success metadata.
 - Validation: `swift test` passes 51 XCTest cases with 0 failures and no warnings emitted. `swift build` passes with no warnings emitted. Review-only lane completed locally due subagent policy.

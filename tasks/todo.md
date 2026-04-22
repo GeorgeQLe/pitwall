@@ -169,7 +169,7 @@
     - Verified missing/skipped providers remain visible/configurable, saved Claude session keys are write-only, replacement session keys rotate through the secret store only, expired auth is preserved, and stale Claude state keeps non-secret last-success metadata.
     - Review-only lane: completed locally because the active environment policy does not permit spawning review subagents without an explicit user request for delegated agent work; review focused on privacy boundaries, injection seams, and app-support behavior coverage.
     - Validation: `swift test` passes 51 XCTest cases with 0 failures and no warnings emitted; `swift build` passes with no warnings emitted.
-- [ ] Step 3.8: Run macOS app validation and verify Phase 3 tests pass
+- [x] Step 3.8: Run macOS app validation and verify Phase 3 tests pass
   - Commands: `swift test`, `swift build`
   - Expected result: all Phase 1-3 tests pass with no warnings emitted, and the app target builds for macOS 13+.
   - Fix unexpected failures before marking green.
@@ -177,6 +177,11 @@
     - Run `swift test` and inspect output for warnings as well as failures.
     - Run `swift build` and inspect output for warnings as well as failures.
     - Fix any regressions in app support, provider privacy boundaries, app target compilation, or previous Phase 1-2 tests before marking this step complete.
+  - Completed notes:
+    - Ran the Phase 3 validation commands and inspected output for warnings as well as failures.
+    - `swift test` passed all 51 XCTest cases with 0 failures and no compiler/test warnings emitted.
+    - `swift build` passed with no warnings emitted and confirmed the macOS 13+ app target still builds.
+    - No source changes were needed.
 - [ ] Step 3.9: Refactor app boundaries if needed while keeping tests green
   - Files: modify `Sources/PitwallAppSupport/*`, `Sources/PitwallApp/Views/*`, `Sources/PitwallApp/MenuBarController.swift`, `Sources/PitwallApp/PopoverController.swift`, and tests only as needed to clarify behavior without weakening coverage
   - Keep provider logic in `PitwallCore`/`PitwallAppSupport` and presentation code in `PitwallApp`.
