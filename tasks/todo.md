@@ -9,7 +9,8 @@
 - [x] `/run` — execute Phase 6a Step 6a.1 (VERSION file + version derivation helper). Completed 2026-04-22.
 - [x] `/run` — execute Phase 6a Step 6a.2 (`.app` bundle wrapper script + `Info.plist` placeholder substitution). Completed 2026-04-22.
 - [x] `/run` — execute Phase 6a Step 6a.3 (`Makefile` with build / install / uninstall / run / clean targets). Completed 2026-04-22.
-- [ ] `/run` — execute Phase 6a Step 6a.4 (wire the menu bar SF Symbol icon). Evidence: Step 6a.4 is decomposed below; replace the existing status-item image in `Sources/PitwallApp/MenuBarController.swift` with `NSImage(systemSymbolName: "gauge.with.dots.needle.67percent", accessibilityDescription: "Pitwall")`. No asset catalog changes.
+- [x] `/run` — execute Phase 6a Step 6a.4 (wire the menu bar SF Symbol icon). Completed 2026-04-22.
+- [ ] `/run` — execute Phase 6a Step 6a.5 (`SMAppService` login-item + Settings toggle). Evidence: Step 6a.5 is decomposed below; add `Sources/PitwallAppSupport/LoginItemService.swift`, wire the Launch-at-Login toggle in `SettingsView`, handle `--unregister-login-item` CLI flag, and add `ServiceManagement` to `PitwallApp` linker settings in `Package.swift`.
 - [ ] After Phase 6a ships: `/plan-phase 6b` — Phase 6b is deferred until the author decides to share Pitwall publicly; blocked on Apple Developer enrollment ($99/yr) and Sparkle/notary credential setup. Do not plan 6b until 6a is complete and the user confirms intent to go public.
 
 ## Completed Phases
@@ -76,7 +77,7 @@
   - `make run` → `open build/Pitwall.app` after build.
   - `make clean` → removes `build/`.
 
-- Step 6a.4: Wire the menu bar SF Symbol icon
+- [x] Step 6a.4: Wire the menu bar SF Symbol icon (completed 2026-04-22)
   - Files: modify `Sources/PitwallApp/MenuBarController.swift`.
   - Replace the current status-item image with `NSImage(systemSymbolName: "gauge.with.dots.needle.67percent", accessibilityDescription: "Pitwall")`.
   - No `.imageset` / `.icns` asset; SF Symbol only (reserved upgrade slot for Phase 6b).
