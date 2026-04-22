@@ -14,7 +14,8 @@
 - [x] `/run` — execute Phase 6a Step 6a.6 (first-launch Application Support + Keychain health probe). Completed 2026-04-22.
 - [x] `/run` — execute Phase 6a Step 6a.7 (first-launch "Welcome to Pitwall" banner). Completed 2026-04-22.
 - [x] `/run` — execute Phase 6a Step 6a.8 (install smoke-test script). Completed 2026-04-22.
-- [ ] `/run` — execute Phase 6a Step 6a.9 (regression tests covering new code paths: `PackagingVersionTests`, `LoginItemServiceTests`, `PackagingProbeTests`). Evidence: Step 6a.9 is decomposed below.
+- [x] `/run` — execute Phase 6a Step 6a.9 (regression tests covering new code paths: `PackagingVersionTests`, `LoginItemServiceTests`, `PackagingProbeTests`). Completed 2026-04-22.
+- [ ] `/run` — execute Phase 6a Step 6a.10 (full test suite + packaging smoke checks; visual confirmation of menu-bar install/uninstall). Evidence: Step 6a.10 is decomposed below.
 - [ ] After Phase 6a ships: `/plan-phase 6b` — Phase 6b is deferred until the author decides to share Pitwall publicly; blocked on Apple Developer enrollment ($99/yr) and Sparkle/notary credential setup. Do not plan 6b until 6a is complete and the user confirms intent to go public.
 
 ## Completed Phases
@@ -136,10 +137,11 @@
 
 ### Green
 
-- Step 6a.9: Write regression tests covering the new code paths
+- [x] Step 6a.9: Write regression tests covering the new code paths (completed 2026-04-22)
   - Files: create `Tests/PitwallAppSupportTests/PackagingVersionTests.swift` (asserts `shortString` matches `VERSION`-file content via the provider protocol; `build` is a positive integer), create `Tests/PitwallAppSupportTests/LoginItemServiceTests.swift` (uses `InMemoryLoginItemService` to assert toggle behavior + idempotency), create `Tests/PitwallAppSupportTests/PackagingProbeTests.swift` (in-memory `FileManager` seam + `InMemorySecretStore` + fresh `UserDefaults`; first `runOnce` writes two events and sets the key; second `runOnce` is a no-op; Application Support write failure is logged as `appSupportWritable: false` with an error string; Keychain mismatch is logged as `keychainRoundTripSucceeded: false`).
   - Reuse Phase 2's `InMemorySecretStore` — do not duplicate.
   - No XCUITest / snapshot tests for the banner; exercise the `UserDefaults` gate indirectly through a small view-model unit test if feasible.
+  - Phase 6a test baseline after this step: 212 tests (193 Phase 5 baseline + 19 new Phase 6a tests).
 
 - Step 6a.10: Run the full test suite and packaging smoke checks
   - Commands: `swift build`, `swift test` (confirm Phase 5's 193-test baseline plus the new Phase 6a tests all pass, zero regressions), `scripts/smoke-install.sh` (exits 0), `make build` then `open build/Pitwall.app` visual confirmation, `make install` then visual confirmation that `/Applications/Pitwall.app` shows the SF Symbol icon in the menu bar, `make uninstall` then `ls /Applications/Pitwall.app` fails + `ls ~/Library/Application\ Support/Pitwall/` succeeds + `security find-generic-password` still finds provider secrets.
