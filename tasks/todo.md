@@ -15,7 +15,8 @@
 - [x] Phase 5 Step 5.3 Windows tray/menu parity shipped against `PitwallShared` contracts.
 - [x] Phase 5 Step 5.4 Linux tray/menu parity shipped against `PitwallShared` contracts.
 - [x] Phase 5 Step 5.5 platform-specific Codex/Gemini passive detection adapters shipped against `PitwallShared` / `PitwallCore` contracts.
-- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.6 (cross-platform regression tests covering acceptance criteria).
+- [x] Phase 5 Step 5.6 cross-platform regression tests landed against the 5.2 / 5.3 / 5.4 / 5.5 contracts.
+- [ ] Ready for isolated agent-team execution of Phase 5 Step 5.7 (run platform validation and verify all supported builds/tests pass).
 
 ## Phase 5: Cross-Platform V1 Parity
 
@@ -199,7 +200,7 @@
   - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.5, (2) run macOS `swift build` + `swift test` to confirm zero macOS regressions and the documented Windows / Linux validation commands on platform hosts (or record the CI gap explicitly in `docs/cross-platform-architecture.md`), (3) mark Step 5.5 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) write the Step 5.6 plan into `tasks/todo.md`, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) start the approval UI for Step 5.6 by calling `EnterPlanMode` first, write a brief pass-through plan, then call `ExitPlanMode`, and (10) stop before implementing Step 5.6. Do not call `ExitPlanMode` from normal mode. If `EnterPlanMode` is denied because an explicit user request is required, stop and ask the user to run `/plan Step 5.6` explicitly instead of falling through.
 
 ### Green
-- [ ] Step 5.6: Write cross-platform regression tests covering acceptance criteria
+- [x] Step 5.6: Write cross-platform regression tests covering acceptance criteria
   - Files: add or extend regression test suites under `Tests/PitwallSharedTests/`, `Tests/PitwallWindowsTests/`, and `Tests/PitwallLinuxTests/` (no new source modules). Update `docs/cross-platform-architecture.md` with a "Cross-Platform Regression Coverage (Step 5.6)" section recording which acceptance bullets are covered by which suites and any gaps kept open for Step 5.7.
   - Architecture anchor: all contracts the regression suite asserts against already exist — `PitwallShared.NotificationPolicy`, `PitwallShared.ProviderConfiguration`, `PitwallShared.UserPreferences`, `PitwallCore` detector semantics, and the per-platform adapters shipped in 5.3 / 5.4 / 5.5. Step 5.6 adds *tests only*; it must not introduce new production code paths or reach into adapter internals beyond the public surfaces.
   - Scope:
@@ -224,8 +225,25 @@
     - Do not introduce new production code in Step 5.6; if a test needs a new API surface, escalate to Step 5.8 ("refactor boundaries if needed") rather than quietly widening the adapter.
   - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.6, (2) run macOS `swift build` + `swift test` to confirm zero macOS regressions and the documented Windows / Linux validation commands on platform hosts (or record the CI gap explicitly in `docs/cross-platform-architecture.md`), (3) mark Step 5.6 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) write the Step 5.7 plan into `tasks/todo.md`, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) start the approval UI for Step 5.7 by calling `EnterPlanMode` first, write a brief pass-through plan, then call `ExitPlanMode`, and (10) stop before implementing Step 5.7. Do not call `ExitPlanMode` from normal mode. If `EnterPlanMode` is denied because an explicit user request is required, stop and ask the user to run `/plan Step 5.7` explicitly instead of falling through.
 - [ ] Step 5.7: Run platform validation and verify all supported builds/tests pass
-  - Commands: platform-specific commands selected in Step 5.1 plus existing `swift test` and `swift build` for macOS regression coverage
-  - Expected result: macOS remains green, shared tests pass, and each supported Windows/Linux build or documented platform limitation is explicit.
+  - Files: update `docs/cross-platform-architecture.md` with a "Platform Validation (Step 5.7)" section recording the exact commands run, which platforms ran them (macOS only vs. real Windows / Linux hosts), pass/fail status, and any platform limitations that remain explicit for the Phase 5 milestone. No source or test code changes are in scope.
+  - Architecture anchor: all validation targets (`PitwallCore`, `PitwallShared`, `PitwallAppSupport`, `PitwallWindows`, `PitwallLinux`, `PitwallApp`) already exist. Step 5.7 is a *verification* step, not an implementation step.
+  - Scope:
+    - Run `swift build` and `swift test` on macOS and record totals (expected: 193 tests, zero failures, zero regressions against Step 5.6's baseline).
+    - Run `swift build --triple x86_64-unknown-windows-msvc` and `swift test` on a real Windows toolchain if one is available, else record the CI gap explicitly (matching the language used in 5.3 / 5.5).
+    - Run `swift build` and `swift test` on a real Linux toolchain if one is available, else record the CI gap explicitly (matching 5.4 / 5.5).
+    - Cross-check that each Phase 5 milestone acceptance bullet is satisfied by *at least one* Step 5.6 regression test and record the map in the architecture doc (or link back to the Step 5.6 "Cross-Platform Regression Coverage" section).
+    - Explicitly call out what is *not* yet validated on real platform hosts (Win32 / WinRT / `libsecret` / `libnotify` / `libayatana-appindicator` bindings, production Credential Manager / Secret Service paths, tray / notification surfaces in a real desktop environment).
+  - Test strategy: verification-only phase. No new tests are introduced; if a gap surfaces that requires additional coverage, escalate to Step 5.8 ("refactor boundaries if needed") rather than widening Step 5.7.
+  - Validation / acceptance:
+    - `swift build` and `swift test` on macOS pass with the Step 5.6 baseline preserved. Final test count recorded in `tasks/history.md`.
+    - Windows / Linux platform validation results (pass, fail, or "CI gap recorded") are written into `docs/cross-platform-architecture.md` and `tasks/history.md` so reviewers can trace the phase milestone outcome.
+    - The Phase 5 milestone acceptance checklist in `tasks/todo.md` is updated to reflect which bullets are verified on which platform and which are documented platform limitations.
+  - Execution profile: phase is `agent-team`; lane `phase5-validation` runs alone on the main branch (no worktree needed — diff is limited to docs + history + todo).
+  - Known risks / gotchas:
+    - Do not silently widen or relax an acceptance bullet because the real platform binding is not yet wired. Document it as a limitation instead.
+    - Do not introduce new source code in Step 5.7. If a validation attempt exposes a missing public surface, escalate to Step 5.8.
+    - Do not repeat Step 5.6 coverage as Step 5.7 commentary — link to the "Cross-Platform Regression Coverage (Step 5.6)" section instead of duplicating the map.
+  - Ship-one-step handoff contract: the clear-context implementation session must (1) implement only Step 5.7, (2) run macOS `swift build` + `swift test` to confirm zero regressions against the Step 5.6 baseline and the documented Windows / Linux validation commands on platform hosts (or record the CI gap explicitly in `docs/cross-platform-architecture.md`), (3) mark Step 5.7 done in `tasks/todo.md`, (4) update `tasks/history.md` with a session entry, (5) commit and push to `main` via `/commit-and-push-by-feature`, (6) skip deploy (no deploy contract exists), (7) write the Step 5.8 plan into `tasks/todo.md`, (8) ensure `.claude/settings.local.json` has `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`, (9) start the approval UI for Step 5.8 by calling `EnterPlanMode` first, write a brief pass-through plan, then call `ExitPlanMode`, and (10) stop before implementing Step 5.8. Do not call `ExitPlanMode` from normal mode. If `EnterPlanMode` is denied because an explicit user request is required, stop and ask the user to run `/plan Step 5.8` explicitly instead of falling through.
 - [ ] Step 5.8: Refactor cross-platform boundaries if needed while keeping tests green
   - Files: modify shared/platform boundary files only as needed to clarify ownership without weakening coverage
   - Keep provider semantics shared, platform integrations isolated, and privacy constraints documented per platform.
