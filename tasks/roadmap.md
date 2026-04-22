@@ -497,4 +497,83 @@ Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native 
 **On Completion:**
 - Deviations from plan: Steps 5.7 and 5.8 did not run Windows or Linux platform toolchains directly — no such CI host is available in this repo. The CI gap is recorded in `docs/cross-platform-architecture.md` "Platform Validation (Step 5.7)" + "Cross-Platform Boundary Refactor Audit (Step 5.8)" as a documented platform limitation rather than silently relaxing an acceptance bullet.
 - Tech debt / follow-ups: wire real Win32 / WinRT bindings + a Windows CI runner; wire real `libsecret` / `libnotify` / `libayatana-appindicator` bindings + a Linux CI runner; wire production Credential Manager / Secret Service backends behind the existing `WindowsCredentialManagerBackend` / `LinuxSecretServiceBackend` seams; add real `FindFirstFileW` / `stat(2)` probes behind the existing `*CodexFilesystemProbing` / `*GeminiFilesystemProbing` seams.
-- Ready for next phase: Phase 5 was the final v1 roadmap phase; Pitwall v1 cross-platform parity is complete. Post-v1 follow-ups tracked as platform-limitation follow-ups above.
+- Ready for next phase: Phase 5 was the final v1 roadmap phase for cross-platform parity; Pitwall v1 product behavior is complete. Post-v1 follow-ups tracked as platform-limitation follow-ups above. Phases 6a and 6b are appended below to cover the macOS packaging + distribution gap surfaced during the v1 close-out review (see `specs/pitwall-macos-packaging.md`).
+
+## Phase 6a: macOS Local Install
+
+**Goal:** Turn the existing `PitwallApp` SwiftPM executable into a `.app` bundle the author can drop into `/Applications` with a single `make install`, so Pitwall can replace the legacy ClaudeUsage menu bar as a daily driver without any Apple Developer Program cost.
+
+**Scope:**
+- Build an `.app` bundle wrapper around the SwiftPM executable (`swift build --configuration release --product PitwallApp` + `Contents/MacOS` + `Contents/Info.plist` + `Contents/Resources`).
+- Ad-hoc codesign the bundle so Gatekeeper accepts it when launched locally (no Developer ID, no notarization — works because the bundle is never quarantined).
+- `Makefile` targets: `make build`, `make install`, `make uninstall`, `make run`. `make install` copies to `/Applications/Pitwall.app`; `make uninstall` removes the `.app` and unregisters the login-item but preserves `~/Library/Application Support/Pitwall/` and Keychain items.
+- Menu bar icon wired to an SF Symbol via `NSImage(systemSymbolName:)` (baseline `gauge.with.dots.needle.67percent`) so no binary asset enters the repo.
+- Launch-at-login wired through `SMAppService.mainApp.register()` / `.unregister()`; toggle exposed in `SettingsView`.
+- Version metadata: `CFBundleShortVersionString` derived from a single-source `VERSION` file or `make` arg; `CFBundleVersion` = `git rev-list --count HEAD`.
+- First-launch health check (run once per install, gated by `UserDefaults` key) that probes Application Support write access + Keychain round-trip and logs two events through the existing `DiagnosticEventStore` — no network, no upload.
+- Short "Welcome to Pitwall" first-launch banner explaining that ClaudeUsage data is not migrated and the user should paste their `sessionKey` + `lastActiveOrg` into the existing onboarding flow.
+
+**Acceptance Criteria:**
+- [ ] `make install` on a clean macOS 13+ system produces `/Applications/Pitwall.app`; `codesign --verify --verbose` exits 0.
+- [ ] Double-clicking `Pitwall.app` launches without a Gatekeeper block (bundle was never quarantined because it was built locally).
+- [ ] Menu bar shows the SF Symbol icon; clicking opens the Phase 3 popover without change.
+- [ ] "Launch at Login" toggle in `SettingsView` flips `SMAppService.mainApp` state; verified by reboot.
+- [ ] `make uninstall` removes the bundle and unregisters the login-item; Application Support + Keychain items remain intact (verified via `ls` + `security find-generic-password`); reinstall restores prior state.
+- [ ] First-launch health check writes two `DiagnosticEventStore` events on first install and does not repeat on subsequent launches.
+- [ ] `CFBundleShortVersionString` / `CFBundleVersion` are derived at build time, not hard-coded; one source of truth for version bumps.
+- [ ] macOS `swift build` + `swift test` still pass at the Phase 5 baseline (193/193) with zero regressions after Phase 6a lands.
+- [ ] No new `import AppKit` / `import UserNotifications` / `import Security` in `PitwallShared` or platform shells (Phase 5 privacy fences preserved).
+
+**Manual Tasks:**
+- None. Phase 6a is fully automatable on the author's Mac; no Apple Developer enrollment, no notary credentials, no Sparkle keys.
+
+**Parallelization:** serial
+
+**Coordination Notes:** Touches `Package.swift`, `Sources/PitwallApp/Info.plist`, `Sources/PitwallApp/MenuBarController.swift`, `Sources/PitwallApp/Views/SettingsView.swift`, new `scripts/build-app-bundle.sh`, new `Makefile`, new `VERSION` file. Tight file coupling around the app bundle wiring makes serial execution the correct mode; no agent-team benefit here.
+
+**On Completion** (fill in when phase is done):
+- Deviations from plan: [none, or describe]
+- Tech debt / follow-ups: [none, or list]
+- Ready for next phase: yes/no
+
+## Phase 6b: macOS Public Release
+
+**Goal:** Turn the Phase 6a `.app` into a signed, notarized, auto-updating DMG that ships on GitHub Releases and optionally a Homebrew cask, so Pitwall can be downloaded and launched on machines other than the author's without Gatekeeper friction. Deferred until the author wants to share Pitwall widely.
+
+**Scope:**
+- Apple Developer Program enrollment (user-driven prerequisite, not an engineering deliverable).
+- Developer ID Application certificate installed in the author's login Keychain; `.p12` backup in password manager.
+- `notarytool` credentials stored via `xcrun notarytool store-credentials --apple-id … --team-id … pitwall-notary`.
+- Sparkle 2.x integration: SwiftPM dependency added to `Package.swift`; `SUFeedURL` + `SUPublicEDKey` in `Info.plist`; `SPUStandardUpdaterController` wired into `AppDelegate`; EdDSA private key stored in password manager only (never committed).
+- `make release VERSION=x.y.z` target that chains: SwiftPM release build → `.app` wrap → Developer ID codesign with hardened runtime + timestamp → DMG package → `xcrun notarytool submit --wait` → `xcrun stapler staple` → Sparkle EdDSA signature → appcast `<item>` append → `gh release create` + `appcast.xml` publish.
+- Entitlements file (`Sources/PitwallApp/Pitwall.entitlements`) scoped for hardened runtime with no sandbox entitlement.
+- Homebrew cask published in a self-hosted tap (`georgele/homebrew-pitwall`) or submitted to `homebrew-cask`. Final channel deferred to `/plan-phase 6b`.
+- "Check for Updates…" menu item, "Automatically check for updates" toggle, and cadence picker added to `SettingsView`.
+
+**Acceptance Criteria:**
+- [ ] `make release VERSION=1.0.0` on a clean tree produces a signed DMG that passes `spctl --assess --type open --context context:primary-signature`.
+- [ ] `xcrun stapler validate build/Pitwall-1.0.0.dmg` succeeds.
+- [ ] Downloading the DMG from GitHub Releases on a different Mac launches Pitwall without any Gatekeeper dialog (quarantine xattr present on the downloaded bundle, notarization ticket accepted).
+- [ ] Sparkle checks the appcast on launch and on-demand, offers an update when a newer version is published, verifies the EdDSA signature, relaunches into the new version, and preserves the user's session key, history, and settings.
+- [ ] `brew install --cask pitwall` (via self-hosted tap or upstream cask) installs the same DMG into `/Applications/Pitwall.app` and launches without Gatekeeper issues.
+- [ ] Phase 6a `make install` / `make uninstall` paths still work alongside `make release` for local iteration.
+- [ ] Phase 6a first-launch health check runs once per install (signed or ad-hoc) — does not double-fire when Sparkle replaces the bundle in place.
+- [ ] `Pitwall.app` runs under hardened runtime with no sandbox entitlement and no entitlement beyond what Phase 1-5 behavior requires.
+- [ ] All Phase 1-6a tests continue to pass on macOS with zero regressions.
+
+**Manual Tasks:**
+- Enroll in the Apple Developer Program ($99/yr) _(blocks: Step 6b.1)_.
+- Request + install Developer ID Application certificate from Apple Developer portal _(blocks: Step 6b.1)_.
+- Generate app-specific password at appleid.apple.com for `notarytool` _(blocks: the first notarization submission)_.
+- Generate Sparkle EdDSA key pair; store private key in password manager _(blocks: the first appcast signature)_.
+- Publish `appcast.xml` hosting URL (GitHub Pages or raw file path) _(blocks: the first Sparkle update check)_.
+- Create self-hosted Homebrew tap repo `georgele/homebrew-pitwall` OR submit to `homebrew-cask` _(blocks: the first `brew install --cask` verification)_.
+
+**Parallelization:** serial
+
+**Coordination Notes:** Sequential dependency on Phase 6a (reuses the bundle wrapper) plus on the manual-task prerequisites listed above. Touches `Package.swift` (Sparkle dep), `Sources/PitwallApp/Info.plist` (Sparkle keys), `Sources/PitwallApp/AppDelegate.swift`, `Sources/PitwallApp/Views/SettingsView.swift`, `Sources/PitwallApp/Pitwall.entitlements`, new `scripts/release.sh`, `Makefile` release target, `appcast.xml`. High coupling between release automation + app integration makes serial the right mode.
+
+**On Completion** (fill in when phase is done):
+- Deviations from plan: [none, or describe]
+- Tech debt / follow-ups: [none, or list]
+- Ready for next phase: yes/no
