@@ -46,6 +46,13 @@ let package = Package(
             resources: [
                 .copy("Fixtures")
             ]
+        ),
+        .testTarget(
+            name: "PitwallAppSupportTests",
+            dependencies: [
+                "PitwallAppSupport",
+                "PitwallCore"
+            ]
         )
     ]
 )
