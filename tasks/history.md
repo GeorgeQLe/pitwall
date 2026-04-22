@@ -2,6 +2,8 @@
 
 ## 2026-04-21
 
+- Phase 4 Step 4.1 completed: added red XCTest coverage for v1 hardening history retention/downsampling, derived-only history snapshots, diagnostics redaction/export metadata, configurable notification policy behavior, GitHub heatmap GraphQL/rate-limit/token-state behavior, and Phase 4 settings persistence without storing GitHub tokens in `UserDefaults`.
+- Validation: `swift test` fails as expected for the red phase because Phase 4 implementation symbols do not exist yet (`ProviderHistorySnapshot`, `ProviderHistoryRetention`, `DiagnosticsRedactor`, `GitHubHeatmapTokenManager`, `NotificationPolicy`, `Phase4SettingsStore`, and related models). No syntax or package-wiring issues were identified beyond expected missing-symbol diagnostics.
 - Phase 3 completed: all milestone acceptance criteria are satisfied, the completed phase was archived to `tasks/phases/phase-3.md`, and Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap was planned just-in-time in `tasks/todo.md` and `tasks/roadmap.md`.
 - Phase 3 Step 3.9 completed: audited app boundaries and moved provider-state construction out of `MenuBarController` into a testable `ProviderStateFactory` in `PitwallAppSupport`.
 - Added app-support tests for provider visibility, skipped-provider configurability, passive state preservation, Claude credential privacy labels, expired refresh disabling, and sanitized placeholder state. Review-only lane completed locally due subagent policy.

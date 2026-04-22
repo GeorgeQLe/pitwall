@@ -9,7 +9,7 @@
 - [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
 - [x] Phase 3 First Usable macOS Provider Parity completed and archived to `tasks/phases/phase-3.md`.
 - [x] Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap planned just-in-time from completed Phase 3 boundaries.
-- [ ] Ready for `$run` to start Phase 4 Step 4.1.
+- [ ] Ready for `$run` to start Phase 4 Step 4.2.
 
 ## Phase 4: V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap
 
@@ -48,7 +48,7 @@
   - Deliverable: Review findings before final validation.
 
 ### Tests First
-- [ ] Step 4.1: Write failing tests for v1 hardening, history, diagnostics, notifications, and GitHub heatmap
+- [x] Step 4.1: Write failing tests for v1 hardening, history, diagnostics, notifications, and GitHub heatmap
   - Files: create `Tests/PitwallCoreTests/HistoryRetentionTests.swift`, create `Tests/PitwallCoreTests/DiagnosticsRedactionTests.swift`, create `Tests/PitwallCoreTests/GitHubHeatmapTests.swift`, create `Tests/PitwallAppSupportTests/NotificationPolicyTests.swift`, create `Tests/PitwallAppSupportTests/Phase4SettingsTests.swift`
   - Cover history retention/downsampling: keep all snapshots for the last 24 hours, downsample 24 hours to 7 days to one per hour, retain highest session utilization and latest weekly utilization per hourly bucket, and drop snapshots older than 7 days.
   - Cover derived-only history snapshots: provider/account ids, timestamps, confidence, session/weekly utilization, reset timestamps, and headline values only; no prompt text, token values, raw responses, cookies, or auth headers.
@@ -71,6 +71,13 @@
   - Persist derived usage snapshots only: account id, timestamp, provider id, confidence, session/weekly utilization, reset timestamps, and headline values needed for sparklines/daily-budget calculations.
   - Implement 24-hour full retention, 24-hour-to-7-day hourly downsampling, highest session/latest weekly selection, and seven-day expiry with deterministic clock inputs.
   - Keep raw provider responses, prompt text, model responses, token values, stdout, source content, cookies, and auth headers out of history storage.
+  - Implementation plan for next run:
+    - Read `Tests/PitwallCoreTests/HistoryRetentionTests.swift`, `Sources/PitwallCore/ProviderModels.swift`, `Sources/PitwallCore/ClaudeProviderModels.swift`, and `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift`.
+    - Add `ProviderHistorySnapshot` in `PitwallCore` with only derived fields covered by the red tests: account id, recorded timestamp, provider id, confidence, optional session/weekly utilization, optional reset timestamps, and headline.
+    - Add `ProviderHistoryRetention` in `PitwallCore` with deterministic `now`, full retention for snapshots newer than 24 hours, hourly buckets for 24 hours to 7 days, highest session/latest weekly merging inside each bucket, stable chronological output, and expiry after 7 days.
+    - Add an app-support `ProviderHistoryStore` that persists encoded derived snapshots through injected storage/UserDefaults or app-support file storage without raw provider payloads or secrets.
+    - Touch `ProviderRefreshCoordinator` only if needed to create and save derived snapshots from existing provider refresh outputs; do not broaden provider state with raw response content.
+    - Validation: run `swift test`. During this step, failures in later Phase 4 red tests for diagnostics, notifications, settings, and GitHub heatmap are still expected; fix any history test failure, syntax issue, or unrelated regression before marking the step complete.
 - [ ] Step 4.3: Add diagnostics redaction and export support
   - Files: create `Sources/PitwallCore/DiagnosticsRedactor.swift`, create `Sources/PitwallAppSupport/DiagnosticsExporter.swift`, create `Sources/PitwallAppSupport/DiagnosticEventStore.swift`, modify `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift` only as needed to emit redacted diagnostic events
   - Export app/build metadata, enabled provider ids, provider status/confidence, redacted error states, last successful refresh timestamps, storage health, and recent diagnostic event summaries.
