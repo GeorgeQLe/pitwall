@@ -8,7 +8,8 @@
 
 - [x] `/run` — execute Phase 6a Step 6a.1 (VERSION file + version derivation helper). Completed 2026-04-22.
 - [x] `/run` — execute Phase 6a Step 6a.2 (`.app` bundle wrapper script + `Info.plist` placeholder substitution). Completed 2026-04-22.
-- [ ] `/run` — execute Phase 6a Step 6a.3 (`Makefile` with build / install / uninstall / run / clean targets). Evidence: Step 6a.3 is fully decomposed below; `make build` wraps `scripts/build-app-bundle.sh` (now on disk from Step 6a.2), `make install` atomically replaces `/Applications/Pitwall.app` after `codesign --verify`, `make uninstall` invokes the app binary with `--unregister-login-item` (flag added in Step 6a.5) and removes `/Applications/Pitwall.app` while preserving Application Support + Keychain data, `make run` opens the built bundle, `make clean` removes `build/`.
+- [x] `/run` — execute Phase 6a Step 6a.3 (`Makefile` with build / install / uninstall / run / clean targets). Completed 2026-04-22.
+- [ ] `/run` — execute Phase 6a Step 6a.4 (wire the menu bar SF Symbol icon). Evidence: Step 6a.4 is decomposed below; replace the existing status-item image in `Sources/PitwallApp/MenuBarController.swift` with `NSImage(systemSymbolName: "gauge.with.dots.needle.67percent", accessibilityDescription: "Pitwall")`. No asset catalog changes.
 - [ ] After Phase 6a ships: `/plan-phase 6b` — Phase 6b is deferred until the author decides to share Pitwall publicly; blocked on Apple Developer enrollment ($99/yr) and Sparkle/notary credential setup. Do not plan 6b until 6a is complete and the user confirms intent to go public.
 
 ## Completed Phases
@@ -67,7 +68,7 @@
   - Files: create `scripts/build-app-bundle.sh` (shell script that runs `swift build --configuration release --product PitwallApp`, constructs `build/Pitwall.app/Contents/{MacOS,Resources}`, copies the built binary to `Contents/MacOS/PitwallApp`, copies an expanded `Info.plist` with real `CFBundleShortVersionString` + `CFBundleVersion` + `CFBundleExecutable=PitwallApp` + `NSHumanReadableCopyright`, and ad-hoc signs via `codesign --sign - --deep --force --options=runtime build/Pitwall.app`), modify `Sources/PitwallApp/Info.plist` (add `CFBundleExecutable`, `NSHumanReadableCopyright`; keep `LSUIElement=true`, `LSMinimumSystemVersion=13.0`; leave version strings as `{{CFBundleShortVersionString}}` / `{{CFBundleVersion}}` placeholders the script substitutes).
   - Script must use `set -euo pipefail`, exit non-zero on any failure, and be idempotent (`rm -rf build/Pitwall.app` before re-assembling).
 
-- Step 6a.3: Add the `Makefile` with build / install / uninstall / run / clean targets
+- [x] Step 6a.3: Add the `Makefile` with build / install / uninstall / run / clean targets (completed 2026-04-22)
   - Files: create `Makefile` at repo root.
   - `make build` → runs `scripts/build-app-bundle.sh`.
   - `make install` → depends on `build`; replaces `/Applications/Pitwall.app` atomically (`rm -rf` then `cp -R`); verifies with `codesign --verify --verbose`; prints "Open Pitwall from /Applications — it will appear in your menu bar."
