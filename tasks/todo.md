@@ -188,10 +188,16 @@
   - Preserve clean-room constraints, secret privacy, and honest confidence labels.
   - Validation: `swift test` and `swift build` must pass with no warnings emitted.
   - Implementation plan for future run:
-    - Audit whether UI-specific behavior leaked into `PitwallCore` or whether provider/networking behavior leaked into SwiftUI views.
-    - Refactor only for concrete boundary, naming, or duplication improvements that preserve covered behavior.
-    - Do not add Phase 4 features such as durable history, diagnostics export, notifications, or GitHub heatmap during this refactor.
-    - If no refactor is needed, rerun validation and mark this step complete with "no code changes needed".
+    - Start from the current clean validation baseline: Step 3.8 recorded `swift test` passing 51 XCTest cases and `swift build` passing with no warnings.
+    - Review `Sources/PitwallApp/MenuBarController.swift`, `Sources/PitwallApp/PopoverController.swift`, and `Sources/PitwallApp/Views/*` for provider/networking/configuration behavior that should live in `PitwallAppSupport`.
+    - Review `Sources/PitwallAppSupport/AppProviderState.swift`, `ProviderCardViewModel.swift`, `MenuBarStatusFormatter.swift`, `ProviderRotationController.swift`, `ProviderConfigurationStore.swift`, `ClaudeAccountSettings.swift`, `ProviderRefreshCoordinator.swift`, `LocalProviderSnapshotLoader.swift`, and `PollingPolicy.swift` for UI-only rendering details that should stay in `PitwallApp`.
+    - Confirm `Sources/PitwallCore/*` remains provider-data/domain focused: no AppKit/SwiftUI imports, no menu/popover concepts, no UI copy that belongs in presentation, and no direct reads of real provider credential files.
+    - Preserve these boundaries while auditing: provider logic belongs in `PitwallCore`/`PitwallAppSupport`; AppKit/SwiftUI composition belongs in `PitwallApp`; secrets remain behind `ProviderSecretStore`; saved Claude credentials are never rendered; Codex/Gemini snapshots remain sanitized/passive only.
+    - Refactor only if the audit finds concrete boundary leakage, misleading naming, avoidable duplication, or untested behavior that can be improved without weakening existing coverage.
+    - If refactoring, update or add focused app-support tests under `Tests/PitwallAppSupportTests/` for any moved behavior; avoid screenshot/UI automation in this step.
+    - Do not add Phase 4 features such as durable history, diagnostics export, notifications, GitHub heatmap, production packaging, or new provider APIs.
+    - Validation: run `swift test` and `swift build`, inspect output for warnings as well as failures, and fix any unexpected regression before marking complete.
+    - If no refactor is needed, rerun validation and mark this step complete with "no code changes needed" plus the validation results.
 
 ### Milestone: Phase 3 First Usable macOS Provider Parity
 **Acceptance Criteria:**
