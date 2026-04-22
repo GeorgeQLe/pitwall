@@ -13,6 +13,10 @@ let package = Package(
             targets: ["PitwallCore"]
         ),
         .library(
+            name: "PitwallShared",
+            targets: ["PitwallShared"]
+        ),
+        .library(
             name: "PitwallAppSupport",
             targets: ["PitwallAppSupport"]
         ),
@@ -29,8 +33,12 @@ let package = Package(
             ]
         ),
         .target(
-            name: "PitwallAppSupport",
+            name: "PitwallShared",
             dependencies: ["PitwallCore"]
+        ),
+        .target(
+            name: "PitwallAppSupport",
+            dependencies: ["PitwallCore", "PitwallShared"]
         ),
         .executableTarget(
             name: "PitwallApp",
@@ -51,6 +59,13 @@ let package = Package(
             name: "PitwallAppSupportTests",
             dependencies: [
                 "PitwallAppSupport",
+                "PitwallCore"
+            ]
+        ),
+        .testTarget(
+            name: "PitwallSharedTests",
+            dependencies: [
+                "PitwallShared",
                 "PitwallCore"
             ]
         )
