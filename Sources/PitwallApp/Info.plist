@@ -8,11 +8,19 @@
     <string>Pitwall</string>
     <key>CFBundleIdentifier</key>
     <string>com.pitwall.app</string>
+    <key>CFBundleExecutable</key>
+    <string>PitwallApp</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>{{CFBundleShortVersionString}}</string>
+    <key>CFBundleVersion</key>
+    <string>{{CFBundleVersion}}</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>LSUIElement</key>
     <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2026 Pitwall contributors. All rights reserved.</string>
 </dict>
 </plist>
