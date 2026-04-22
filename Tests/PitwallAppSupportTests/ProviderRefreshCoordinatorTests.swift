@@ -191,7 +191,13 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertEqual(outcome.appState.provider(for: .claude)?.status, .expired)
         XCTAssertEqual(setupState?.secretState.status, .expired)
         XCTAssertEqual(setupState?.lastErrorDescription, "Claude auth expired.")
-        XCTAssertTrue(outcome.diagnostics.contains("Claude auth expired for account acct_1."))
+        XCTAssertTrue(outcome.diagnostics.contains("Claude auth expired."))
+        XCTAssertTrue(outcome.diagnosticEvents.contains {
+            $0.providerId == .claude &&
+                $0.summary == "Claude auth expired." &&
+                $0.details["reason"] == "httpStatus:401"
+        })
+        XCTAssertFalse(String(describing: outcome.diagnosticEvents).contains("acct_1"))
     }
 
     func testNetworkFailurePreservesLastSuccessfulNonSecretSnapshotAsStale() async throws {

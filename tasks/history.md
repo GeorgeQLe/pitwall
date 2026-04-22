@@ -2,6 +2,9 @@
 
 ## 2026-04-21
 
+- Phase 4 Step 4.3 completed: added deterministic diagnostics redaction/export models, local redacted diagnostic event storage, diagnostics export assembly, and refresh coordinator diagnostic events for Claude auth/network failures plus Codex/Gemini passive scan failures.
+- Diagnostics redaction now strips sensitive keys and token/account-id-like values before persistence/export, and refresh outcomes no longer include the Claude account id in expired-auth diagnostics.
+- Validation: `swift build` passes with no warnings emitted. `swift test` remains red as expected because later Phase 4 red tests still reference unimplemented notification, settings, and GitHub heatmap symbols (`NotificationPolicy`, `Phase4SettingsStore`, `GitHubHeatmapRequest`, and related models).
 - Phase 4 Step 4.2 completed: added `ProviderHistorySnapshot`, deterministic history retention/downsampling, a derived-only app-support history store, and Claude refresh coordinator integration that persists sanitized usage history after successful refreshes.
 - History retention keeps all snapshots for the last 24 hours, downsamples 24-hour-to-7-day snapshots into hourly buckets, preserves highest session utilization and latest weekly utilization per bucket, and drops snapshots older than seven days.
 - Validation: `swift build` passes with no warnings emitted. `swift test --filter HistoryRetentionTests` still fails before execution as expected because SwiftPM compiles later red-phase Phase 4 test files with missing diagnostics, notification, settings, and GitHub heatmap symbols. A direct module-level history retention check passed.

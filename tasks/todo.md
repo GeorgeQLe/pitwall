@@ -9,7 +9,7 @@
 - [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
 - [x] Phase 3 First Usable macOS Provider Parity completed and archived to `tasks/phases/phase-3.md`.
 - [x] Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap planned just-in-time from completed Phase 3 boundaries.
-- [ ] Ready for `$run` to start Phase 4 Step 4.3.
+- [ ] Ready for `$run` to start Phase 4 Step 4.4.
 
 ## Phase 4: V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap
 
@@ -78,7 +78,7 @@
     - Add an app-support `ProviderHistoryStore` that persists encoded derived snapshots through injected storage/UserDefaults or app-support file storage without raw provider payloads or secrets.
     - Touch `ProviderRefreshCoordinator` only if needed to create and save derived snapshots from existing provider refresh outputs; do not broaden provider state with raw response content.
     - Validation: run `swift test`. During this step, failures in later Phase 4 red tests for diagnostics, notifications, settings, and GitHub heatmap are still expected; fix any history test failure, syntax issue, or unrelated regression before marking the step complete.
-- [ ] Step 4.3: Add diagnostics redaction and export support
+- [x] Step 4.3: Add diagnostics redaction and export support
   - Files: create `Sources/PitwallCore/DiagnosticsRedactor.swift`, create `Sources/PitwallAppSupport/DiagnosticsExporter.swift`, create `Sources/PitwallAppSupport/DiagnosticEventStore.swift`, modify `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift` only as needed to emit redacted diagnostic events
   - Export app/build metadata, enabled provider ids, provider status/confidence, redacted error states, last successful refresh timestamps, storage health, and recent diagnostic event summaries.
   - Redact cookies, tokens, auth headers, unnecessary account ids, raw responses, prompts, model responses, stdout, and source content before persistence or export.
@@ -96,6 +96,14 @@
   - Support Claude reset, expired auth, telemetry degraded, and pacing-threshold notification decisions through injectable schedulers.
   - Keep notifications user-configurable and ensure disabled preferences suppress all scheduling.
   - Avoid requiring live macOS notification permission for tests; concrete OS scheduling should be isolated behind the scheduler protocol.
+  - Implementation plan for next run:
+    - Read `Tests/PitwallAppSupportTests/NotificationPolicyTests.swift`, `Sources/PitwallAppSupport/UserPreferences.swift`, `Sources/PitwallApp/Views/SettingsView.swift`, and the notification/privacy sections of `specs/pitwall-macos-clean-room.md`.
+    - Add `NotificationPreferences` in `PitwallAppSupport` with toggles for reset, expired auth, telemetry degraded, and pacing-threshold notifications plus a configurable `PacingLabel` threshold.
+    - Add `NotificationEvent`, `NotificationRequest`, `NotificationScheduling`, and `NotificationPolicy` in `PitwallAppSupport`; keep decision logic deterministic and testable with an injected scheduler.
+    - Add a concrete macOS notification scheduler behind the protocol without requiring live notification permission in tests.
+    - Wire preferences into settings persistence only as needed for the Step 4.4 tests; avoid implementing GitHub heatmap settings in this step.
+    - Add `NotificationPreferencesView` and connect it from `SettingsView` with native controls for notification toggles and threshold selection, keeping disabled preferences suppressing every schedule path.
+    - Validation: run `swift build` and `swift test`. During this step, later Phase 4 red tests for settings gaps not covered by notifications and GitHub heatmap are still expected to fail; fix notification test failures, syntax issues, and unrelated regressions before marking the step complete.
 - [ ] Step 4.5: Add optional GitHub heatmap configuration, token storage, and GraphQL fetch
   - Files: create `Sources/PitwallCore/GitHubHeatmapClient.swift`, create `Sources/PitwallCore/GitHubHeatmapModels.swift`, create `Sources/PitwallAppSupport/GitHubHeatmapSettings.swift`, create `Sources/PitwallAppSupport/GitHubHeatmapCoordinator.swift`, modify `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/GitHubHeatmapSettingsView.swift`
   - Store the GitHub personal access token through `ProviderSecretStore`/Keychain and store username/non-secret heatmap settings outside Keychain.

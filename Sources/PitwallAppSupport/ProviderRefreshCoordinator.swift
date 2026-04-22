@@ -16,15 +16,18 @@ public struct ProviderRefreshOutcome: Equatable, Sendable {
     public var appState: AppProviderState
     public var nextClaudeRefreshAt: Date?
     public var diagnostics: [String]
+    public var diagnosticEvents: [DiagnosticEvent]
 
     public init(
         appState: AppProviderState,
         nextClaudeRefreshAt: Date? = nil,
-        diagnostics: [String] = []
+        diagnostics: [String] = [],
+        diagnosticEvents: [DiagnosticEvent] = []
     ) {
         self.appState = appState
         self.nextClaudeRefreshAt = nextClaudeRefreshAt
         self.diagnostics = diagnostics
+        self.diagnosticEvents = diagnosticEvents
     }
 }
 
@@ -42,6 +45,8 @@ public actor ProviderRefreshCoordinator {
     private let claudeClient: any ClaudeUsageClienting
     private let snapshotLoader: any LocalProviderSnapshotLoading
     private let historyStore: ProviderHistoryStore
+    private let diagnosticEventStore: DiagnosticEventStore
+    private let diagnosticsRedactor: DiagnosticsRedactor
     private let pollingPolicy: PollingPolicy
     private let now: @Sendable () -> Date
 
@@ -55,6 +60,8 @@ public actor ProviderRefreshCoordinator {
         claudeClient: any ClaudeUsageClienting = ClaudeUsageClient(),
         snapshotLoader: any LocalProviderSnapshotLoading = LocalProviderSnapshotLoader(),
         historyStore: ProviderHistoryStore = ProviderHistoryStore(),
+        diagnosticEventStore: DiagnosticEventStore = DiagnosticEventStore(),
+        diagnosticsRedactor: DiagnosticsRedactor = DiagnosticsRedactor(),
         pollingPolicy: PollingPolicy = PollingPolicy(),
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
@@ -63,6 +70,8 @@ public actor ProviderRefreshCoordinator {
         self.claudeClient = claudeClient
         self.snapshotLoader = snapshotLoader
         self.historyStore = historyStore
+        self.diagnosticEventStore = diagnosticEventStore
+        self.diagnosticsRedactor = diagnosticsRedactor
         self.pollingPolicy = pollingPolicy
         self.now = now
     }
@@ -73,15 +82,25 @@ public actor ProviderRefreshCoordinator {
         let refreshDate = now()
         let configuration = await configurationStore.load()
         var diagnostics: [String] = []
+        var diagnosticEvents: [DiagnosticEvent] = []
 
         let claudeState = await refreshClaude(
             configuration: configuration,
             trigger: trigger,
             now: refreshDate,
-            diagnostics: &diagnostics
+            diagnostics: &diagnostics,
+            diagnosticEvents: &diagnosticEvents
         )
-        let codexState = refreshCodex(diagnostics: &diagnostics)
-        let geminiState = refreshGemini(diagnostics: &diagnostics)
+        let codexState = refreshCodex(
+            diagnostics: &diagnostics,
+            diagnosticEvents: &diagnosticEvents,
+            now: refreshDate
+        )
+        let geminiState = refreshGemini(
+            diagnostics: &diagnostics,
+            diagnosticEvents: &diagnosticEvents,
+            now: refreshDate
+        )
 
         let nextClaudeRefreshAt = pollingPolicy.nextClaudeRefreshDate(
             lastRefreshAt: lastClaudeRefreshAttemptAt,
@@ -91,19 +110,24 @@ public actor ProviderRefreshCoordinator {
             now: refreshDate
         )
 
+        let redactedDiagnosticEvents = diagnosticEvents.map(diagnosticsRedactor.redact)
+        try? await diagnosticEventStore.append(redactedDiagnosticEvents, now: refreshDate)
+
         return ProviderRefreshOutcome(
             appState: AppProviderState(
                 providers: [claudeState, codexState, geminiState],
                 selectedProviderId: configuration.userPreferences.pinnedProviderId ?? .claude
             ),
             nextClaudeRefreshAt: nextClaudeRefreshAt,
-            diagnostics: diagnostics
+            diagnostics: diagnostics,
+            diagnosticEvents: redactedDiagnosticEvents
         )
     }
 
     public func testClaudeConnection(accountId: String? = nil) async -> ProviderState {
         let configuration = await configurationStore.load()
         var diagnostics: [String] = []
+        var diagnosticEvents: [DiagnosticEvent] = []
 
         if let accountId,
            configuration.claudeAccounts.contains(where: { $0.id == accountId }) {
@@ -113,7 +137,8 @@ public actor ProviderRefreshCoordinator {
                 configuration: scoped,
                 trigger: .testConnection,
                 now: now(),
-                diagnostics: &diagnostics
+                diagnostics: &diagnostics,
+                diagnosticEvents: &diagnosticEvents
             )
         }
 
@@ -121,7 +146,8 @@ public actor ProviderRefreshCoordinator {
             configuration: configuration,
             trigger: .testConnection,
             now: now(),
-            diagnostics: &diagnostics
+            diagnostics: &diagnostics,
+            diagnosticEvents: &diagnosticEvents
         )
     }
 
@@ -129,7 +155,8 @@ public actor ProviderRefreshCoordinator {
         configuration: ProviderConfigurationSnapshot,
         trigger: RefreshTrigger,
         now refreshDate: Date,
-        diagnostics: inout [String]
+        diagnostics: inout [String],
+        diagnosticEvents: inout [DiagnosticEvent]
     ) async -> ProviderState {
         guard let account = selectedClaudeAccount(in: configuration) else {
             return missingClaudeState(
@@ -203,7 +230,8 @@ public actor ProviderRefreshCoordinator {
                 account: account,
                 lastSnapshot: lastSnapshot,
                 refreshDate: refreshDate,
-                diagnostics: &diagnostics
+                diagnostics: &diagnostics,
+                diagnosticEvents: &diagnosticEvents
             )
         } catch {
             return await handleClaudeFailure(
@@ -211,7 +239,8 @@ public actor ProviderRefreshCoordinator {
                 account: account,
                 lastSnapshot: lastSnapshot,
                 refreshDate: refreshDate,
-                diagnostics: &diagnostics
+                diagnostics: &diagnostics,
+                diagnosticEvents: &diagnosticEvents
             )
         }
     }
@@ -221,7 +250,8 @@ public actor ProviderRefreshCoordinator {
         account: ClaudeAccountConfiguration,
         lastSnapshot: ClaudeUsageSnapshot?,
         refreshDate: Date,
-        diagnostics: inout [String]
+        diagnostics: inout [String],
+        diagnosticEvents: inout [DiagnosticEvent]
     ) async -> ProviderState {
         switch reason {
         case .httpStatus(401), .httpStatus(403):
@@ -233,11 +263,23 @@ public actor ProviderRefreshCoordinator {
                 accountId: account.id,
                 errorDescription: "Claude auth expired."
             )
-            diagnostics.append("Claude auth expired for account \(account.id).")
+            diagnostics.append("Claude auth expired.")
+            diagnosticEvents.append(DiagnosticEvent(
+                providerId: .claude,
+                occurredAt: refreshDate,
+                summary: "Claude auth expired.",
+                details: ["reason": diagnosticValue(for: reason)]
+            ))
 
         case .networkUnavailable, .decodingFailed, .unknown, .httpStatus:
             claudeFailureState.consecutiveNetworkFailures += 1
             diagnostics.append("Claude refresh failed: \(diagnosticValue(for: reason)).")
+            diagnosticEvents.append(DiagnosticEvent(
+                providerId: .claude,
+                occurredAt: refreshDate,
+                summary: "Claude refresh failed.",
+                details: ["reason": diagnosticValue(for: reason)]
+            ))
         }
 
         return ClaudeUsageParser.normalizedErrorState(
@@ -248,12 +290,22 @@ public actor ProviderRefreshCoordinator {
         )
     }
 
-    private func refreshCodex(diagnostics: inout [String]) -> ProviderState {
+    private func refreshCodex(
+        diagnostics: inout [String],
+        diagnosticEvents: inout [DiagnosticEvent],
+        now refreshDate: Date
+    ) -> ProviderState {
         do {
             let snapshot = try snapshotLoader.loadCodexSnapshot()
             return try CodexLocalDetector().detect(from: snapshot)
         } catch {
             diagnostics.append("Codex passive scan failed.")
+            diagnosticEvents.append(DiagnosticEvent(
+                providerId: .codex,
+                occurredAt: refreshDate,
+                summary: "Codex passive scan failed.",
+                details: ["reason": "scanUnavailable"]
+            ))
             return degradedLocalState(
                 providerId: .codex,
                 displayName: "Codex",
@@ -262,12 +314,22 @@ public actor ProviderRefreshCoordinator {
         }
     }
 
-    private func refreshGemini(diagnostics: inout [String]) -> ProviderState {
+    private func refreshGemini(
+        diagnostics: inout [String],
+        diagnosticEvents: inout [DiagnosticEvent],
+        now refreshDate: Date
+    ) -> ProviderState {
         do {
             let snapshot = try snapshotLoader.loadGeminiSnapshot()
             return try GeminiLocalDetector().detect(from: snapshot)
         } catch {
             diagnostics.append("Gemini passive scan failed.")
+            diagnosticEvents.append(DiagnosticEvent(
+                providerId: .gemini,
+                occurredAt: refreshDate,
+                summary: "Gemini passive scan failed.",
+                details: ["reason": "scanUnavailable"]
+            ))
             return degradedLocalState(
                 providerId: .gemini,
                 displayName: "Gemini",
