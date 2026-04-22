@@ -91,7 +91,7 @@
     - Add `DiagnosticsExporter` in `PitwallAppSupport` to assemble app/build metadata, enabled provider ids, provider status/confidence, last successful refresh timestamps, storage health, and recent redacted diagnostic summaries.
     - Touch `ProviderRefreshCoordinator` only as needed to emit redacted diagnostic events for Claude auth/network failures and passive scan failures. Do not persist raw endpoint responses, prompts, stdout, source content, cookies, auth headers, or token values.
     - Validation: run `swift build` and `swift test`. During this step, later Phase 4 red tests for notifications, settings, and GitHub heatmap are still expected to fail; fix diagnostics test failures, syntax issues, and unrelated regressions before marking the step complete.
-- [ ] Step 4.4: Add configurable local notification policy and scheduler abstraction
+- [x] Step 4.4: Add configurable local notification policy and scheduler abstraction
   - Files: create `Sources/PitwallAppSupport/NotificationPreferences.swift`, create `Sources/PitwallAppSupport/NotificationPolicy.swift`, create `Sources/PitwallAppSupport/NotificationScheduler.swift`, modify `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/NotificationPreferencesView.swift`
   - Support Claude reset, expired auth, telemetry degraded, and pacing-threshold notification decisions through injectable schedulers.
   - Keep notifications user-configurable and ensure disabled preferences suppress all scheduling.
@@ -109,6 +109,14 @@
   - Store the GitHub personal access token through `ProviderSecretStore`/Keychain and store username/non-secret heatmap settings outside Keychain.
   - Use GraphQL variables for username/date inputs, display the last 12 weeks, and enforce hourly refresh limits except for manual refresh.
   - Treat 401/403 as invalid or expired token state and never render saved tokens back into UI state.
+  - Implementation plan for next run:
+    - Read `Tests/PitwallCoreTests/GitHubHeatmapTests.swift`, `Tests/PitwallAppSupportTests/Phase4SettingsTests.swift`, `Sources/PitwallCore/SecretStore.swift`, `Sources/PitwallCore/InMemorySecretStore.swift`, `Sources/PitwallAppSupport/ProviderConfigurationStore.swift`, and the GitHub Heatmap sections of `specs/pitwall-macos-clean-room.md`.
+    - Add `GitHubHeatmapRequest`, response/day/week models, `GitHubHeatmapResponseMapper`, `GitHubHeatmapRefreshPolicy`, and `GitHubHeatmapError` in `PitwallCore`. The GraphQL request must use variables for username and date inputs rather than string interpolation.
+    - Add `GitHubHeatmapTokenState` and `GitHubHeatmapTokenManager` using `ProviderSecretStore` so saved tokens are write-only at public boundaries and 401/403 maps to invalid/expired state.
+    - Add `GitHubHeatmapSettings` and `Phase4SettingsStore` in `PitwallAppSupport` to persist history, diagnostics, notification, and non-secret heatmap preferences in `UserDefaults`; do not store GitHub tokens there.
+    - Add `GitHubHeatmapCoordinator` with injected transport/clock, hourly automatic refresh limiting, manual bypass, invalid-token state handling, and no live GitHub calls in tests.
+    - Add `GitHubHeatmapSettingsView` and connect it from `SettingsView`, ensuring saved token values are never rendered back into UI state after save.
+    - Validation: run `swift build` and `swift test`. During this step, later Phase 4 UI wiring tests or gaps for Step 4.6 may still be expected; fix all GitHub heatmap/settings test failures, syntax issues, and unrelated regressions before marking the step complete.
 - [ ] Step 4.6: Wire history, diagnostics, notifications, and heatmap into the macOS app surface
   - Files: modify `Sources/PitwallApp/MenuBarController.swift`, modify `Sources/PitwallApp/PopoverController.swift`, modify `Sources/PitwallApp/Views/PopoverContentView.swift`, modify `Sources/PitwallApp/Views/ProviderCardView.swift`, modify `Sources/PitwallApp/Views/SettingsView.swift`, create `Sources/PitwallApp/Views/DiagnosticsExportView.swift`, create `Sources/PitwallApp/Views/GitHubHeatmapView.swift`, create `Sources/PitwallApp/Views/HistorySparklineView.swift`
   - Replace "History pending" placeholders with compact sparklines backed by derived snapshots when available.

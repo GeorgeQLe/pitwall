@@ -2,6 +2,9 @@
 
 ## 2026-04-21
 
+- Phase 4 Step 4.4 completed: added configurable notification preferences, deterministic notification policy decisions, a scheduler protocol, a macOS `UserNotificationScheduler`, settings persistence for notification preferences, and a native settings section for reset/auth/degraded/pacing-threshold notifications.
+- Notification scheduling is testable through injected schedulers and the concrete macOS scheduler is isolated behind `NotificationScheduling`, so tests do not require live notification permission.
+- Validation: `swift build` passes with no warnings emitted. `swift test` remains red as expected because later Phase 4 red tests still reference unimplemented GitHub heatmap and Phase 4 settings symbols (`GitHubHeatmapRequest`, `GitHubHeatmapTokenManager`, `Phase4SettingsStore`, and related models); SwiftPM compiles those files before filtered notification tests can execute.
 - Phase 4 Step 4.3 completed: added deterministic diagnostics redaction/export models, local redacted diagnostic event storage, diagnostics export assembly, and refresh coordinator diagnostic events for Claude auth/network failures plus Codex/Gemini passive scan failures.
 - Diagnostics redaction now strips sensitive keys and token/account-id-like values before persistence/export, and refresh outcomes no longer include the Claude account id in expired-auth diagnostics.
 - Validation: `swift build` passes with no warnings emitted. `swift test` remains red as expected because later Phase 4 red tests still reference unimplemented notification, settings, and GitHub heatmap symbols (`NotificationPolicy`, `Phase4SettingsStore`, `GitHubHeatmapRequest`, and related models).

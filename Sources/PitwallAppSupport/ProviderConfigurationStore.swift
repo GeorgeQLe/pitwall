@@ -254,12 +254,14 @@ private struct StoredUserPreferences: Codable {
     var providerRotationMode: String
     var pinnedProviderId: String?
     var rotationInterval: TimeInterval
+    var notificationPreferences: StoredNotificationPreferences?
 
     init(_ preferences: UserPreferences) {
         resetDisplayPreference = preferences.resetDisplayPreference.rawValue
         providerRotationMode = preferences.providerRotationMode.rawValue
         pinnedProviderId = preferences.pinnedProviderId?.rawValue
         rotationInterval = preferences.rotationInterval
+        notificationPreferences = StoredNotificationPreferences(preferences.notificationPreferences)
     }
 
     var preferences: UserPreferences {
@@ -267,7 +269,34 @@ private struct StoredUserPreferences: Codable {
             resetDisplayPreference: ResetDisplayPreference(rawValue: resetDisplayPreference) ?? .countdown,
             providerRotationMode: ProviderRotationMode(rawValue: providerRotationMode) ?? .automatic,
             pinnedProviderId: pinnedProviderId.map(ProviderID.init(rawValue:)),
-            rotationInterval: rotationInterval
+            rotationInterval: rotationInterval,
+            notificationPreferences: notificationPreferences?.preferences ?? NotificationPreferences()
+        )
+    }
+}
+
+private struct StoredNotificationPreferences: Codable {
+    var resetNotificationsEnabled: Bool
+    var expiredAuthNotificationsEnabled: Bool
+    var telemetryDegradedNotificationsEnabled: Bool
+    var pacingThresholdNotificationsEnabled: Bool
+    var pacingThreshold: String
+
+    init(_ preferences: NotificationPreferences) {
+        resetNotificationsEnabled = preferences.resetNotificationsEnabled
+        expiredAuthNotificationsEnabled = preferences.expiredAuthNotificationsEnabled
+        telemetryDegradedNotificationsEnabled = preferences.telemetryDegradedNotificationsEnabled
+        pacingThresholdNotificationsEnabled = preferences.pacingThresholdNotificationsEnabled
+        pacingThreshold = preferences.pacingThreshold.rawValue
+    }
+
+    var preferences: NotificationPreferences {
+        NotificationPreferences(
+            resetNotificationsEnabled: resetNotificationsEnabled,
+            expiredAuthNotificationsEnabled: expiredAuthNotificationsEnabled,
+            telemetryDegradedNotificationsEnabled: telemetryDegradedNotificationsEnabled,
+            pacingThresholdNotificationsEnabled: pacingThresholdNotificationsEnabled,
+            pacingThreshold: PacingLabel(rawValue: pacingThreshold) ?? .warning
         )
     }
 }

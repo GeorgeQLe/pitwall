@@ -50,6 +50,8 @@ struct SettingsView: View {
                     )
                     Divider()
                     DisplayPreferencesView(preferences: $preferences)
+                    Divider()
+                    NotificationPreferencesView(preferences: notificationPreferences)
                 }
                 .padding(.trailing, 6)
             }
@@ -126,5 +128,12 @@ struct SettingsView: View {
         PitwallAppSupport.supportedProviders.map { providerId in
             profiles.first(where: { $0.providerId == providerId }) ?? ProviderProfileConfiguration(providerId: providerId)
         }
+    }
+
+    private var notificationPreferences: Binding<NotificationPreferences> {
+        Binding(
+            get: { preferences.notificationPreferences },
+            set: { preferences.notificationPreferences = $0 }
+        )
     }
 }

@@ -17,16 +17,19 @@ public struct UserPreferences: Equatable, Sendable {
     public var providerRotationMode: ProviderRotationMode
     public var pinnedProviderId: ProviderID?
     public var rotationInterval: TimeInterval
+    public var notificationPreferences: NotificationPreferences
 
     public init(
         resetDisplayPreference: ResetDisplayPreference = .countdown,
         providerRotationMode: ProviderRotationMode = .automatic,
         pinnedProviderId: ProviderID? = nil,
-        rotationInterval: TimeInterval = 7
+        rotationInterval: TimeInterval = 7,
+        notificationPreferences: NotificationPreferences = NotificationPreferences()
     ) {
         self.resetDisplayPreference = resetDisplayPreference
         self.providerRotationMode = providerRotationMode
         self.pinnedProviderId = pinnedProviderId
         self.rotationInterval = max(5, min(10, rotationInterval))
+        self.notificationPreferences = notificationPreferences
     }
 }
