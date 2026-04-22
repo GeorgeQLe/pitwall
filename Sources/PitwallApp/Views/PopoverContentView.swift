@@ -14,6 +14,8 @@ struct PopoverContentView: View {
     let onAddAccount: () -> Void
     let onSelectProvider: (ProviderID) -> Void
 
+    @AppStorage("pitwall.welcome.v1.dismissed") private var welcomeDismissed: Bool = false
+
     private var selectedProvider: ProviderState? {
         appState.selectedProvider()
     }
@@ -27,6 +29,10 @@ struct PopoverContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
+
+            if !welcomeDismissed {
+                WelcomeBannerView(onDismiss: { welcomeDismissed = true })
+            }
 
             if let selectedCard {
                 actionSummary(selectedCard)
