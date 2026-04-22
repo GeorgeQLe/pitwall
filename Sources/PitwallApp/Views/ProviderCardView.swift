@@ -5,6 +5,7 @@ import SwiftUI
 struct ProviderCardView: View {
     let viewModel: ProviderCardViewModel
     let isSelected: Bool
+    let historySnapshots: [ProviderHistorySnapshot]
     let onSelect: () -> Void
     let actionHandler: (ProviderAction) -> Void
 
@@ -12,6 +13,10 @@ struct ProviderCardView: View {
         VStack(alignment: .leading, spacing: 10) {
             header
             metrics
+            if historySnapshots.count > 1 {
+                HistorySparklineView(snapshots: historySnapshots)
+                    .frame(height: 24)
+            }
 
             Text(viewModel.confidenceExplanation)
                 .font(.system(size: 12))

@@ -5,7 +5,11 @@ import SwiftUI
 struct PopoverContentView: View {
     let appState: AppProviderState
     let preferences: UserPreferences
+    let historySnapshots: [ProviderHistorySnapshot]
+    let gitHubHeatmap: GitHubHeatmap?
+    let gitHubHeatmapSettings: GitHubHeatmapSettings
     let onRefresh: () -> Void
+    let onRefreshGitHubHeatmap: () -> Void
     let onOpenSettings: () -> Void
     let onAddAccount: () -> Void
     let onSelectProvider: (ProviderID) -> Void
@@ -26,6 +30,14 @@ struct PopoverContentView: View {
 
             if let selectedCard {
                 actionSummary(selectedCard)
+            }
+
+            if gitHubHeatmapSettings.isEnabled {
+                GitHubHeatmapView(
+                    heatmap: gitHubHeatmap,
+                    settings: gitHubHeatmapSettings,
+                    onRefresh: onRefreshGitHubHeatmap
+                )
             }
 
             providerList
@@ -82,7 +94,7 @@ struct PopoverContentView: View {
             HStack(spacing: 10) {
                 metricTile(title: "Budget", value: card.secondaryMetric ?? "Unavailable")
                 metricTile(title: "Reset", value: card.resetText ?? "Unknown")
-                metricTile(title: "Trend", value: "History pending")
+                trendTile(for: card.providerId)
             }
         }
         .padding(12)
@@ -103,6 +115,25 @@ struct PopoverContentView: View {
         .frame(maxWidth: .infinity, minHeight: 48, alignment: .topLeading)
     }
 
+    private func trendTile(for providerId: ProviderID) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Trend")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.secondary)
+
+            let snapshots = history(for: providerId)
+            if snapshots.count > 1 {
+                HistorySparklineView(snapshots: snapshots)
+                    .frame(height: 28)
+            } else {
+                Text("No history")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 48, alignment: .topLeading)
+    }
+
     private var providerList: some View {
         ScrollView {
             VStack(spacing: 10) {
@@ -110,6 +141,7 @@ struct PopoverContentView: View {
                     ProviderCardView(
                         viewModel: ProviderCardViewModel(provider: provider, preferences: preferences),
                         isSelected: provider.providerId == appState.selectedProviderId,
+                        historySnapshots: history(for: provider.providerId),
                         onSelect: {
                             onSelectProvider(provider.providerId)
                         },
@@ -152,5 +184,11 @@ struct PopoverContentView: View {
         case .wait:
             break
         }
+    }
+
+    private func history(for providerId: ProviderID) -> [ProviderHistorySnapshot] {
+        historySnapshots
+            .filter { $0.providerId == providerId }
+            .sorted { $0.recordedAt < $1.recordedAt }
     }
 }

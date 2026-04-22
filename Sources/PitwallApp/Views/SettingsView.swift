@@ -5,6 +5,9 @@ import SwiftUI
 struct SettingsView: View {
     let claudeAccounts: [ClaudeAccountSetupState]
     let onSaveConfiguration: (ProviderConfigurationSnapshot) async -> String?
+    let onSavePhase4Settings: (Phase4Settings) async -> String?
+    let onSaveGitHubToken: (String, String) async -> GitHubHeatmapTokenStatus?
+    let onExportDiagnostics: () async -> String
     let onSaveClaudeCredentials: (ClaudeCredentialInput) async -> String?
     let onDeleteClaudeCredentials: (String) async -> String?
     let onTestClaudeConnection: (String?) async -> String
@@ -12,14 +15,18 @@ struct SettingsView: View {
 
     @State private var profiles: [ProviderProfileConfiguration]
     @State private var preferences: UserPreferences
-    @State private var gitHubHeatmapSettings: GitHubHeatmapSettings
+    @State private var phase4Settings: Phase4Settings
     @State private var message: String?
     @State private var isSaving = false
 
     init(
         snapshot: ProviderConfigurationSnapshot,
+        phase4Settings: Phase4Settings,
         claudeAccounts: [ClaudeAccountSetupState],
         onSaveConfiguration: @escaping (ProviderConfigurationSnapshot) async -> String?,
+        onSavePhase4Settings: @escaping (Phase4Settings) async -> String?,
+        onSaveGitHubToken: @escaping (String, String) async -> GitHubHeatmapTokenStatus?,
+        onExportDiagnostics: @escaping () async -> String,
         onSaveClaudeCredentials: @escaping (ClaudeCredentialInput) async -> String?,
         onDeleteClaudeCredentials: @escaping (String) async -> String?,
         onTestClaudeConnection: @escaping (String?) async -> String,
@@ -27,13 +34,18 @@ struct SettingsView: View {
     ) {
         self.claudeAccounts = claudeAccounts
         self.onSaveConfiguration = onSaveConfiguration
+        self.onSavePhase4Settings = onSavePhase4Settings
+        self.onSaveGitHubToken = onSaveGitHubToken
+        self.onExportDiagnostics = onExportDiagnostics
         self.onSaveClaudeCredentials = onSaveClaudeCredentials
         self.onDeleteClaudeCredentials = onDeleteClaudeCredentials
         self.onTestClaudeConnection = onTestClaudeConnection
         self.onRefresh = onRefresh
         _profiles = State(initialValue: Self.normalizedProfiles(from: snapshot.providerProfiles))
         _preferences = State(initialValue: snapshot.userPreferences)
-        _gitHubHeatmapSettings = State(initialValue: GitHubHeatmapSettings())
+        var initialPhase4Settings = phase4Settings
+        initialPhase4Settings.notifications = snapshot.userPreferences.notificationPreferences
+        _phase4Settings = State(initialValue: initialPhase4Settings)
     }
 
     var body: some View {
@@ -55,7 +67,14 @@ struct SettingsView: View {
                     Divider()
                     NotificationPreferencesView(preferences: notificationPreferences)
                     Divider()
-                    GitHubHeatmapSettingsView(settings: $gitHubHeatmapSettings)
+                    historyAndDiagnosticsSettings
+                    Divider()
+                    DiagnosticsExportView(onExport: onExportDiagnostics)
+                    Divider()
+                    GitHubHeatmapSettingsView(
+                        settings: gitHubHeatmapSettings,
+                        onSaveToken: onSaveGitHubToken
+                    )
                 }
                 .padding(.trailing, 6)
             }
@@ -121,6 +140,12 @@ struct SettingsView: View {
 
         if let error = await onSaveConfiguration(snapshot) {
             message = error
+            return
+        }
+
+        phase4Settings.notifications = preferences.notificationPreferences
+        if let error = await onSavePhase4Settings(phase4Settings) {
+            message = error
         } else {
             message = "Settings saved."
         }
@@ -137,7 +162,56 @@ struct SettingsView: View {
     private var notificationPreferences: Binding<NotificationPreferences> {
         Binding(
             get: { preferences.notificationPreferences },
-            set: { preferences.notificationPreferences = $0 }
+            set: {
+                preferences.notificationPreferences = $0
+                phase4Settings.notifications = $0
+            }
+        )
+    }
+
+    private var gitHubHeatmapSettings: Binding<GitHubHeatmapSettings> {
+        Binding(
+            get: { phase4Settings.gitHubHeatmap },
+            set: { phase4Settings.gitHubHeatmap = $0 }
+        )
+    }
+
+    private var historyAndDiagnosticsSettings: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("History And Diagnostics")
+                .font(.system(size: 14, weight: .semibold))
+
+            Toggle("Retain derived provider history", isOn: historyEnabled)
+
+            Stepper(
+                "History retention: \(phase4Settings.history.retentionDays) days",
+                value: historyRetentionDays,
+                in: 1...7
+            )
+            .disabled(!phase4Settings.history.isEnabled)
+
+            Toggle("Include recent redacted diagnostic events", isOn: includeDiagnosticEvents)
+        }
+    }
+
+    private var historyEnabled: Binding<Bool> {
+        Binding(
+            get: { phase4Settings.history.isEnabled },
+            set: { phase4Settings.history.isEnabled = $0 }
+        )
+    }
+
+    private var historyRetentionDays: Binding<Int> {
+        Binding(
+            get: { phase4Settings.history.retentionDays },
+            set: { phase4Settings.history.retentionDays = $0 }
+        )
+    }
+
+    private var includeDiagnosticEvents: Binding<Bool> {
+        Binding(
+            get: { phase4Settings.diagnostics.includeRecentEvents },
+            set: { phase4Settings.diagnostics.includeRecentEvents = $0 }
         )
     }
 }

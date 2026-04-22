@@ -17,7 +17,11 @@ final class PopoverController {
     func update(
         appState: AppProviderState,
         preferences: UserPreferences,
+        historySnapshots: [ProviderHistorySnapshot],
+        gitHubHeatmap: GitHubHeatmap?,
+        gitHubHeatmapSettings: GitHubHeatmapSettings,
         onRefresh: @escaping () -> Void,
+        onRefreshGitHubHeatmap: @escaping () -> Void,
         onOpenSettings: @escaping () -> Void,
         onAddAccount: @escaping () -> Void,
         onSelectProvider: @escaping (ProviderID) -> Void
@@ -27,7 +31,11 @@ final class PopoverController {
             rootView: PopoverContentView(
                 appState: appState,
                 preferences: preferences,
+                historySnapshots: historySnapshots,
+                gitHubHeatmap: gitHubHeatmap,
+                gitHubHeatmapSettings: gitHubHeatmapSettings,
                 onRefresh: onRefresh,
+                onRefreshGitHubHeatmap: onRefreshGitHubHeatmap,
                 onOpenSettings: onOpenSettings,
                 onAddAccount: onAddAccount,
                 onSelectProvider: onSelectProvider
@@ -50,8 +58,12 @@ final class PopoverController {
 
     func showSettings(
         snapshot: ProviderConfigurationSnapshot,
+        phase4Settings: Phase4Settings,
         claudeAccounts: [ClaudeAccountSetupState],
         onSaveConfiguration: @escaping (ProviderConfigurationSnapshot) async -> String?,
+        onSavePhase4Settings: @escaping (Phase4Settings) async -> String?,
+        onSaveGitHubToken: @escaping (String, String) async -> GitHubHeatmapTokenStatus?,
+        onExportDiagnostics: @escaping () async -> String,
         onSaveClaudeCredentials: @escaping (ClaudeCredentialInput) async -> String?,
         onDeleteClaudeCredentials: @escaping (String) async -> String?,
         onTestClaudeConnection: @escaping (String?) async -> String,
@@ -59,8 +71,12 @@ final class PopoverController {
     ) {
         let view = SettingsView(
             snapshot: snapshot,
+            phase4Settings: phase4Settings,
             claudeAccounts: claudeAccounts,
             onSaveConfiguration: onSaveConfiguration,
+            onSavePhase4Settings: onSavePhase4Settings,
+            onSaveGitHubToken: onSaveGitHubToken,
+            onExportDiagnostics: onExportDiagnostics,
             onSaveClaudeCredentials: onSaveClaudeCredentials,
             onDeleteClaudeCredentials: onDeleteClaudeCredentials,
             onTestClaudeConnection: onTestClaudeConnection,
