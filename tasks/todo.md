@@ -82,7 +82,7 @@
   - Replace the current status-item image with `NSImage(systemSymbolName: "gauge.with.dots.needle.67percent", accessibilityDescription: "Pitwall")`.
   - No `.imageset` / `.icns` asset; SF Symbol only (reserved upgrade slot for Phase 6b).
 
-- Step 6a.5: Wire the `SMAppService` login-item and Settings toggle
+- [x] Step 6a.5: Wire the `SMAppService` login-item and Settings toggle (completed 2026-04-22)
   - Files: create `Sources/PitwallAppSupport/LoginItemService.swift` (`LoginItemService` protocol with `isEnabled: Bool { get }` and `setEnabled(_:) throws`; `SMAppServiceLoginItemService` implementation wrapping `SMAppService.mainApp`; `InMemoryLoginItemService` fixture for tests), modify `Sources/PitwallApp/Views/SettingsView.swift` to bind the existing Launch-at-Login `Toggle` through the service and surface a friendly error state if `setEnabled` throws, modify `Sources/PitwallApp/AppDelegate.swift` or `PitwallApp.swift` to inject the service and to handle a `--unregister-login-item` CLI flag that immediately calls `SMAppService.mainApp.unregister()` and exits 0.
   - `Package.swift`: add `.linkedFramework("ServiceManagement")` to `PitwallApp`'s `linkerSettings`.
 
