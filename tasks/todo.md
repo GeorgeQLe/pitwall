@@ -9,7 +9,7 @@
 - [x] Phase 2 Provider Data Foundations completed and archived to `tasks/phases/phase-2.md`.
 - [x] Phase 3 First Usable macOS Provider Parity completed and archived to `tasks/phases/phase-3.md`.
 - [x] Phase 4 V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap planned just-in-time from completed Phase 3 boundaries.
-- [ ] Ready for `$run` to start Phase 4 Step 4.4.
+- [ ] Ready for `$run` to start Phase 4 Step 4.6.
 
 ## Phase 4: V1 Hardening, History, Diagnostics, Notifications, And GitHub Heatmap
 
