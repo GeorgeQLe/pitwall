@@ -102,6 +102,36 @@
 - Step 6a.8: Add the install smoke-test script
   - Files: create `scripts/smoke-install.sh` that builds into a tmp prefix, asserts `Contents/MacOS/PitwallApp` exists and is executable, asserts `Contents/Info.plist` has both version strings filled in (via `defaults read`), runs `codesign --verify --verbose` against the tmp bundle, and tears down.
   - Must use `set -euo pipefail` and exit non-zero on any failure.
+  - **Self-contained handoff detail (ship-one-step contract):**
+    - **Execution profile:** serial, implementation-safe. No subagent lanes. Integration owner: main agent.
+    - **What to build:** a bash script at `scripts/smoke-install.sh` that assembles `build/Pitwall.app` via the existing Step 6a.2 pipeline and then asserts the packaged bundle is well-formed without touching `/Applications/`.
+    - **Required assertions (script must fail non-zero on any):**
+      1. `build/Pitwall.app/Contents/MacOS/PitwallApp` exists, is a regular file, and has the executable bit set (use `test -x`).
+      2. `build/Pitwall.app/Contents/Info.plist` has `CFBundleShortVersionString` substituted (matches `^[0-9]+\.[0-9]+\.[0-9]+$` — reject the literal `{{CFBundleShortVersionString}}` placeholder) and `CFBundleVersion` substituted (matches `^[0-9]+$` — reject the literal `{{CFBundleVersion}}` placeholder). Read via `defaults read "$PWD/build/Pitwall.app/Contents/Info" CFBundleShortVersionString` and likewise for `CFBundleVersion`. Note: `defaults read` requires an absolute path and no `.plist` extension on the argument.
+      3. `codesign --verify --verbose build/Pitwall.app` exits 0.
+    - **Pipeline:** `set -euo pipefail`; `cd` to repo root (resolve via `$(cd "$(dirname "$0")/.." && pwd)` then `cd` into it); invoke `bash scripts/build-app-bundle.sh` (that script is already idempotent and self-cleans `build/Pitwall.app` before reassembly, so no extra teardown is required — the "builds into a tmp prefix … and tears down" language in the original task line is satisfied by the existing `rm -rf build/Pitwall.app` inside `scripts/build-app-bundle.sh`); then run the three assertions above; print a terminal `smoke-install: OK` line on success.
+    - **Do not** invoke `/Applications/Pitwall.app`, do not run `make install` or `make uninstall`, do not touch any `UserDefaults`, do not launch the app, do not unregister the login item. The script is a packaging-artifact validator only — production filesystem state is Step 6a.10's problem, not Step 6a.8's.
+    - **Reuse anchors:** `scripts/build-app-bundle.sh` for the build step; `defaults read` for plist inspection (already used by the manual Step 6a.2 validation); `codesign --verify --verbose` exactly as wired into `make install` in `Makefile`. No new Swift code, no new SwiftPM target.
+    - **Files to create / modify:**
+      - Create `scripts/smoke-install.sh` (executable — `chmod +x` after write).
+    - **Validation after landing Step 6a.8:**
+      - `bash scripts/smoke-install.sh` exits 0 on a clean tree.
+      - `swift build` passes.
+      - `swift test` still passes the 193/193 baseline with zero regressions.
+      - `make build` still exits 0 and produces `build/Pitwall.app`; `codesign --verify --verbose build/Pitwall.app` still exits 0.
+      - Grep confirms no new forbidden imports in `PitwallShared` / `PitwallCore` / `PitwallWindows` / `PitwallLinux` (trivial — no Swift source changes this step).
+    - **Test strategy:** tests-after. Step 6a.8 ships no XCTest coverage of its own — it IS a test in shell form. The Phase 6a XCTest additions all live in Step 6a.9 (`PackagingVersionTests`, `LoginItemServiceTests`, `PackagingProbeTests`).
+    - **Ship-one-step handoff contract:**
+      1. Implement only Step 6a.8 per this plan.
+      2. Run `bash scripts/smoke-install.sh`, then `swift build` + `swift test`; confirm the 193-test baseline still passes with zero regressions.
+      3. Run `make build`; verify `build/Pitwall.app` still assembles cleanly and `codesign --verify --verbose` exits 0.
+      4. Mark Step 6a.8 done in `tasks/todo.md`; bump the priority-queue pointer to Step 6a.9 (regression tests for new code paths).
+      5. Update `tasks/history.md` with a session entry.
+      6. Commit and push to `main` via `/commit-and-push-by-feature`.
+      7. Skip deploy (no `deploy.md` contract exists for Pitwall).
+      8. Step 6a.9 is already decomposed in `tasks/todo.md` above.
+      9. Ensure `.claude/settings.local.json` contains `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`.
+      10. Start the approval UI for Step 6a.9 by calling `EnterPlanMode` first, writing a brief pass-through plan in plan mode, then calling `ExitPlanMode`. Stop before implementing 6a.9.
 
 ### Green
 
