@@ -162,6 +162,31 @@ Notes on constraints honored by this step:
 - **CI gap carried forward**: as with 5.3 / 5.4 / 5.5, no Windows / Linux CI host is configured yet. Because every adapter plus these regression suites are pure Foundation, macOS `swift test` runs `PitwallWindowsTests` and `PitwallLinuxTests` as a portability proxy. Step 5.7 inherits this gap.
 - **Gap kept open for Step 5.7 / 5.8**: the regression suites do not exercise real Win32 / WinRT / `libsecret` / `libnotify` / `libayatana-appindicator` bindings. Those seams remain injected stubs until platform CI runners and production backend wiring land. Step 5.7 records whether macOS `swift test` alone satisfies the phase acceptance gate or whether the CI gap must be closed before Phase 5 ships.
 
+## Platform Validation (Step 5.7)
+
+Recorded when Phase 5 Step 5.7 ran the Phase 5 milestone validation gate against the supported build toolchains. This step is verification-only — no source or test code changed; only this section plus `tasks/todo.md` + `tasks/history.md` were edited.
+
+- **macOS — validated**: on `Apple Swift 6.2.4` (`arm64-apple-macosx26.0`, Darwin 25.3.0), `swift build` and `swift test` both succeed. `swift test` executed **193 XCTest cases with 0 failures and 0 regressions**, matching the Step 5.6 baseline exactly (167 pre-5.6 + 26 new 5.6 suites: 5 shared + 11 Windows + 10 Linux). `PitwallCore`, `PitwallShared`, `PitwallAppSupport`, `PitwallApp`, `PitwallWindows`, and `PitwallLinux` all compile and their test targets all run cleanly under macOS.
+- **Windows — CI gap recorded, not resolved**: no Windows toolchain / CI host is wired up in this repository. `swift build --triple x86_64-unknown-windows-msvc` and `swift test` on a real Windows host are **not** executed by this step. Because every `PitwallWindows` adapter and every `WindowsCrossPlatformRegressionTests` assertion is pure Foundation, the macOS `swift test` run exercises `PitwallWindowsTests` as a portability proxy (mirroring the 5.3 / 5.5 / 5.6 precedent). Wiring a Windows runner + real Win32 / WinRT bindings is a known follow-up.
+- **Linux — CI gap recorded, not resolved**: no Linux toolchain / CI host is wired up in this repository. `swift build` and `swift test` on a real Linux host are **not** executed by this step. Because every `PitwallLinux` adapter and every `LinuxCrossPlatformRegressionTests` assertion is pure Foundation, the macOS `swift test` run exercises `PitwallLinuxTests` as a portability proxy (mirroring the 5.4 / 5.5 / 5.6 precedent). Wiring a Linux runner + real `libsecret` / `libnotify` / `libayatana-appindicator` bindings is a known follow-up.
+- **Phase 5 milestone acceptance ↔ regression coverage map**: each Phase 5 milestone acceptance bullet is satisfied by at least one Step 5.6 regression suite. See the "Cross-Platform Regression Coverage (Step 5.6)" section above for the full map — it is the canonical source and is not duplicated here. In summary:
+  - Tray/menu parity with Claude/Codex/Gemini (provider visibility + status formatting parity) → `WindowsCrossPlatformRegressionTests` + `LinuxCrossPlatformRegressionTests` + shared anchor.
+  - Shared fixture/behavior tests for pacing, Claude parsing, provider confidence, history retention, and diagnostics redaction → `PitwallCoreTests` (pacing, Claude parsing, provider confidence) + shared `CrossPlatformRegressionTests` + per-platform regression suites (history retention + diagnostics redaction parity).
+  - Credential storage uses OS secure storage or documented fallback → per-platform `test_credentialStore_neverExposesPlaintextReadPath_onFailingBackend` + `test_secureStorageDegradedStateEnum_isVisibleToShell`.
+  - Codex/Gemini detection prompt/token safe on each platform → per-platform detector sanitization + suppressed-probe fail-closed regression tests.
+  - GitHub heatmap behavior matches macOS v1 within platform constraints → per-platform `test_githubHeatmapClient_producesIdenticalMappingForRecordedFixture` + shared anchor.
+  - Platform-specific differences documented without silently weakening privacy → the Windows Shell (5.3), Linux Shell (5.4), Codex/Gemini Detection (5.5), Regression Coverage (5.6), and this Platform Validation (5.7) sections are the written record.
+- **Explicitly not validated on real platform hosts** (limitation, not regression — carried forward from 5.3 / 5.4 / 5.5 / 5.6 unchanged):
+  - Win32 `Shell_NotifyIcon` tray + WinRT `ToastNotificationManager` bindings — production backends remain TBD behind `WindowsToastDelivering` / future tray glue.
+  - Windows Credential Manager production path (`CredWriteW` / `CredReadW` / `CredDeleteW`) — production wiring of `WindowsCredentialManagerBackend` remains a follow-up; tests use `InMemoryWindowsCredentialBackend`.
+  - `libsecret` / Secret Service production path — `LinuxSecretServiceBackend` production wiring remains a follow-up; tests use `InMemoryLinuxSecretBackend`.
+  - `libnotify` / `org.freedesktop.Notifications` D-Bus delivery — `LinuxNotificationDelivering` production wiring remains a follow-up.
+  - `libayatana-appindicator` binding + "no tray available" windowed-popover fallback in a real desktop environment.
+  - Real filesystem probes for Codex / Gemini presence on Windows (`FindFirstFileW`-backed) and Linux (`stat(2)`-backed); current tests inject fixture probes.
+  - End-to-end tray + notification UX in a real Windows or Linux desktop session.
+
+Step 5.7 outcome: Phase 5 milestone acceptance is **verified on macOS** (including portability-proxy coverage of the Windows and Linux adapter suites) and **documented as a platform limitation** for real Windows / Linux hosts. The CI gap is intentionally carried into post-Phase 5 follow-ups rather than closed by silently relaxing any acceptance bullet.
+
 ## Deferred Decisions
 
 Explicitly punted from Step 5.1. Each downstream step must resolve its own items before closing.
