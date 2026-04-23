@@ -4,7 +4,10 @@ import PitwallCore
 import SwiftUI
 
 final class PopoverController {
+    private static let popoverContentSize = NSSize(width: 430, height: 620)
+
     private let popover: NSPopover
+    private var hostingController: NSHostingController<PopoverContentView>?
     private var onboardingWindowController: NSWindowController?
     private var settingsWindowController: NSWindowController?
 
@@ -12,6 +15,7 @@ final class PopoverController {
         self.popover = NSPopover()
         popover.behavior = .transient
         popover.animates = true
+        popover.contentSize = Self.popoverContentSize
     }
 
     func update(
@@ -26,21 +30,27 @@ final class PopoverController {
         onAddAccount: @escaping () -> Void,
         onSelectProvider: @escaping (ProviderID) -> Void
     ) {
-        popover.contentSize = NSSize(width: 430, height: 620)
-        popover.contentViewController = NSHostingController(
-            rootView: PopoverContentView(
-                appState: appState,
-                preferences: preferences,
-                historySnapshots: historySnapshots,
-                gitHubHeatmap: gitHubHeatmap,
-                gitHubHeatmapSettings: gitHubHeatmapSettings,
-                onRefresh: onRefresh,
-                onRefreshGitHubHeatmap: onRefreshGitHubHeatmap,
-                onOpenSettings: onOpenSettings,
-                onAddAccount: onAddAccount,
-                onSelectProvider: onSelectProvider
-            )
+        let rootView = PopoverContentView(
+            appState: appState,
+            preferences: preferences,
+            historySnapshots: historySnapshots,
+            gitHubHeatmap: gitHubHeatmap,
+            gitHubHeatmapSettings: gitHubHeatmapSettings,
+            onRefresh: onRefresh,
+            onRefreshGitHubHeatmap: onRefreshGitHubHeatmap,
+            onOpenSettings: onOpenSettings,
+            onAddAccount: onAddAccount,
+            onSelectProvider: onSelectProvider
         )
+
+        if let hostingController {
+            hostingController.rootView = rootView
+        } else {
+            let controller = NSHostingController(rootView: rootView)
+            controller.preferredContentSize = Self.popoverContentSize
+            hostingController = controller
+            popover.contentViewController = controller
+        }
     }
 
     func toggle(relativeTo positioningRect: NSRect, of positioningView: NSView) {
@@ -113,8 +123,9 @@ final class PopoverController {
         onboardingWindowController = showWindow(
             existingController: onboardingWindowController,
             title: "Set Up Pitwall",
-            contentSize: NSSize(width: 540, height: 660),
-            rootView: view
+            contentSize: NSSize(width: 640, height: 720),
+            rootView: view,
+            level: .floating
         )
     }
 
@@ -127,7 +138,8 @@ final class PopoverController {
         existingController: NSWindowController?,
         title: String,
         contentSize: NSSize,
-        rootView: Content
+        rootView: Content,
+        level: NSWindow.Level = .normal
     ) -> NSWindowController {
         if let existingController {
             existingController.window?.makeKeyAndOrderFront(nil)
@@ -143,6 +155,7 @@ final class PopoverController {
         )
         window.title = title
         window.contentViewController = NSHostingController(rootView: rootView)
+        window.level = level
         window.center()
 
         let controller = NSWindowController(window: window)
