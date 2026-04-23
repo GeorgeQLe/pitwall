@@ -126,6 +126,20 @@ final class MenuBarController: NSObject {
             return
         }
 
+        let onboardingPending = !onboardingDefaults.bool(forKey: Self.onboardingCompletedKey)
+        if onboardingPending {
+            if popoverController.onboardingPanelActive {
+                popoverController.dismissOnboardingPanel()
+            } else {
+                Task {
+                    let snapshot = await configurationStore.load()
+                    let accounts = (try? await claudeSettings.setupStates()) ?? []
+                    presentOnboarding(snapshot: snapshot, claudeAccounts: accounts)
+                }
+            }
+            return
+        }
+
         popoverController.toggle(relativeTo: sender.bounds, of: sender)
     }
 
@@ -259,10 +273,10 @@ final class MenuBarController: NSObject {
             await reloadProviderHistory()
             await refreshGitHubHeatmapIfNeeded(trigger: .automatic)
 
-            if showOnboardingIfNeeded,
-               !onboardingDefaults.bool(forKey: Self.onboardingCompletedKey) {
-                presentOnboarding(snapshot: snapshot, claudeAccounts: accounts)
-            }
+            _ = showOnboardingIfNeeded
+            // Onboarding is surfaced via handleStatusItemClick when the flag
+            // is unset; auto-presenting during launch races the status item's
+            // first layout pass.
         }
     }
 
@@ -308,21 +322,25 @@ final class MenuBarController: NSObject {
         snapshot: ProviderConfigurationSnapshot,
         claudeAccounts: [ClaudeAccountSetupState]
     ) {
-        popoverController.showOnboarding(
+        guard let button = statusItem?.button else { return }
+        popoverController.presentOnboardingPanel(
+            anchoredTo: button,
             snapshot: snapshot,
             claudeAccounts: claudeAccounts,
             onSaveConfiguration: { [weak self] snapshot in
-                await self?.saveConfiguration(snapshot) ?? "Onboarding controller is unavailable."
+                guard let self else { return "Onboarding controller is unavailable." }
+                return await self.saveConfiguration(snapshot)
             },
             onSaveClaudeCredentials: { [weak self] input in
-                await self?.saveClaudeCredentials(input) ?? "Onboarding controller is unavailable."
+                guard let self else { return "Onboarding controller is unavailable." }
+                return await self.saveClaudeCredentials(input)
             },
             onTestClaudeConnection: { [weak self] accountId in
                 await self?.testClaudeConnection(accountId: accountId) ?? "Onboarding controller is unavailable."
             },
             onFinish: { [weak self] in
                 self?.onboardingDefaults.set(true, forKey: Self.onboardingCompletedKey)
-                self?.popoverController.closeOnboarding()
+                self?.popoverController.dismissOnboardingPanel()
                 self?.loadConfiguration(showOnboardingIfNeeded: false)
             }
         )

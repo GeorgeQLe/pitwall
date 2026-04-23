@@ -59,7 +59,7 @@ struct OnboardingWizardView: View {
             footer
         }
         .padding(18)
-        .frame(width: 640, height: 720, alignment: .topLeading)
+        .frame(width: 520, height: 580, alignment: .topLeading)
         .background(Color(nsColor: .windowBackgroundColor))
     }
 
@@ -123,7 +123,7 @@ struct OnboardingWizardView: View {
 
             Spacer()
 
-            Button("Skip setup") {
+            Button("Don't show again") {
                 Task { await finish(skipped: true) }
             }
             .disabled(isSaving)
