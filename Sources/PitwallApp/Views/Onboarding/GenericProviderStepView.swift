@@ -16,6 +16,12 @@ struct GenericProviderStepView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if !isComplete {
+                Text("Enter both required values to continue.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+
             Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 8) {
                 GridRow {
                     Text("Plan or profile")
@@ -78,6 +84,12 @@ struct GenericProviderStepView: View {
 
     private var profile: ProviderProfileConfiguration? {
         profiles.first(where: { $0.providerId == providerId })
+    }
+
+    private var isComplete: Bool {
+        guard let profile else { return false }
+        return !(profile.planProfile ?? "").trimmed.isEmpty
+            && !(profile.authMode ?? "").trimmed.isEmpty
     }
 
     private func updateProfile(_ mutate: (inout ProviderProfileConfiguration) -> Void) {

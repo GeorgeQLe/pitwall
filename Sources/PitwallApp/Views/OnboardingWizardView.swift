@@ -16,6 +16,7 @@ struct OnboardingWizardView: View {
     @State private var message: String?
     @State private var isSaving = false
     @State private var completedSteps: Set<OnboardingWizardStep> = []
+    @State private var claudeCredentialsSaved: Bool
 
     init(
         snapshot: ProviderConfigurationSnapshot,
@@ -35,6 +36,7 @@ struct OnboardingWizardView: View {
         _preferences = State(initialValue: snapshot.userPreferences)
         let preselected = Set(normalized.filter { $0.isEnabled }.map { $0.providerId })
         _selectedProviders = State(initialValue: preselected)
+        _claudeCredentialsSaved = State(initialValue: Self.hasConfiguredClaudeAccount(claudeAccounts))
     }
 
     private var steps: [OnboardingWizardStep] {
@@ -52,10 +54,16 @@ struct OnboardingWizardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             progressBar
-            ScrollView {
-                stepContent
+            ScrollViewReader { proxy in
+                ScrollView {
+                    stepContent {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            proxy.scrollTo(OnboardingScrollTarget.claudeCredentialHelp, anchor: .bottom)
+                        }
+                    }
                     .padding(.trailing, 6)
                     .padding(.top, 4)
+                }
             }
             footer
         }
@@ -78,7 +86,7 @@ struct OnboardingWizardView: View {
     }
 
     @ViewBuilder
-    private var stepContent: some View {
+    private func stepContent(onScrollToClaudeHelp: @escaping () -> Void) -> some View {
         switch currentStep {
         case .welcome:
             WelcomeStepView()
@@ -88,7 +96,12 @@ struct OnboardingWizardView: View {
             ClaudeCredentialStepView(
                 accounts: claudeAccounts,
                 onSaveClaudeCredentials: onSaveClaudeCredentials,
-                onTestClaudeConnection: onTestClaudeConnection
+                onTestClaudeConnection: onTestClaudeConnection,
+                onHelpExpanded: onScrollToClaudeHelp,
+                onCredentialsSaved: {
+                    claudeCredentialsSaved = true
+                    message = nil
+                }
             )
         case .credentials(let providerId):
             GenericProviderStepView(providerId: providerId, profiles: $profiles)
@@ -112,6 +125,12 @@ struct OnboardingWizardView: View {
 
             if let message {
                 Text(message)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+            } else if let validationMessage {
+                Text(validationMessage)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
@@ -145,8 +164,23 @@ struct OnboardingWizardView: View {
         switch currentStep {
         case .toolSelection:
             return !selectedProviders.isEmpty
+        case .credentials(.claude):
+            return claudeCredentialsSaved
+        case .credentials(let providerId):
+            return profileIsComplete(for: providerId)
         default:
             return true
+        }
+    }
+
+    private var validationMessage: String? {
+        switch currentStep {
+        case .credentials(.claude) where !claudeCredentialsSaved:
+            return "Save a Claude org id and session key to continue."
+        case .credentials(let providerId) where !profileIsComplete(for: providerId):
+            return "Enter the required \(displayName(for: providerId)) values to continue."
+        default:
+            return nil
         }
     }
 
@@ -185,5 +219,38 @@ struct OnboardingWizardView: View {
         PitwallAppSupport.supportedProviders.map { providerId in
             profiles.first(where: { $0.providerId == providerId }) ?? ProviderProfileConfiguration(providerId: providerId)
         }
+    }
+
+    private static func hasConfiguredClaudeAccount(_ accounts: [ClaudeAccountSetupState]) -> Bool {
+        accounts.contains { account in
+            account.isEnabled
+                && !account.organizationId.trimmed.isEmpty
+                && account.secretState.status == .configured
+        }
+    }
+
+    private func profileIsComplete(for providerId: ProviderID) -> Bool {
+        guard let profile = profiles.first(where: { $0.providerId == providerId }) else { return false }
+        return !(profile.planProfile ?? "").trimmed.isEmpty
+            && !(profile.authMode ?? "").trimmed.isEmpty
+    }
+
+    private func displayName(for providerId: ProviderID) -> String {
+        switch providerId {
+        case .claude: return "Claude"
+        case .codex: return "Codex"
+        case .gemini: return "Gemini"
+        default: return providerId.rawValue.capitalized
+        }
+    }
+}
+
+enum OnboardingScrollTarget: Hashable {
+    case claudeCredentialHelp
+}
+
+private extension String {
+    var trimmed: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

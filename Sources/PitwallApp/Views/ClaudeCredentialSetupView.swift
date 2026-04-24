@@ -7,6 +7,7 @@ struct ClaudeCredentialSetupView: View {
     let onSave: (ClaudeCredentialInput) async -> String?
     let onDelete: (String) async -> String?
     let onTest: (String?) async -> String
+    var onSaveSucceeded: () -> Void = {}
 
     @State private var accountId = UUID().uuidString
     @State private var label = ""
@@ -144,6 +145,7 @@ struct ClaudeCredentialSetupView: View {
             selectedAccountId = input.accountId
             sessionKey = ""
             message = "Claude credentials saved. The session key field was cleared."
+            onSaveSucceeded()
         }
     }
 
