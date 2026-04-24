@@ -7,7 +7,7 @@
 ## Priority Task Queue
 
 - [x] `/run` — execute Phase 6b Step 6b.1 (Sparkle 2.x dependency, entitlements, Info.plist keys, build script updates).
-- [ ] `/run` — execute Phase 6b Step 6b.2 (wire Sparkle updater into AppDelegate and Settings UI).
+- [x] `/run` — execute Phase 6b Step 6b.2 (wire Sparkle updater into AppDelegate and Settings UI).
 - [ ] `/run` — execute Phase 6b Step 6b.3 (create release automation script).
 - [ ] `/run` — execute Phase 6b Step 6b.4 (Makefile release target and appcast.xml template).
 - [ ] `/run` — execute Phase 6b Step 6b.5 (Homebrew cask formula).
@@ -71,7 +71,7 @@
   - Verify `swift build` still compiles and `make install` still works for ad-hoc local dev (no Sparkle keys = no auto-update UI, graceful).
   - Blocked on: manual-todo "Generate Sparkle 2.x EdDSA key pair" for real `SUPublicEDKey` value; manual-todo "Stand up appcast.xml hosting" for real `SUFeedURL` value. Step can proceed with placeholders for code integration; real values filled in Step 6b.6.
 
-- [ ] Step 6b.2: Wire Sparkle updater controller into AppDelegate and Settings UI
+- [x] Step 6b.2: Wire Sparkle updater controller into AppDelegate and Settings UI
   - Files: modify `Sources/PitwallApp/AppDelegate.swift` (import `Sparkle`; init `SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)` only when `SUFeedURL` is present in the bundle's Info.plist — skip silently for ad-hoc builds without Sparkle keys), modify `Sources/PitwallApp/Views/SettingsView.swift` (add an "Updates" section between "Startup" and "Notifications" with: "Check for Updates…" button that calls `updater.checkForUpdates()`, "Automatically check for updates" toggle bound to `updater.automaticallyChecksForUpdates`, update cadence picker bound to `updater.updateCheckInterval` with options: hourly / every 6 hours / daily / weekly), modify `Sources/PitwallApp/MenuBarController.swift` if the updater reference needs to flow through the controller to SettingsView.
   - The "Updates" section is hidden when Sparkle is not configured (ad-hoc builds), so Phase 6a `make install` UX is unchanged.
   - No new `import Sparkle` in `PitwallAppSupport`, `PitwallShared`, `PitwallCore`, or platform shells.

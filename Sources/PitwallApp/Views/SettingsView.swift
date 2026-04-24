@@ -1,5 +1,6 @@
 import PitwallAppSupport
 import PitwallCore
+import Sparkle
 import SwiftUI
 
 struct SettingsView: View {
@@ -13,6 +14,7 @@ struct SettingsView: View {
     let onTestClaudeConnection: (String?) async -> String
     let onRefresh: () -> Void
     let loginItemService: LoginItemService?
+    let updater: SPUUpdater?
 
     @State private var profiles: [ProviderProfileConfiguration]
     @State private var preferences: UserPreferences
@@ -21,6 +23,8 @@ struct SettingsView: View {
     @State private var isSaving = false
     @State private var launchAtLoginEnabled: Bool
     @State private var launchAtLoginMessage: String?
+    @State private var automaticallyChecksForUpdates: Bool
+    @State private var updateCheckInterval: TimeInterval
 
     init(
         snapshot: ProviderConfigurationSnapshot,
@@ -34,7 +38,8 @@ struct SettingsView: View {
         onDeleteClaudeCredentials: @escaping (String) async -> String?,
         onTestClaudeConnection: @escaping (String?) async -> String,
         onRefresh: @escaping () -> Void,
-        loginItemService: LoginItemService? = nil
+        loginItemService: LoginItemService? = nil,
+        updater: SPUUpdater? = nil
     ) {
         self.claudeAccounts = claudeAccounts
         self.onSaveConfiguration = onSaveConfiguration
@@ -46,12 +51,15 @@ struct SettingsView: View {
         self.onTestClaudeConnection = onTestClaudeConnection
         self.onRefresh = onRefresh
         self.loginItemService = loginItemService
+        self.updater = updater
         _profiles = State(initialValue: Self.normalizedProfiles(from: snapshot.providerProfiles))
         _preferences = State(initialValue: snapshot.userPreferences)
         var initialPhase4Settings = phase4Settings
         initialPhase4Settings.notifications = snapshot.userPreferences.notificationPreferences
         _phase4Settings = State(initialValue: initialPhase4Settings)
         _launchAtLoginEnabled = State(initialValue: loginItemService?.isEnabled ?? false)
+        _automaticallyChecksForUpdates = State(initialValue: updater?.automaticallyChecksForUpdates ?? false)
+        _updateCheckInterval = State(initialValue: updater?.updateCheckInterval ?? UpdateCheckCadence.daily.interval)
     }
 
     var body: some View {
@@ -73,6 +81,10 @@ struct SettingsView: View {
                     Divider()
                     launchAtLoginSection
                     Divider()
+                    if updater != nil {
+                        updatesSection
+                        Divider()
+                    }
                     NotificationPreferencesView(preferences: notificationPreferences)
                     Divider()
                     historyAndDiagnosticsSettings
@@ -259,5 +271,80 @@ struct SettingsView: View {
             get: { phase4Settings.diagnostics.includeRecentEvents },
             set: { phase4Settings.diagnostics.includeRecentEvents = $0 }
         )
+    }
+
+    private var updatesSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Updates")
+                .font(.system(size: 14, weight: .semibold))
+
+            Button("Check for Updates...") {
+                updater?.checkForUpdates()
+            }
+
+            Toggle("Automatically check for updates", isOn: automaticallyChecksForUpdatesBinding)
+
+            Picker("Check cadence", selection: updateCheckIntervalBinding) {
+                ForEach(UpdateCheckCadence.allCases) { cadence in
+                    Text(cadence.title).tag(cadence.interval)
+                }
+            }
+            .disabled(!automaticallyChecksForUpdates)
+        }
+    }
+
+    private var automaticallyChecksForUpdatesBinding: Binding<Bool> {
+        Binding(
+            get: { automaticallyChecksForUpdates },
+            set: { newValue in
+                updater?.automaticallyChecksForUpdates = newValue
+                automaticallyChecksForUpdates = updater?.automaticallyChecksForUpdates ?? newValue
+            }
+        )
+    }
+
+    private var updateCheckIntervalBinding: Binding<TimeInterval> {
+        Binding(
+            get: { updateCheckInterval },
+            set: { newValue in
+                updater?.updateCheckInterval = newValue
+                updateCheckInterval = updater?.updateCheckInterval ?? newValue
+            }
+        )
+    }
+}
+
+private enum UpdateCheckCadence: CaseIterable, Identifiable {
+    case hourly
+    case everySixHours
+    case daily
+    case weekly
+
+    var id: TimeInterval { interval }
+
+    var title: String {
+        switch self {
+        case .hourly:
+            return "Hourly"
+        case .everySixHours:
+            return "Every 6 hours"
+        case .daily:
+            return "Daily"
+        case .weekly:
+            return "Weekly"
+        }
+    }
+
+    var interval: TimeInterval {
+        switch self {
+        case .hourly:
+            return 60 * 60
+        case .everySixHours:
+            return 6 * 60 * 60
+        case .daily:
+            return 24 * 60 * 60
+        case .weekly:
+            return 7 * 24 * 60 * 60
+        }
     }
 }

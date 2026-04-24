@@ -1,6 +1,7 @@
 import AppKit
 import PitwallAppSupport
 import PitwallCore
+import Sparkle
 import SwiftUI
 
 final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
@@ -175,7 +176,8 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         onDeleteClaudeCredentials: @escaping (String) async -> String?,
         onTestClaudeConnection: @escaping (String?) async -> String,
         onRefresh: @escaping () -> Void,
-        loginItemService: LoginItemService? = nil
+        loginItemService: LoginItemService? = nil,
+        updater: SPUUpdater? = nil
     ) {
         let view = SettingsView(
             snapshot: snapshot,
@@ -189,7 +191,8 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             onDeleteClaudeCredentials: onDeleteClaudeCredentials,
             onTestClaudeConnection: onTestClaudeConnection,
             onRefresh: onRefresh,
-            loginItemService: loginItemService
+            loginItemService: loginItemService,
+            updater: updater
         )
 
         settingsWindowController = showWindow(

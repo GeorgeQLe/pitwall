@@ -2,6 +2,7 @@ import AppKit
 import Foundation
 import PitwallAppSupport
 import PitwallCore
+import Sparkle
 
 @MainActor
 final class MenuBarController: NSObject {
@@ -25,6 +26,7 @@ final class MenuBarController: NSObject {
     private let onboardingDefaults: UserDefaults
     private let diagnosticEventStore: DiagnosticEventStore
     private let packagingProbe: PackagingProbe
+    private let updater: SPUUpdater?
     private var statusItem: NSStatusItem?
     private var rotationTimer: Timer?
     private var appState: AppProviderState
@@ -34,7 +36,7 @@ final class MenuBarController: NSObject {
     private var gitHubHeatmap: GitHubHeatmap?
     private var scheduledNotificationKeys: Set<String>
 
-    init(loginItemService: LoginItemService? = nil) {
+    init(loginItemService: LoginItemService? = nil, updater: SPUUpdater? = nil) {
         let now = Date()
         let configurationStore = ProviderConfigurationStore()
         let secretStore = KeychainSecretStore()
@@ -80,6 +82,7 @@ final class MenuBarController: NSObject {
             appSupportRoot: appSupportRoot,
             secretStore: KeychainSecretStore(service: "com.pitwall.app.packaging-probe")
         )
+        self.updater = updater
         self.appState = ProviderStateFactory().initialAppState(now: now)
         self.preferences = UserPreferences()
         self.phase4Settings = Phase4Settings()
@@ -313,7 +316,8 @@ final class MenuBarController: NSObject {
                 onRefresh: { [weak self] in
                     self?.refreshNow()
                 },
-                loginItemService: loginItemService
+                loginItemService: loginItemService,
+                updater: updater
             )
         }
     }
