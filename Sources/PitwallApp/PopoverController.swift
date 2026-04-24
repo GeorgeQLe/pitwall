@@ -103,13 +103,12 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         } else {
             panel = NSPanel(
                 contentRect: NSRect(origin: .zero, size: Self.onboardingPanelSize),
-                styleMask: [.titled, .closable, .fullSizeContentView, .nonactivatingPanel],
+                styleMask: [.titled, .closable, .nonactivatingPanel],
                 backing: .buffered,
                 defer: false
             )
             panel.isReleasedWhenClosed = false
-            panel.titlebarAppearsTransparent = true
-            panel.titleVisibility = .hidden
+            panel.title = "Set Up Pitwall"
             panel.isFloatingPanel = true
             panel.becomesKeyOnlyIfNeeded = true
             panel.hidesOnDeactivate = false
