@@ -1,0 +1,12 @@
+# Copy to .release-config for local release credentials and never commit it.
+#
+# Values here are placeholders until the Phase 6b manual prerequisites are done.
+
+SU_FEED_URL="https://example.com/pitwall/appcast.xml"
+SU_PUBLIC_ED_KEY="replace-with-sparkle-public-eddsa-key"
+SIGNING_IDENTITY="Developer ID Application"
+NOTARY_PROFILE="pitwall-notary"
+SIGN_UPDATE_TOOL="./bin/sign_update"
+
+# Optional. The command runs after appcast.xml is updated during a real release.
+# APPCAST_PUBLISH_COMMAND="git add appcast.xml && git commit -m 'Update Pitwall appcast' && git push"

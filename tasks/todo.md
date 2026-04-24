@@ -8,7 +8,7 @@
 
 - [x] `/run` — execute Phase 6b Step 6b.1 (Sparkle 2.x dependency, entitlements, Info.plist keys, build script updates).
 - [x] `/run` — execute Phase 6b Step 6b.2 (wire Sparkle updater into AppDelegate and Settings UI).
-- [ ] `/run` — execute Phase 6b Step 6b.3 (create release automation script).
+- [x] `/run` — execute Phase 6b Step 6b.3 (create release automation script).
 - [ ] `/run` — execute Phase 6b Step 6b.4 (Makefile release target and appcast.xml template).
 - [ ] `/run` — execute Phase 6b Step 6b.5 (Homebrew cask formula).
 - [ ] `/guide` — complete Phase 6b manual prerequisites (Apple Developer enrollment, Developer ID cert, notarytool creds, Sparkle EdDSA key, appcast hosting, Homebrew tap). See `tasks/manual-todo.md`.
@@ -76,7 +76,7 @@
   - The "Updates" section is hidden when Sparkle is not configured (ad-hoc builds), so Phase 6a `make install` UX is unchanged.
   - No new `import Sparkle` in `PitwallAppSupport`, `PitwallShared`, `PitwallCore`, or platform shells.
 
-- [ ] Step 6b.3: Create the release automation script
+- [x] Step 6b.3: Create the release automation script
   - Files: create `scripts/release.sh` (`set -euo pipefail`; accepts `VERSION` as first positional arg or env var).
   - Script pipeline (each step exits non-zero on failure):
     1. Validate `VERSION` matches semver regex; validate working tree is clean (`git diff --quiet HEAD`).
