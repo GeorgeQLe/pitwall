@@ -62,6 +62,7 @@ struct OnboardingWizardView: View {
         .padding(18)
         .frame(width: 520, height: 580, alignment: .topLeading)
         .background(Color(nsColor: .windowBackgroundColor))
+        .animation(.easeInOut(duration: 0.3), value: selectedProviders)
     }
 
     private var progressBar: some View {

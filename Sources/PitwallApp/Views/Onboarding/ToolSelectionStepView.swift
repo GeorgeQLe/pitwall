@@ -45,10 +45,12 @@ struct ToolSelectionStepView: View {
         Binding(
             get: { selectedProviders.contains(providerId) },
             set: { isOn in
-                if isOn {
-                    selectedProviders.insert(providerId)
-                } else {
-                    selectedProviders.remove(providerId)
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    if isOn {
+                        selectedProviders.insert(providerId)
+                    } else {
+                        selectedProviders.remove(providerId)
+                    }
                 }
             }
         )
