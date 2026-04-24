@@ -6,7 +6,7 @@
 
 ## Priority Task Queue
 
-- [ ] `/run` — execute Phase 6b Step 6b.1 (Sparkle 2.x dependency, entitlements, Info.plist keys, build script updates).
+- [x] `/run` — execute Phase 6b Step 6b.1 (Sparkle 2.x dependency, entitlements, Info.plist keys, build script updates).
 - [ ] `/run` — execute Phase 6b Step 6b.2 (wire Sparkle updater into AppDelegate and Settings UI).
 - [ ] `/run` — execute Phase 6b Step 6b.3 (create release automation script).
 - [ ] `/run` — execute Phase 6b Step 6b.4 (Makefile release target and appcast.xml template).
@@ -65,7 +65,7 @@
 
 ### Implementation
 
-- [ ] Step 6b.1: Add Sparkle 2.x SwiftPM dependency, entitlements file, and Info.plist keys
+- [x] Step 6b.1: Add Sparkle 2.x SwiftPM dependency, entitlements file, and Info.plist keys
   - Files: modify `Package.swift` (add `.package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.0")` dependency; add `"Sparkle"` to `PitwallApp` target dependencies), create `Sources/PitwallApp/Pitwall.entitlements` (hardened runtime, no sandbox — keys: `com.apple.security.app-sandbox = false`, no other entitlements beyond what Phases 1-5 require), modify `Sources/PitwallApp/Info.plist` (add `SUFeedURL` with placeholder `{{SUFeedURL}}`, add `SUPublicEDKey` with placeholder `{{SUPublicEDKey}}`).
   - Modify `scripts/build-app-bundle.sh` to: (a) accept optional env vars `SIGNING_IDENTITY` (default `-` for ad-hoc), `ENTITLEMENTS_PATH` (default empty), `SU_FEED_URL` and `SU_PUBLIC_ED_KEY` (default empty — strip from plist when empty for local dev); (b) substitute or strip the Sparkle placeholders in the expanded Info.plist; (c) when `ENTITLEMENTS_PATH` is set, pass `--entitlements "$ENTITLEMENTS_PATH"` to `codesign`; (d) when `SIGNING_IDENTITY` is not `-`, add `--timestamp` to the codesign invocation.
   - Verify `swift build` still compiles and `make install` still works for ad-hoc local dev (no Sparkle keys = no auto-update UI, graceful).
