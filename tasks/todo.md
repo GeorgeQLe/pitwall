@@ -9,7 +9,7 @@
 - [x] `/run` — execute Phase 6b Step 6b.1 (Sparkle 2.x dependency, entitlements, Info.plist keys, build script updates).
 - [x] `/run` — execute Phase 6b Step 6b.2 (wire Sparkle updater into AppDelegate and Settings UI).
 - [x] `/run` — execute Phase 6b Step 6b.3 (create release automation script).
-- [ ] `/run` — execute Phase 6b Step 6b.4 (Makefile release target and appcast.xml template).
+- [x] `/run` — execute Phase 6b Step 6b.4 (Makefile release target and appcast.xml template).
 - [ ] `/run` — execute Phase 6b Step 6b.5 (Homebrew cask formula).
 - [ ] `/guide` — complete Phase 6b manual prerequisites (Apple Developer enrollment, Developer ID cert, notarytool creds, Sparkle EdDSA key, appcast hosting, Homebrew tap). See `tasks/manual-todo.md`.
 - [ ] `/run` — execute Phase 6b Step 6b.6 (fill in real Sparkle keys and appcast URL from completed prerequisites).
@@ -93,7 +93,7 @@
   - Add `.release-config` to `.gitignore`.
   - Add `--dry-run` flag that runs through validation + build + codesign but skips notarization, GitHub release, and appcast publish.
 
-- [ ] Step 6b.4: Add Makefile release target and initial appcast.xml template
+- [x] Step 6b.4: Add Makefile release target and initial appcast.xml template
   - Files: modify `Makefile` (add `.PHONY: release`; `release` target requires `VERSION` env var, validates it's set, calls `bash scripts/release.sh "$(VERSION)"`), create `appcast.xml` (empty Sparkle appcast template with `<rss>` + `<channel>` skeleton and no items — items are appended by `scripts/release.sh`).
   - Verify `make build`, `make install`, `make run`, `make clean` still work (no regression to Phase 6a targets).
 

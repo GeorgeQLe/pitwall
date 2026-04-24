@@ -1,4 +1,4 @@
-.PHONY: build install uninstall run clean
+.PHONY: build install uninstall run clean release
 
 build:
 	bash scripts/build-app-bundle.sh
@@ -22,3 +22,7 @@ run: build
 
 clean:
 	rm -rf build/
+
+release:
+	@test -n "$(VERSION)" || (echo "VERSION is required. Usage: make release VERSION=x.y.z" >&2; exit 2)
+	bash scripts/release.sh "$(VERSION)"
