@@ -1,23 +1,21 @@
 # Todo - Pitwall
 
-> Current phase: 6a of 6b — macOS Local Install (packaging phase, appended post-v1).
+> Current phase: 6b of 6b — macOS Public Release.
 > Source roadmap: `tasks/roadmap.md`
 > Project: Pitwall — clean-room macOS menu bar app for Claude/Codex/Gemini usage pacing.
 
 ## Priority Task Queue
 
-- [x] `/run` — execute Phase 6a Step 6a.1 (VERSION file + version derivation helper). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.2 (`.app` bundle wrapper script + `Info.plist` placeholder substitution). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.3 (`Makefile` with build / install / uninstall / run / clean targets). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.4 (wire the menu bar SF Symbol icon). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.5 (`SMAppService` login-item + Settings toggle). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.6 (first-launch Application Support + Keychain health probe). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.7 (first-launch "Welcome to Pitwall" banner). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.8 (install smoke-test script). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.9 (regression tests covering new code paths: `PackagingVersionTests`, `LoginItemServiceTests`, `PackagingProbeTests`). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.10 (full test suite + packaging smoke checks; visual confirmation of menu-bar install/uninstall). Completed 2026-04-22.
-- [x] `/run` — execute Phase 6a Step 6a.11 (refactor while keeping tests green if needed). Completed 2026-04-22 — closed as "no refactor required"; 212/212 tests green.
-- [ ] After Phase 6a ships: `/plan-phase 6b` — Phase 6b is deferred until the author decides to share Pitwall publicly; blocked on Apple Developer enrollment ($99/yr) and Sparkle/notary credential setup. Do not plan 6b until 6a is complete and the user confirms intent to go public.
+- [ ] `/run` — execute Phase 6b Step 6b.1 (Sparkle 2.x dependency, entitlements, Info.plist keys, build script updates).
+- [ ] `/run` — execute Phase 6b Step 6b.2 (wire Sparkle updater into AppDelegate and Settings UI).
+- [ ] `/run` — execute Phase 6b Step 6b.3 (create release automation script).
+- [ ] `/run` — execute Phase 6b Step 6b.4 (Makefile release target and appcast.xml template).
+- [ ] `/run` — execute Phase 6b Step 6b.5 (Homebrew cask formula).
+- [ ] `/guide` — complete Phase 6b manual prerequisites (Apple Developer enrollment, Developer ID cert, notarytool creds, Sparkle EdDSA key, appcast hosting, Homebrew tap). See `tasks/manual-todo.md`.
+- [ ] `/run` — execute Phase 6b Step 6b.6 (fill in real Sparkle keys and appcast URL from completed prerequisites).
+- [ ] `/run` — execute Phase 6b Step 6b.7 (regression tests for Sparkle integration and release pipeline).
+- [ ] `/run` — execute Phase 6b Step 6b.8 (end-to-end release validation). Blocked on all manual prerequisites.
+- [ ] `/run` — execute Phase 6b Step 6b.9 (refactor if needed while keeping tests green).
 
 ## Completed Phases
 
@@ -28,34 +26,34 @@
 - [x] Phase 5 Cross-Platform V1 Parity completed and archived to `tasks/phases/phase-5.md`.
 - [x] Phase 6a macOS Local Install completed and archived to `tasks/phases/phase-6a.md`.
 
-## Phase 6a: macOS Local Install
+## Phase 6b: macOS Public Release
 
 > Test strategy: tests-after
 
-**Goal:** Turn the existing `PitwallApp` SwiftPM executable into a `.app` bundle the author can drop into `/Applications` with a single `make install`, so Pitwall can replace the legacy ClaudeUsage menu bar as a daily driver without any Apple Developer Program cost.
+**Goal:** Turn the Phase 6a `.app` into a signed, notarized, auto-updating DMG that ships on GitHub Releases and optionally a Homebrew cask, so Pitwall can be downloaded and launched on machines other than the author's without Gatekeeper friction. Deferred until the author wants to share Pitwall widely.
 
 **Scope:**
-- Build an `.app` bundle wrapper around the SwiftPM executable (`swift build --configuration release --product PitwallApp` + `Contents/MacOS` + `Contents/Info.plist` + `Contents/Resources`).
-- Ad-hoc codesign the bundle so Gatekeeper accepts it when launched locally (no Developer ID, no notarization).
-- `Makefile` targets: `make build`, `make install`, `make uninstall`, `make run`. `make uninstall` preserves Application Support + Keychain items.
-- Menu bar icon wired to an SF Symbol via `NSImage(systemSymbolName:)` (baseline `gauge.with.dots.needle.67percent`).
-- Launch-at-login wired through `SMAppService.mainApp`; toggle exposed in `SettingsView`.
-- Version metadata: `CFBundleShortVersionString` from a single-source `VERSION` file; `CFBundleVersion` from `git rev-list --count HEAD`.
-- First-launch health check (run once per install) that probes Application Support write access + Keychain round-trip and logs two events through the existing `DiagnosticEventStore`.
-- "Welcome to Pitwall" one-time first-launch banner explaining no ClaudeUsage migration and directing the user to paste credentials into the existing onboarding flow.
+- Apple Developer Program enrollment (user-driven prerequisite, not an engineering deliverable).
+- Developer ID Application certificate installed in the author's login Keychain; `.p12` backup in password manager.
+- `notarytool` credentials stored via `xcrun notarytool store-credentials --apple-id … --team-id … pitwall-notary`.
+- Sparkle 2.x integration: SwiftPM dependency added to `Package.swift`; `SUFeedURL` + `SUPublicEDKey` in `Info.plist`; `SPUStandardUpdaterController` wired into `AppDelegate`; EdDSA private key stored in password manager only (never committed).
+- `make release VERSION=x.y.z` target that chains: SwiftPM release build → `.app` wrap → Developer ID codesign with hardened runtime + timestamp → DMG package → `xcrun notarytool submit --wait` → `xcrun stapler staple` → Sparkle EdDSA signature → appcast `<item>` append → `gh release create` + `appcast.xml` publish.
+- Entitlements file (`Sources/PitwallApp/Pitwall.entitlements`) scoped for hardened runtime with no sandbox entitlement.
+- Homebrew cask published in a self-hosted tap (`georgele/homebrew-pitwall`) or submitted to `homebrew-cask`. Final channel deferred to manual-todo resolution.
+- "Check for Updates…" menu item, "Automatically check for updates" toggle, and cadence picker added to `SettingsView`.
 
 **Acceptance Criteria:**
-- [x] `make install` on a clean macOS 13+ system produces `/Applications/Pitwall.app`; `codesign --verify --verbose` exits 0.
-- [x] Double-clicking `Pitwall.app` launches without a Gatekeeper block (bundle was never quarantined because it was built locally).
-- [x] Menu bar shows the SF Symbol icon; clicking opens the Phase 3 popover without change.
-- [x] "Launch at Login" toggle in `SettingsView` flips `SMAppService.mainApp` state; verified by reboot.
-- [x] `make uninstall` removes the bundle and unregisters the login-item; Application Support + Keychain items remain intact; reinstall restores prior state.
-- [x] First-launch health check writes two `DiagnosticEventStore` events on first install and does not repeat on subsequent launches.
-- [x] `CFBundleShortVersionString` / `CFBundleVersion` are derived at build time, not hard-coded.
-- [x] macOS `swift build` + `swift test` still pass at the Phase 5 baseline (193/193) with zero regressions after Phase 6a lands.
-- [x] No new `import AppKit` / `import UserNotifications` / `import Security` in `PitwallShared` or platform shells.
-- [x] All phase tests pass (Phase 6a adds `PackagingVersionTests`, `LoginItemServiceTests`, `PackagingProbeTests`).
-- [x] No regressions in previous phase tests.
+- [ ] `make release VERSION=1.0.0` on a clean tree produces a signed DMG that passes `spctl --assess --type open --context context:primary-signature`.
+- [ ] `xcrun stapler validate build/Pitwall-1.0.0.dmg` succeeds.
+- [ ] Downloading the DMG from GitHub Releases on a different Mac launches Pitwall without any Gatekeeper dialog (quarantine xattr present on the downloaded bundle, notarization ticket accepted).
+- [ ] Sparkle checks the appcast on launch and on-demand, offers an update when a newer version is published, verifies the EdDSA signature, relaunches into the new version, and preserves the user's session key, history, and settings.
+- [ ] `brew install --cask pitwall` (via self-hosted tap or upstream cask) installs the same DMG into `/Applications/Pitwall.app` and launches without Gatekeeper issues.
+- [ ] Phase 6a `make install` / `make uninstall` paths still work alongside `make release` for local iteration.
+- [ ] Phase 6a first-launch health check runs once per install (signed or ad-hoc) — does not double-fire when Sparkle replaces the bundle in place.
+- [ ] `Pitwall.app` runs under hardened runtime with no sandbox entitlement and no entitlement beyond what Phase 1-5 behavior requires.
+- [ ] All Phase 1-6a tests continue to pass on macOS with zero regressions.
+- [ ] All phase tests pass.
+- [ ] No regressions in previous phase tests.
 
 ### Execution Profile
 **Parallel mode:** serial
@@ -67,115 +65,82 @@
 
 ### Implementation
 
-- [x] Step 6a.1: Add the version source and an AppKit-free version derivation helper (completed 2026-04-22)
-  - Files: create `VERSION` (content `1.0.0`), create `Sources/PitwallAppSupport/PackagingVersion.swift` (pure struct: `PackagingVersion` with `shortString`, `build`, and a `PackagingVersionProvider` protocol that exposes `current() -> PackagingVersion`; include a `StaticPackagingVersionProvider` fixture for tests), modify `Sources/PitwallApp/PitwallApp.swift` (or `AppDelegate.swift`) to read the version from a build-time constant or bundle lookup so the in-app About section can display it.
-  - Rationale: version is touched by both the bundle builder (writes into `Info.plist`) and the in-app About view. Centralize the in-process side in `PitwallAppSupport` behind a protocol seam so it is unit-testable without launching the app.
-  - The `VERSION` file is the single source of truth for `CFBundleShortVersionString`. `CFBundleVersion` is computed at build time via `git rev-list --count HEAD`.
+- [ ] Step 6b.1: Add Sparkle 2.x SwiftPM dependency, entitlements file, and Info.plist keys
+  - Files: modify `Package.swift` (add `.package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.0")` dependency; add `"Sparkle"` to `PitwallApp` target dependencies), create `Sources/PitwallApp/Pitwall.entitlements` (hardened runtime, no sandbox — keys: `com.apple.security.app-sandbox = false`, no other entitlements beyond what Phases 1-5 require), modify `Sources/PitwallApp/Info.plist` (add `SUFeedURL` with placeholder `{{SUFeedURL}}`, add `SUPublicEDKey` with placeholder `{{SUPublicEDKey}}`).
+  - Modify `scripts/build-app-bundle.sh` to: (a) accept optional env vars `SIGNING_IDENTITY` (default `-` for ad-hoc), `ENTITLEMENTS_PATH` (default empty), `SU_FEED_URL` and `SU_PUBLIC_ED_KEY` (default empty — strip from plist when empty for local dev); (b) substitute or strip the Sparkle placeholders in the expanded Info.plist; (c) when `ENTITLEMENTS_PATH` is set, pass `--entitlements "$ENTITLEMENTS_PATH"` to `codesign`; (d) when `SIGNING_IDENTITY` is not `-`, add `--timestamp` to the codesign invocation.
+  - Verify `swift build` still compiles and `make install` still works for ad-hoc local dev (no Sparkle keys = no auto-update UI, graceful).
+  - Blocked on: manual-todo "Generate Sparkle 2.x EdDSA key pair" for real `SUPublicEDKey` value; manual-todo "Stand up appcast.xml hosting" for real `SUFeedURL` value. Step can proceed with placeholders for code integration; real values filled in Step 6b.6.
 
-- [x] Step 6a.2: Build the `.app` bundle wrapper script (completed 2026-04-22)
-  - Files: create `scripts/build-app-bundle.sh` (shell script that runs `swift build --configuration release --product PitwallApp`, constructs `build/Pitwall.app/Contents/{MacOS,Resources}`, copies the built binary to `Contents/MacOS/PitwallApp`, copies an expanded `Info.plist` with real `CFBundleShortVersionString` + `CFBundleVersion` + `CFBundleExecutable=PitwallApp` + `NSHumanReadableCopyright`, and ad-hoc signs via `codesign --sign - --deep --force --options=runtime build/Pitwall.app`), modify `Sources/PitwallApp/Info.plist` (add `CFBundleExecutable`, `NSHumanReadableCopyright`; keep `LSUIElement=true`, `LSMinimumSystemVersion=13.0`; leave version strings as `{{CFBundleShortVersionString}}` / `{{CFBundleVersion}}` placeholders the script substitutes).
-  - Script must use `set -euo pipefail`, exit non-zero on any failure, and be idempotent (`rm -rf build/Pitwall.app` before re-assembling).
+- [ ] Step 6b.2: Wire Sparkle updater controller into AppDelegate and Settings UI
+  - Files: modify `Sources/PitwallApp/AppDelegate.swift` (import `Sparkle`; init `SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)` only when `SUFeedURL` is present in the bundle's Info.plist — skip silently for ad-hoc builds without Sparkle keys), modify `Sources/PitwallApp/Views/SettingsView.swift` (add an "Updates" section between "Startup" and "Notifications" with: "Check for Updates…" button that calls `updater.checkForUpdates()`, "Automatically check for updates" toggle bound to `updater.automaticallyChecksForUpdates`, update cadence picker bound to `updater.updateCheckInterval` with options: hourly / every 6 hours / daily / weekly), modify `Sources/PitwallApp/MenuBarController.swift` if the updater reference needs to flow through the controller to SettingsView.
+  - The "Updates" section is hidden when Sparkle is not configured (ad-hoc builds), so Phase 6a `make install` UX is unchanged.
+  - No new `import Sparkle` in `PitwallAppSupport`, `PitwallShared`, `PitwallCore`, or platform shells.
 
-- [x] Step 6a.3: Add the `Makefile` with build / install / uninstall / run / clean targets (completed 2026-04-22)
-  - Files: create `Makefile` at repo root.
-  - `make build` → runs `scripts/build-app-bundle.sh`.
-  - `make install` → depends on `build`; replaces `/Applications/Pitwall.app` atomically (`rm -rf` then `cp -R`); verifies with `codesign --verify --verbose`; prints "Open Pitwall from /Applications — it will appear in your menu bar."
-  - `make uninstall` → invokes the app binary with a `--unregister-login-item` flag (added in Step 6a.5) to unregister `SMAppService.mainApp`; removes `/Applications/Pitwall.app`; prints that Application Support + Keychain data are preserved.
-  - `make run` → `open build/Pitwall.app` after build.
-  - `make clean` → removes `build/`.
+- [ ] Step 6b.3: Create the release automation script
+  - Files: create `scripts/release.sh` (`set -euo pipefail`; accepts `VERSION` as first positional arg or env var).
+  - Script pipeline (each step exits non-zero on failure):
+    1. Validate `VERSION` matches semver regex; validate working tree is clean (`git diff --quiet HEAD`).
+    2. Call `bash scripts/build-app-bundle.sh` with `SIGNING_IDENTITY="Developer ID Application"`, `ENTITLEMENTS_PATH="Sources/PitwallApp/Pitwall.entitlements"`, `SU_FEED_URL` and `SU_PUBLIC_ED_KEY` from env or a local `.release-config` file (gitignored).
+    3. `codesign --verify --verbose --deep build/Pitwall.app` + `spctl --assess --type execute build/Pitwall.app`.
+    4. Create DMG: `hdiutil create -volname "Pitwall $VERSION" -srcfolder build/Pitwall.app -ov -format UDZO "build/Pitwall-${VERSION}.dmg"`.
+    5. `xcrun notarytool submit "build/Pitwall-${VERSION}.dmg" --keychain-profile pitwall-notary --wait`.
+    6. `xcrun stapler staple "build/Pitwall-${VERSION}.dmg"`.
+    7. Generate Sparkle EdDSA signature: `./bin/sign_update "build/Pitwall-${VERSION}.dmg"` (Sparkle's bundled tool) and capture the `sparkle:edSignature` + `length` values.
+    8. Append a new `<item>` to `appcast.xml` with version, signature, DMG URL, and release notes.
+    9. `gh release create "v${VERSION}" "build/Pitwall-${VERSION}.dmg" --title "Pitwall ${VERSION}" --notes-file "build/release-notes.md"` (release notes extracted from git log since last tag).
+    10. Copy updated `appcast.xml` to the hosting location (GitHub Pages push or raw file upload — exact mechanism depends on the hosting choice from manual-todo).
+  - Create `.release-config.example` with placeholder keys for `SU_FEED_URL`, `SU_PUBLIC_ED_KEY`, `SIGNING_IDENTITY`, and document that `.release-config` is gitignored.
+  - Add `.release-config` to `.gitignore`.
+  - Add `--dry-run` flag that runs through validation + build + codesign but skips notarization, GitHub release, and appcast publish.
 
-- [x] Step 6a.4: Wire the menu bar SF Symbol icon (completed 2026-04-22)
-  - Files: modify `Sources/PitwallApp/MenuBarController.swift`.
-  - Replace the current status-item image with `NSImage(systemSymbolName: "gauge.with.dots.needle.67percent", accessibilityDescription: "Pitwall")`.
-  - No `.imageset` / `.icns` asset; SF Symbol only (reserved upgrade slot for Phase 6b).
+- [ ] Step 6b.4: Add Makefile release target and initial appcast.xml template
+  - Files: modify `Makefile` (add `.PHONY: release`; `release` target requires `VERSION` env var, validates it's set, calls `bash scripts/release.sh "$(VERSION)"`), create `appcast.xml` (empty Sparkle appcast template with `<rss>` + `<channel>` skeleton and no items — items are appended by `scripts/release.sh`).
+  - Verify `make build`, `make install`, `make run`, `make clean` still work (no regression to Phase 6a targets).
 
-- [x] Step 6a.5: Wire the `SMAppService` login-item and Settings toggle (completed 2026-04-22)
-  - Files: create `Sources/PitwallAppSupport/LoginItemService.swift` (`LoginItemService` protocol with `isEnabled: Bool { get }` and `setEnabled(_:) throws`; `SMAppServiceLoginItemService` implementation wrapping `SMAppService.mainApp`; `InMemoryLoginItemService` fixture for tests), modify `Sources/PitwallApp/Views/SettingsView.swift` to bind the existing Launch-at-Login `Toggle` through the service and surface a friendly error state if `setEnabled` throws, modify `Sources/PitwallApp/AppDelegate.swift` or `PitwallApp.swift` to inject the service and to handle a `--unregister-login-item` CLI flag that immediately calls `SMAppService.mainApp.unregister()` and exits 0.
-  - `Package.swift`: add `.linkedFramework("ServiceManagement")` to `PitwallApp`'s `linkerSettings`.
-
-- [x] Step 6a.6: Add the first-launch Application Support + Keychain health probe (completed 2026-04-22)
-  - Files: create `Sources/PitwallAppSupport/PackagingProbe.swift` (`PackagingProbeResult` struct; `PackagingProbe` takes a `FileManager`, an app-support root URL, and a `ProviderSecretStore` reference for the round-trip test; `runOnce(eventStore:, defaults:, firstLaunchKey:)` returns early if the `UserDefaults` key is set, otherwise runs both probes, appends two `DiagnosticEventStore` events, and sets the key), modify `Sources/PitwallApp/MenuBarController.swift` or `AppDelegate.swift` to call `runOnce(...)` exactly once at startup.
-  - Keychain round-trip uses a disposable service name (e.g., `com.pitwall.app.packaging-probe`, account `probe`, random value) and must NOT touch any production `ProviderSecretKey`.
-  - No network, no upload. Redaction path remains subject to `DiagnosticsRedactor`.
-
-- [x] Step 6a.7: Add the "Welcome to Pitwall" first-launch banner (completed 2026-04-22)
-  - Files: create `Sources/PitwallApp/Views/WelcomeBannerView.swift`, modify `Sources/PitwallApp/Views/PopoverContentView.swift` to conditionally render the banner gated on a `UserDefaults` key (`pitwall.welcome.v1.dismissed`).
-  - Banner copy must include: "Welcome to Pitwall. You're replacing a previous menu bar app — Pitwall does not copy data from it." + "Paste your Claude `sessionKey` and `lastActiveOrg` in Settings → Claude account to get started." + "Secrets are stored in the macOS Keychain."
-  - Dismiss button sets the key and hides the banner forever.
-
-- Step 6a.8: Add the install smoke-test script
-  - Files: create `scripts/smoke-install.sh` that builds into a tmp prefix, asserts `Contents/MacOS/PitwallApp` exists and is executable, asserts `Contents/Info.plist` has both version strings filled in (via `defaults read`), runs `codesign --verify --verbose` against the tmp bundle, and tears down.
-  - Must use `set -euo pipefail` and exit non-zero on any failure.
-  - **Self-contained handoff detail (ship-one-step contract):**
-    - **Execution profile:** serial, implementation-safe. No subagent lanes. Integration owner: main agent.
-    - **What to build:** a bash script at `scripts/smoke-install.sh` that assembles `build/Pitwall.app` via the existing Step 6a.2 pipeline and then asserts the packaged bundle is well-formed without touching `/Applications/`.
-    - **Required assertions (script must fail non-zero on any):**
-      1. `build/Pitwall.app/Contents/MacOS/PitwallApp` exists, is a regular file, and has the executable bit set (use `test -x`).
-      2. `build/Pitwall.app/Contents/Info.plist` has `CFBundleShortVersionString` substituted (matches `^[0-9]+\.[0-9]+\.[0-9]+$` — reject the literal `{{CFBundleShortVersionString}}` placeholder) and `CFBundleVersion` substituted (matches `^[0-9]+$` — reject the literal `{{CFBundleVersion}}` placeholder). Read via `defaults read "$PWD/build/Pitwall.app/Contents/Info" CFBundleShortVersionString` and likewise for `CFBundleVersion`. Note: `defaults read` requires an absolute path and no `.plist` extension on the argument.
-      3. `codesign --verify --verbose build/Pitwall.app` exits 0.
-    - **Pipeline:** `set -euo pipefail`; `cd` to repo root (resolve via `$(cd "$(dirname "$0")/.." && pwd)` then `cd` into it); invoke `bash scripts/build-app-bundle.sh` (that script is already idempotent and self-cleans `build/Pitwall.app` before reassembly, so no extra teardown is required — the "builds into a tmp prefix … and tears down" language in the original task line is satisfied by the existing `rm -rf build/Pitwall.app` inside `scripts/build-app-bundle.sh`); then run the three assertions above; print a terminal `smoke-install: OK` line on success.
-    - **Do not** invoke `/Applications/Pitwall.app`, do not run `make install` or `make uninstall`, do not touch any `UserDefaults`, do not launch the app, do not unregister the login item. The script is a packaging-artifact validator only — production filesystem state is Step 6a.10's problem, not Step 6a.8's.
-    - **Reuse anchors:** `scripts/build-app-bundle.sh` for the build step; `defaults read` for plist inspection (already used by the manual Step 6a.2 validation); `codesign --verify --verbose` exactly as wired into `make install` in `Makefile`. No new Swift code, no new SwiftPM target.
-    - **Files to create / modify:**
-      - Create `scripts/smoke-install.sh` (executable — `chmod +x` after write).
-    - **Validation after landing Step 6a.8:**
-      - `bash scripts/smoke-install.sh` exits 0 on a clean tree.
-      - `swift build` passes.
-      - `swift test` still passes the 193/193 baseline with zero regressions.
-      - `make build` still exits 0 and produces `build/Pitwall.app`; `codesign --verify --verbose build/Pitwall.app` still exits 0.
-      - Grep confirms no new forbidden imports in `PitwallShared` / `PitwallCore` / `PitwallWindows` / `PitwallLinux` (trivial — no Swift source changes this step).
-    - **Test strategy:** tests-after. Step 6a.8 ships no XCTest coverage of its own — it IS a test in shell form. The Phase 6a XCTest additions all live in Step 6a.9 (`PackagingVersionTests`, `LoginItemServiceTests`, `PackagingProbeTests`).
-    - **Ship-one-step handoff contract:**
-      1. Implement only Step 6a.8 per this plan.
-      2. Run `bash scripts/smoke-install.sh`, then `swift build` + `swift test`; confirm the 193-test baseline still passes with zero regressions.
-      3. Run `make build`; verify `build/Pitwall.app` still assembles cleanly and `codesign --verify --verbose` exits 0.
-      4. Mark Step 6a.8 done in `tasks/todo.md`; bump the priority-queue pointer to Step 6a.9 (regression tests for new code paths).
-      5. Update `tasks/history.md` with a session entry.
-      6. Commit and push to `main` via `/commit-and-push-by-feature`.
-      7. Skip deploy (no `deploy.md` contract exists for Pitwall).
-      8. Step 6a.9 is already decomposed in `tasks/todo.md` above.
-      9. Ensure `.claude/settings.local.json` contains `"showClearContextOnPlanAccept": true` and `"defaultMode": "acceptEdits"`.
-      10. Start the approval UI for Step 6a.9 by calling `EnterPlanMode` first, writing a brief pass-through plan in plan mode, then calling `ExitPlanMode`. Stop before implementing 6a.9.
+- [ ] Step 6b.5: Create Homebrew cask formula
+  - Files: create `Formula/pitwall.rb` (Homebrew cask formula pointing to the GitHub Releases DMG URL pattern `https://github.com/GeorgeQLe/pitwall/releases/download/v#{version}/Pitwall-#{version}.dmg`; SHA256 placeholder filled per release; `app "Pitwall.app"`).
+  - Document in README.md the `brew install --cask pitwall` path (either via self-hosted tap `brew tap georgele/pitwall && brew install --cask pitwall`, or upstream submission — decision deferred to manual-todo resolution).
 
 ### Green
 
-- [x] Step 6a.9: Write regression tests covering the new code paths (completed 2026-04-22)
-  - Files: create `Tests/PitwallAppSupportTests/PackagingVersionTests.swift` (asserts `shortString` matches `VERSION`-file content via the provider protocol; `build` is a positive integer), create `Tests/PitwallAppSupportTests/LoginItemServiceTests.swift` (uses `InMemoryLoginItemService` to assert toggle behavior + idempotency), create `Tests/PitwallAppSupportTests/PackagingProbeTests.swift` (in-memory `FileManager` seam + `InMemorySecretStore` + fresh `UserDefaults`; first `runOnce` writes two events and sets the key; second `runOnce` is a no-op; Application Support write failure is logged as `appSupportWritable: false` with an error string; Keychain mismatch is logged as `keychainRoundTripSucceeded: false`).
-  - Reuse Phase 2's `InMemorySecretStore` — do not duplicate.
-  - No XCUITest / snapshot tests for the banner; exercise the `UserDefaults` gate indirectly through a small view-model unit test if feasible.
-  - Phase 6a test baseline after this step: 212 tests (193 Phase 5 baseline + 19 new Phase 6a tests).
+- [ ] Step 6b.6: Fill in real Sparkle keys and appcast URL from manual prerequisites
+  - Requires: all Phase 6b manual-todo items completed (Apple Developer enrollment, Developer ID cert, notarytool creds, Sparkle EdDSA key pair, appcast hosting URL, Homebrew tap).
+  - Files: modify `.release-config.example` with real feed URL pattern, update `Formula/pitwall.rb` with the real tap path if using self-hosted tap.
+  - Verify `swift build` + `swift test` still pass.
 
-- [x] Step 6a.10: Run the full test suite and packaging smoke checks (completed 2026-04-22)
-  - Commands: `swift build`, `swift test` (confirm Phase 5's 193-test baseline plus the new Phase 6a tests all pass, zero regressions), `scripts/smoke-install.sh` (exits 0), `make build` then `open build/Pitwall.app` visual confirmation, `make install` then visual confirmation that `/Applications/Pitwall.app` shows the SF Symbol icon in the menu bar, `make uninstall` then `ls /Applications/Pitwall.app` fails + `ls ~/Library/Application\ Support/Pitwall/` succeeds + `security find-generic-password` still finds provider secrets.
-  - Record the new test count in `tasks/history.md` as the Phase 6a baseline.
+- [ ] Step 6b.7: Write regression tests for Sparkle integration and release pipeline
+  - Files: create `Tests/PitwallAppSupportTests/UpdaterSettingsTests.swift` (test that updater settings section is hidden when no `SUFeedURL` is present; test that cadence options map to expected `TimeInterval` values), modify existing tests as needed to confirm no regressions.
+  - Shell validation: `bash scripts/release.sh --dry-run` runs through validation + build + codesign without notarization or publish.
+  - Verify `make install` still works for ad-hoc local dev with no Sparkle keys configured.
 
-- [x] Step 6a.11: Refactor while keeping tests green if needed (completed 2026-04-22 — no refactor required)
-  - Files: touch only the new Phase 6a files + `Sources/PitwallApp/Views/SettingsView.swift` / `MenuBarController.swift` / `AppDelegate.swift` / `PitwallApp.swift`.
-  - No refactor of Phase 1-5 code. If a Phase 6a step exposes a gap in a Phase 1-5 contract, record as a post-6a follow-up rather than widening 6a.
-  - Outcome: Reviewed all Phase 6a files with fresh eyes. `PackagingVersion` (72L), `LoginItemService` (83L), `PackagingProbe` (137L), `WelcomeBannerView` (40L), the `MenuBarController`/`AppDelegate`/`PitwallApp`/`SettingsView`/`PopoverContentView` edits, and the `scripts/*.sh` + `Makefile` additions are all tight, single-purpose, and protocol-seamed. `AppDelegate.packagingVersion` is an intentional anchor for a future About section per the Step 6a.1 rationale. No duplication, no dead branches, no obvious-private types leaked public, no collapsible conditionals worth the churn. Closed as "no refactor required" — analogous to Phase 5 Step 5.8's docs-only close. 212/212 tests green; no forbidden imports introduced.
+- [ ] Step 6b.8: End-to-end release validation (blocked on all manual prerequisites)
+  - Run `make release VERSION=1.0.0` on a clean tree with all credentials configured.
+  - Verify: `spctl --assess --type open --context context:primary-signature build/Pitwall-1.0.0.dmg` succeeds; `xcrun stapler validate build/Pitwall-1.0.0.dmg` succeeds; download DMG from GitHub Releases on a different Mac and confirm no Gatekeeper dialog; Sparkle auto-update check works on launch and on-demand; `brew install --cask pitwall` installs and launches without issues.
+  - Verify Phase 6a paths: `make install` / `make uninstall` still work; first-launch health check does not double-fire after Sparkle in-place update.
+  - Run `swift build` + `swift test` — all Phase 1-6a tests pass with zero regressions.
 
-### Milestone: Phase 6a macOS Local Install
+- [ ] Step 6b.9: Refactor if needed while keeping tests green
+  - Files: touch only Phase 6b files + `scripts/build-app-bundle.sh`, `scripts/release.sh`, `Makefile`, `Sources/PitwallApp/AppDelegate.swift`, `Sources/PitwallApp/Views/SettingsView.swift`.
+  - No refactor of Phase 1-6a code. If Phase 6b exposes a gap in an earlier contract, record as a post-6b follow-up.
+
+### Milestone: Phase 6b macOS Public Release
 **Acceptance Criteria:**
-- [x] `make install` on a clean macOS 13+ system produces `/Applications/Pitwall.app`; `codesign --verify --verbose` exits 0.
-- [x] Double-clicking `Pitwall.app` launches without a Gatekeeper block.
-- [x] Menu bar shows the SF Symbol icon; clicking opens the Phase 3 popover unchanged.
-- [x] "Launch at Login" toggle flips `SMAppService.mainApp` state; verified by reboot.
-- [x] `make uninstall` removes the bundle and unregisters the login-item; Application Support + Keychain items remain intact; reinstall restores prior state.
-- [x] First-launch health check writes two `DiagnosticEventStore` events on first install and does not repeat on subsequent launches.
-- [x] `CFBundleShortVersionString` / `CFBundleVersion` are derived at build time, not hard-coded.
-- [x] macOS `swift build` + `swift test` pass at the Phase 5 baseline + new Phase 6a tests with zero regressions.
-- [x] No new `import AppKit` / `import UserNotifications` / `import Security` in `PitwallShared` or platform shells.
-- [x] All phase tests pass.
-- [x] No regressions in previous phase tests.
+- [ ] `make release VERSION=1.0.0` on a clean tree produces a signed DMG that passes `spctl --assess --type open --context context:primary-signature`.
+- [ ] `xcrun stapler validate build/Pitwall-1.0.0.dmg` succeeds.
+- [ ] Downloading the DMG from GitHub Releases on a different Mac launches Pitwall without any Gatekeeper dialog (quarantine xattr present on the downloaded bundle, notarization ticket accepted).
+- [ ] Sparkle checks the appcast on launch and on-demand, offers an update when a newer version is published, verifies the EdDSA signature, relaunches into the new version, and preserves the user's session key, history, and settings.
+- [ ] `brew install --cask pitwall` (via self-hosted tap or upstream cask) installs the same DMG into `/Applications/Pitwall.app` and launches without Gatekeeper issues.
+- [ ] Phase 6a `make install` / `make uninstall` paths still work alongside `make release` for local iteration.
+- [ ] Phase 6a first-launch health check runs once per install (signed or ad-hoc) — does not double-fire when Sparkle replaces the bundle in place.
+- [ ] `Pitwall.app` runs under hardened runtime with no sandbox entitlement and no entitlement beyond what Phase 1-5 behavior requires.
+- [ ] All Phase 1-6a tests continue to pass on macOS with zero regressions.
+- [ ] All phase tests pass.
+- [ ] No regressions in previous phase tests.
 
-**On Completion:**
-- Deviations from plan: none. Step 6a.11 closed as "no refactor required" (analogous to Phase 5 Step 5.8's docs-only close).
-- Tech debt / follow-ups: none beyond the already-tracked Phase 5 post-v1 platform-limitation backlog. `AppDelegate.packagingVersion` is intentionally held as an anchor for a future in-app About section.
-- Ready for next phase: Phase 6a ships as the macOS daily-driver local install. Phase 6b remains deferred behind Apple Developer enrollment + Sparkle/notary credentials.
-
-## Phase 6b: macOS Public Release (deferred)
-
-Not scoped for immediate execution. See `tasks/roadmap.md` → Phase 6b for goals, scope, and acceptance criteria, and `tasks/manual-todo.md` → "Phase 6b — macOS Public Release prerequisites" for the human-gated blockers. Plan just-in-time via `/plan-phase 6b` only after Phase 6a ships, the manual-todo prerequisites are resolved, and the user confirms intent to distribute publicly.
+**On Completion** (fill in when phase is done):
+- Deviations from plan: [none, or describe]
+- Tech debt / follow-ups: [none, or list]
+- Ready for next phase: yes/no
 
 ## Post-v1 / Post-packaging Follow-ups (not scheduled)
 

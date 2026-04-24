@@ -8,14 +8,14 @@
 
 ## Phase 6b — macOS Public Release prerequisites
 
-Blocks: `/plan-phase 6b` and every Step 6b.* below it. Phase 6a ships without any of these.
+Blocks: Steps 6b.6 and 6b.8 (end-to-end validation). Steps 6b.1–6b.5 can proceed with placeholders before these are resolved.
 
-- [ ] Enroll in the Apple Developer Program ($99/yr). _Blocks: Step 6b.1 (Sparkle + Developer ID signing), every subsequent notarization step._
-- [ ] Request + install a Developer ID Application certificate from the Apple Developer portal into the author's login Keychain; export a `.p12` backup to the password manager. _Blocks: Step 6b.1._
-- [ ] Generate an app-specific password at appleid.apple.com for `notarytool`, then run `xcrun notarytool store-credentials --apple-id … --team-id … pitwall-notary`. _Blocks: the first notarization submission._
-- [ ] Generate a Sparkle 2.x EdDSA key pair; store the private key in the password manager only (never commit). Record the public key for `SUPublicEDKey` in `Info.plist`. _Blocks: the first appcast signature._
-- [ ] Stand up a public hosting URL for `appcast.xml` (GitHub Pages on the Pitwall repo, or a raw file path). _Blocks: the first Sparkle update check._
-- [ ] Create a self-hosted Homebrew tap repo `georgele/homebrew-pitwall`, OR submit the cask to upstream `homebrew-cask`. _Blocks: the first `brew install --cask` verification._
+- [ ] Enroll in the Apple Developer Program ($99/yr). _(blocks: Step 6b.6, Step 6b.8)_
+- [ ] Request + install a Developer ID Application certificate from the Apple Developer portal into the author's login Keychain; export a `.p12` backup to the password manager. _(blocks: Step 6b.6, Step 6b.8)_
+- [ ] Generate an app-specific password at appleid.apple.com for `notarytool`, then run `xcrun notarytool store-credentials --apple-id … --team-id … pitwall-notary`. _(blocks: Step 6b.8)_
+- [ ] Generate a Sparkle 2.x EdDSA key pair; store the private key in the password manager only (never commit). Record the public key for `SUPublicEDKey` in `Info.plist`. _(blocks: Step 6b.6)_
+- [ ] Stand up a public hosting URL for `appcast.xml` (GitHub Pages on the Pitwall repo, or a raw file path). _(blocks: Step 6b.6)_
+- [ ] Create a self-hosted Homebrew tap repo `georgele/homebrew-pitwall`, OR submit the cask to upstream `homebrew-cask`. _(blocks: Step 6b.8)_
 
 ## Cross-platform parity prerequisites (post-v1 platform-limitation backlog)
 
