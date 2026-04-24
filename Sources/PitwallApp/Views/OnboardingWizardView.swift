@@ -15,6 +15,7 @@ struct OnboardingWizardView: View {
     @State private var currentIndex: Int = 0
     @State private var message: String?
     @State private var isSaving = false
+    @State private var completedSteps: Set<OnboardingWizardStep> = []
 
     init(
         snapshot: ProviderConfigurationSnapshot,
@@ -64,19 +65,14 @@ struct OnboardingWizardView: View {
     }
 
     private var progressBar: some View {
-        let total = steps.count
-        let position = clampedIndex + 1
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("Set Up Pitwall")
-                    .font(.system(size: 18, weight: .semibold))
-                Spacer()
-                Text("Step \(position) of \(total)")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-            }
-            ProgressView(value: Double(position), total: Double(total))
-                .progressViewStyle(.linear)
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Set Up Pitwall")
+                .font(.system(size: 18, weight: .semibold))
+            PitRoadProgressView(
+                currentStep: currentStep,
+                completedSteps: completedSteps,
+                selectedProviders: selectedProviders
+            )
         }
     }
 
@@ -132,6 +128,7 @@ struct OnboardingWizardView: View {
                 if isLastStep {
                     Task { await finish(skipped: false) }
                 } else {
+                    completedSteps.insert(currentStep)
                     currentIndex = min(steps.count - 1, clampedIndex + 1)
                 }
             }
