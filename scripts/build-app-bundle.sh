@@ -9,6 +9,7 @@ EXECUTABLE="PitwallApp"
 BUNDLE_DIR="build/${APP_NAME}.app"
 CONTENTS_DIR="${BUNDLE_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
+FRAMEWORKS_DIR="${CONTENTS_DIR}/Frameworks"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
 INFO_PLIST_TEMPLATE="Sources/PitwallApp/Info.plist"
 INFO_PLIST_OUT="${CONTENTS_DIR}/Info.plist"
@@ -48,13 +49,23 @@ if [[ ! -f "$BUILT_BINARY" ]]; then
     echo "error: built binary not found at ${BUILT_BINARY}" >&2
     exit 1
 fi
+BUILD_BIN_DIR="$(dirname "$BUILT_BINARY")"
+SPARKLE_FRAMEWORK="${BUILD_BIN_DIR}/Sparkle.framework"
+if [[ ! -d "$SPARKLE_FRAMEWORK" ]]; then
+    echo "error: Sparkle.framework not found at ${SPARKLE_FRAMEWORK}" >&2
+    exit 1
+fi
 
 echo "==> Assembling ${BUNDLE_DIR}"
 rm -rf "$BUNDLE_DIR"
-mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
+mkdir -p "$MACOS_DIR" "$FRAMEWORKS_DIR" "$RESOURCES_DIR"
 
 cp "$BUILT_BINARY" "${MACOS_DIR}/${EXECUTABLE}"
 chmod +x "${MACOS_DIR}/${EXECUTABLE}"
+cp -R "$SPARKLE_FRAMEWORK" "$FRAMEWORKS_DIR/"
+if ! otool -l "${MACOS_DIR}/${EXECUTABLE}" | grep -q '@executable_path/../Frameworks'; then
+    install_name_tool -add_rpath "@executable_path/../Frameworks" "${MACOS_DIR}/${EXECUTABLE}"
+fi
 
 echo "==> Expanding Info.plist (shortVersion=${SHORT_VERSION}, build=${BUILD_NUMBER})"
 sed \
@@ -80,13 +91,16 @@ else
 fi
 
 echo "==> Signing ${BUNDLE_DIR} (identity=${SIGNING_IDENTITY})"
-CODESIGN_ARGS=(--sign "$SIGNING_IDENTITY" --deep --force --options=runtime)
+CODESIGN_ARGS=(--sign "$SIGNING_IDENTITY" --deep --force)
+FRAMEWORK_CODESIGN_ARGS=(--sign "$SIGNING_IDENTITY" --force)
 if [[ "$SIGNING_IDENTITY" != "-" ]]; then
-    CODESIGN_ARGS+=(--timestamp)
+    CODESIGN_ARGS+=(--options=runtime --timestamp)
+    FRAMEWORK_CODESIGN_ARGS+=(--options=runtime --timestamp)
 fi
 if [[ -n "$ENTITLEMENTS_PATH" ]]; then
     CODESIGN_ARGS+=(--entitlements "$ENTITLEMENTS_PATH")
 fi
+codesign "${FRAMEWORK_CODESIGN_ARGS[@]}" "${FRAMEWORKS_DIR}/Sparkle.framework"
 codesign "${CODESIGN_ARGS[@]}" "$BUNDLE_DIR"
 
 echo "==> Done: ${BUNDLE_DIR}"
