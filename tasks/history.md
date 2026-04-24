@@ -1,5 +1,9 @@
 # History
 
+## 2026-04-24
+
+- Pit road progress indicator for onboarding wizard: replaced the linear `ProgressView` + "Step X of Y" counter with a racing-themed track visualization. Main road always shows 4 fixed nodes (Welcome → Tools → Prefs → Summary); credential steps branch off as a pit road below between Tools and Prefs, animated in/out with `.easeInOut(duration: 0.3)`. Added `OnboardingTrackPosition` type with `Lane` enum (`.main(index:)` / `.pit(index:)`) and `trackPositions(for:)` / `pitProviders(for:)` to `OnboardingWizardStepSequencer`. Created `Sources/PitwallApp/Views/Onboarding/PitRoadProgressView.swift` (custom SwiftUI view using `GeometryReader` + `Path`/`Circle` shapes). Wired into `OnboardingWizardView` with `completedSteps: Set<OnboardingWizardStep>` state for node highlighting. Separate panel styling fix: `PopoverController` now shows "Set Up Pitwall" window title instead of transparent titlebar. 5 new `OnboardingWizardStepSequencerTests` for track positions. Validation: `swift build` clean (no warnings), `swift test` passes **222 / 222** with 0 failures and 0 regressions, `make install` succeeded.
+
 ## 2026-04-23
 
 - Onboarding wizard landed (prior session work committed this cut): new SwiftUI wizard split across `Sources/PitwallApp/Views/OnboardingWizardView.swift` and six step views under `Sources/PitwallApp/Views/Onboarding/` (`WelcomeStepView`, `ToolSelectionStepView`, `ClaudeCredentialStepView`, `GenericProviderStepView`, `PreferencesStepView`, `WizardSummaryStepView`), driven by a new `Sources/PitwallAppSupport/OnboardingWizardStepSequencer.swift` (pure, protocol-free step advancement seam). `Sources/PitwallApp/Views/OnboardingView.swift` slimmed from ~110L of legacy flow to a thin host around the wizard. `Tests/PitwallAppSupportTests/OnboardingWizardStepSequencerTests.swift` adds 5 regression tests covering forward/back navigation and completion — Phase 6a baseline moves from 212 → 217.
