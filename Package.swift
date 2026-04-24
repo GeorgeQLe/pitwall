@@ -33,6 +33,9 @@ let package = Package(
             targets: ["PitwallApp"]
         )
     ],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.0")
+    ],
     targets: [
         .target(
             name: "PitwallCore",
@@ -58,8 +61,11 @@ let package = Package(
         ),
         .executableTarget(
             name: "PitwallApp",
-            dependencies: ["PitwallAppSupport"],
-            exclude: ["Info.plist"],
+            dependencies: [
+                "PitwallAppSupport",
+                .product(name: "Sparkle", package: "Sparkle")
+            ],
+            exclude: ["Info.plist", "Pitwall.entitlements"],
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("ServiceManagement")

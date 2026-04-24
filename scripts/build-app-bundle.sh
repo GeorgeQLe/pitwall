@@ -13,6 +13,10 @@ RESOURCES_DIR="${CONTENTS_DIR}/Resources"
 INFO_PLIST_TEMPLATE="Sources/PitwallApp/Info.plist"
 INFO_PLIST_OUT="${CONTENTS_DIR}/Info.plist"
 VERSION_FILE="VERSION"
+SIGNING_IDENTITY="${SIGNING_IDENTITY:--}"
+ENTITLEMENTS_PATH="${ENTITLEMENTS_PATH:-}"
+SU_FEED_URL="${SU_FEED_URL:-}"
+SU_PUBLIC_ED_KEY="${SU_PUBLIC_ED_KEY:-}"
 
 if [[ ! -f "$VERSION_FILE" ]]; then
     echo "error: VERSION file not found at ${VERSION_FILE}" >&2
@@ -63,7 +67,26 @@ if grep -q "{{CFBundle" "$INFO_PLIST_OUT"; then
     exit 1
 fi
 
-echo "==> Ad-hoc signing ${BUNDLE_DIR}"
-codesign --sign - --deep --force --options=runtime "$BUNDLE_DIR"
+if [[ -n "$SU_FEED_URL" ]]; then
+    sed -i '' "s|{{SUFeedURL}}|${SU_FEED_URL}|g" "$INFO_PLIST_OUT"
+else
+    sed -i '' '/SUFeedURL/{N;d;}' "$INFO_PLIST_OUT"
+fi
+
+if [[ -n "$SU_PUBLIC_ED_KEY" ]]; then
+    sed -i '' "s|{{SUPublicEDKey}}|${SU_PUBLIC_ED_KEY}|g" "$INFO_PLIST_OUT"
+else
+    sed -i '' '/SUPublicEDKey/{N;d;}' "$INFO_PLIST_OUT"
+fi
+
+echo "==> Signing ${BUNDLE_DIR} (identity=${SIGNING_IDENTITY})"
+CODESIGN_ARGS=(--sign "$SIGNING_IDENTITY" --deep --force --options=runtime)
+if [[ "$SIGNING_IDENTITY" != "-" ]]; then
+    CODESIGN_ARGS+=(--timestamp)
+fi
+if [[ -n "$ENTITLEMENTS_PATH" ]]; then
+    CODESIGN_ARGS+=(--entitlements "$ENTITLEMENTS_PATH")
+fi
+codesign "${CODESIGN_ARGS[@]}" "$BUNDLE_DIR"
 
 echo "==> Done: ${BUNDLE_DIR}"
