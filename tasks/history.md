@@ -2,6 +2,9 @@
 
 ## 2026-04-25
 
+- Onboarding Claude credential help animation refined: changed `ClaudeCredentialStepView` so the "How do I find these values?" instructions reveal inside a clipped region below the toggle, with the toggle layered above the moving content. Removed the opacity portion of the transition so the text slides down from the masked top edge instead of popping/fading over the control.
+- Validation: `swift build` passes with no warnings emitted.
+
 - Phase 6b Step 6b.5 completed: added the planned Homebrew cask scaffold at `Casks/pitwall.rb` for the GitHub Releases DMG URL pattern (`https://github.com/GeorgeQLe/pitwall/releases/download/v#{version}/Pitwall-#{version}.dmg`) with `sha256 :no_check` as the placeholder until a real signed release exists. Used the idiomatic Homebrew tap path `Casks/` rather than the task's original `Formula/` wording because this is a cask installed via `brew install --cask`. Updated `README.md` with local `make install` guidance and the future self-hosted tap path (`brew tap georgele/pitwall && brew install --cask pitwall`), noting that the public channel depends on the first release and tap prerequisites.
 - Validation: `ruby -c Casks/pitwall.rb` passes (`Syntax OK`) and `git diff --check` passes. `brew style --cask Casks/pitwall.rb` could not complete because Homebrew entered its vendor `bundle install` bootstrap and was manually terminated after no lint output; no cask style finding was produced.
 

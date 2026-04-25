@@ -48,24 +48,28 @@ struct ClaudeCredentialStepView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityHint(isHelpExpanded ? "Hide Claude credential instructions" : "Show Claude credential instructions")
+                .zIndex(1)
 
-                if isHelpExpanded {
-                    VStack(alignment: .leading, spacing: 8) {
-                        instructionRow(1, "Open https://claude.ai in your browser and sign in.")
-                        instructionRow(2, "Open DevTools with Option + Command + I.")
-                        instructionRow(3, "Go to the Application tab, then Cookies, then https://claude.ai.")
-                        instructionRow(4, "Copy the sessionKey value and paste it into the Session Key field above.")
-                        instructionRow(5, "Copy the lastActiveOrg value and paste it into the Org Id field.")
-                        instructionRow(6, "Give the account a label, such as Personal, so you can spot it later.")
-                        Text("Tip: this wizard stays on screen while you switch to your browser.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 4)
+                VStack(alignment: .leading, spacing: 8) {
+                    if isHelpExpanded {
+                        VStack(alignment: .leading, spacing: 8) {
+                            instructionRow(1, "Open https://claude.ai in your browser and sign in.")
+                            instructionRow(2, "Open DevTools with Option + Command + I.")
+                            instructionRow(3, "Go to the Application tab, then Cookies, then https://claude.ai.")
+                            instructionRow(4, "Copy the sessionKey value and paste it into the Session Key field above.")
+                            instructionRow(5, "Copy the lastActiveOrg value and paste it into the Org Id field.")
+                            instructionRow(6, "Give the account a label, such as Personal, so you can spot it later.")
+                            Text("Tip: this wizard stays on screen while you switch to your browser.")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 4)
+                        }
+                        .padding(.leading, 4)
+                        .id(OnboardingScrollTarget.claudeCredentialHelp)
+                        .transition(.move(edge: .top))
                     }
-                    .padding(.leading, 4)
-                    .id(OnboardingScrollTarget.claudeCredentialHelp)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
+                .clipped()
             }
         }
     }
