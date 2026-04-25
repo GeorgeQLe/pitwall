@@ -1,9 +1,11 @@
 # History
 
-## 2026-04-24
+## 2026-04-25
 
 - Phase 6b Step 6b.5 completed: added the planned Homebrew cask scaffold at `Casks/pitwall.rb` for the GitHub Releases DMG URL pattern (`https://github.com/GeorgeQLe/pitwall/releases/download/v#{version}/Pitwall-#{version}.dmg`) with `sha256 :no_check` as the placeholder until a real signed release exists. Used the idiomatic Homebrew tap path `Casks/` rather than the task's original `Formula/` wording because this is a cask installed via `brew install --cask`. Updated `README.md` with local `make install` guidance and the future self-hosted tap path (`brew tap georgele/pitwall && brew install --cask pitwall`), noting that the public channel depends on the first release and tap prerequisites.
 - Validation: `ruby -c Casks/pitwall.rb` passes (`Syntax OK`) and `git diff --check` passes. `brew style --cask Casks/pitwall.rb` could not complete because Homebrew entered its vendor `bundle install` bootstrap and was manually terminated after no lint output; no cask style finding was produced.
+
+## 2026-04-24
 
 - Phase 6b Step 6b.4 completed: added a `make release VERSION=x.y.z` target that validates `VERSION` before invoking `scripts/release.sh`, and created the initial empty Sparkle `appcast.xml` feed skeleton for release automation to append items.
 - Validation: `make build` passes with ad-hoc signing, `bash scripts/smoke-install.sh` passes codesign verification, `bash scripts/release.sh --help` parses successfully, and `make release` without `VERSION` fails intentionally with the expected usage error.
