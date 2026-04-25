@@ -54,6 +54,21 @@ swift test
 
 The package intentionally does not contain provider credentials, provider network clients, local provider file readers, or production UI code yet.
 
+## Installation
+
+Local macOS development builds install from source:
+
+```sh
+make install
+```
+
+The public release channel is planned as a signed, notarized DMG on GitHub Releases. After the Homebrew tap and first release are published, install the cask with:
+
+```sh
+brew tap georgele/pitwall
+brew install --cask pitwall
+```
+
 ## Claude Credential Setup
 
 Pitwall should use an explicit user-driven credential flow. It must not automatically extract cookies from the browser.

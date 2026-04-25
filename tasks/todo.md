@@ -10,7 +10,7 @@
 - [x] `/run` — execute Phase 6b Step 6b.2 (wire Sparkle updater into AppDelegate and Settings UI).
 - [x] `/run` — execute Phase 6b Step 6b.3 (create release automation script).
 - [x] `/run` — execute Phase 6b Step 6b.4 (Makefile release target and appcast.xml template).
-- [ ] `/run` — execute Phase 6b Step 6b.5 (Homebrew cask formula).
+- [x] `/run` — execute Phase 6b Step 6b.5 (Homebrew cask formula).
 - [ ] `/guide` — complete Phase 6b manual prerequisites (Apple Developer enrollment, Developer ID cert, notarytool creds, Sparkle EdDSA key, appcast hosting, Homebrew tap). See `tasks/manual-todo.md`.
 - [ ] `/run` — execute Phase 6b Step 6b.6 (fill in real Sparkle keys and appcast URL from completed prerequisites).
 - [ ] `/run` — execute Phase 6b Step 6b.7 (regression tests for Sparkle integration and release pipeline).
@@ -97,9 +97,9 @@
   - Files: modify `Makefile` (add `.PHONY: release`; `release` target requires `VERSION` env var, validates it's set, calls `bash scripts/release.sh "$(VERSION)"`), create `appcast.xml` (empty Sparkle appcast template with `<rss>` + `<channel>` skeleton and no items — items are appended by `scripts/release.sh`).
   - Verify `make build`, `make install`, `make run`, `make clean` still work (no regression to Phase 6a targets).
 
-- [ ] Step 6b.5: Create Homebrew cask formula
-  - Files: create `Formula/pitwall.rb` (Homebrew cask formula pointing to the GitHub Releases DMG URL pattern `https://github.com/GeorgeQLe/pitwall/releases/download/v#{version}/Pitwall-#{version}.dmg`; SHA256 placeholder filled per release; `app "Pitwall.app"`).
-  - Document in README.md the `brew install --cask pitwall` path (either via self-hosted tap `brew tap georgele/pitwall && brew install --cask pitwall`, or upstream submission — decision deferred to manual-todo resolution).
+- [x] Step 6b.5: Create Homebrew cask formula
+  - Files: created `Casks/pitwall.rb` (Homebrew cask pointing to the GitHub Releases DMG URL pattern `https://github.com/GeorgeQLe/pitwall/releases/download/v#{version}/Pitwall-#{version}.dmg`; `sha256 :no_check` placeholder until the first real release SHA256 is available; `app "Pitwall.app"`). Note: the original plan said `Formula/pitwall.rb`, but casks belong under `Casks/` in a Homebrew tap.
+  - Documented in `README.md` the planned self-hosted tap install path: `brew tap georgele/pitwall && brew install --cask pitwall`. The tap/release remains blocked on manual-todo resolution.
 
 ### Green
 
