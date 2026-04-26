@@ -8,6 +8,7 @@ struct ClaudeCredentialSetupView: View {
     let onDelete: (String) async -> String?
     let onTest: (String?) async -> String
     var onSaveSucceeded: () -> Void = {}
+    var onSensitiveInputChanged: (Bool) -> Void = { _ in }
 
     @State private var accountId = UUID().uuidString
     @State private var label = ""
@@ -79,7 +80,7 @@ struct ClaudeCredentialSetupView: View {
     private var credentialFields: some View {
         Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 8) {
             GridRow {
-                Text("Label")
+                Text("Label (optional)")
                     .font(.system(size: 12, weight: .medium))
                 TextField("Claude account", text: $label)
                     .textFieldStyle(.roundedBorder)
@@ -97,6 +98,9 @@ struct ClaudeCredentialSetupView: View {
                     .font(.system(size: 12, weight: .medium))
                 SecureField("sessionKey", text: $sessionKey)
                     .textFieldStyle(.roundedBorder)
+                    .onChange(of: sessionKey) { newValue in
+                        onSensitiveInputChanged(!newValue.isEmpty)
+                    }
             }
         }
     }
@@ -107,7 +111,7 @@ struct ClaudeCredentialSetupView: View {
                 Button("Save Credentials") {
                     Task { await save() }
                 }
-                .disabled(isBusy || label.trimmed.isEmpty || organizationId.trimmed.isEmpty || sessionKey.isEmpty)
+                .disabled(isBusy || organizationId.trimmed.isEmpty || sessionKey.isEmpty)
 
                 Button("Test Connection") {
                     Task { await testConnection() }
@@ -134,7 +138,7 @@ struct ClaudeCredentialSetupView: View {
 
         let input = ClaudeCredentialInput(
             accountId: accountId,
-            label: label.trimmed,
+            label: displayLabel,
             organizationId: organizationId.trimmed,
             sessionKey: sessionKey
         )
@@ -145,6 +149,7 @@ struct ClaudeCredentialSetupView: View {
             selectedAccountId = input.accountId
             sessionKey = ""
             message = "Claude credentials saved. The session key field was cleared."
+            onSensitiveInputChanged(false)
             onSaveSucceeded()
         }
     }
@@ -187,6 +192,20 @@ struct ClaudeCredentialSetupView: View {
         case .missing, .expired:
             return .warning
         }
+    }
+
+    private var displayLabel: String {
+        let trimmedLabel = label.trimmed
+        if !trimmedLabel.isEmpty {
+            return trimmedLabel
+        }
+
+        let trimmedOrganizationId = organizationId.trimmed
+        if !trimmedOrganizationId.isEmpty {
+            return trimmedOrganizationId
+        }
+
+        return "Claude account"
     }
 }
 

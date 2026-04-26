@@ -12,6 +12,8 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     private var hostingController: NSHostingController<PopoverContentView>?
     private var settingsWindowController: NSWindowController?
     private var onboardingWindowController: NSWindowController?
+    private var onboardingHasUnsavedSensitiveInput = false
+    private var onboardingForceClose = false
 
     override init() {
         self.popover = NSPopover()
@@ -91,7 +93,10 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             onSaveConfiguration: onSaveConfiguration,
             onSaveClaudeCredentials: onSaveClaudeCredentials,
             onTestClaudeConnection: onTestClaudeConnection,
-            onFinish: onFinish
+            onFinish: onFinish,
+            onUnsavedSensitiveInputChanged: { [weak self] hasUnsavedInput in
+                self?.onboardingHasUnsavedSensitiveInput = hasUnsavedInput
+            }
         )
 
         let hostingController = NSHostingController(rootView: wizard)
@@ -126,7 +131,27 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
 
     func dismissOnboardingPanel() {
         onboardingWindowController?.window?.close()
+    }
+
+    func forceDismissOnboardingPanel() {
+        onboardingForceClose = true
+        onboardingWindowController?.window?.close()
         onboardingWindowController = nil
+        onboardingForceClose = false
+        onboardingHasUnsavedSensitiveInput = false
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        guard sender === onboardingWindowController?.window else { return true }
+        guard !onboardingForceClose, onboardingHasUnsavedSensitiveInput else { return true }
+
+        let alert = NSAlert()
+        alert.messageText = "Leave setup?"
+        alert.informativeText = "The session key you entered has not been saved and will be discarded."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Keep Editing")
+        alert.addButton(withTitle: "Leave Setup")
+        return alert.runModal() == .alertSecondButtonReturn
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -134,6 +159,8 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             let window = notification.object as? NSWindow,
             window === onboardingWindowController?.window
         else { return }
+        onboardingHasUnsavedSensitiveInput = false
+        onboardingForceClose = false
         onboardingWindowController = nil
     }
 

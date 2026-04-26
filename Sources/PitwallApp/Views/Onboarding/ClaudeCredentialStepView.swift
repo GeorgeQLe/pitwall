@@ -8,6 +8,7 @@ struct ClaudeCredentialStepView: View {
     let onTestClaudeConnection: (String?) async -> String
     let onHelpExpanded: () -> Void
     let onCredentialsSaved: () -> Void
+    let onSensitiveInputChanged: (Bool) -> Void
     @State private var isHelpExpanded = false
 
     var body: some View {
@@ -25,7 +26,8 @@ struct ClaudeCredentialStepView: View {
                 onSave: onSaveClaudeCredentials,
                 onDelete: { _ in "Delete saved accounts from Settings." },
                 onTest: onTestClaudeConnection,
-                onSaveSucceeded: onCredentialsSaved
+                onSaveSucceeded: onCredentialsSaved,
+                onSensitiveInputChanged: onSensitiveInputChanged
             )
 
             VStack(alignment: .leading, spacing: 8) {

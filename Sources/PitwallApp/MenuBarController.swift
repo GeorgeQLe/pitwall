@@ -344,7 +344,7 @@ final class MenuBarController: NSObject {
             },
             onFinish: { [weak self] in
                 self?.onboardingDefaults.set(true, forKey: Self.onboardingCompletedKey)
-                self?.popoverController.dismissOnboardingPanel()
+                self?.popoverController.forceDismissOnboardingPanel()
                 self?.loadConfiguration(showOnboardingIfNeeded: false)
             }
         )

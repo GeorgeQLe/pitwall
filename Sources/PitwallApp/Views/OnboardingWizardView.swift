@@ -8,11 +8,12 @@ struct OnboardingWizardView: View {
     let onSaveClaudeCredentials: (ClaudeCredentialInput) async -> String?
     let onTestClaudeConnection: (String?) async -> String
     let onFinish: () -> Void
+    let onUnsavedSensitiveInputChanged: (Bool) -> Void
 
     @State private var profiles: [ProviderProfileConfiguration]
     @State private var preferences: UserPreferences
     @State private var selectedProviders: Set<ProviderID>
-    @State private var currentIndex: Int = 0
+    @State private var currentIndex: Int
     @State private var message: String?
     @State private var isSaving = false
     @State private var completedSteps: Set<OnboardingWizardStep> = []
@@ -24,18 +25,23 @@ struct OnboardingWizardView: View {
         onSaveConfiguration: @escaping (ProviderConfigurationSnapshot) async -> String?,
         onSaveClaudeCredentials: @escaping (ClaudeCredentialInput) async -> String?,
         onTestClaudeConnection: @escaping (String?) async -> String,
-        onFinish: @escaping () -> Void
+        onFinish: @escaping () -> Void,
+        onUnsavedSensitiveInputChanged: @escaping (Bool) -> Void = { _ in }
     ) {
         self.claudeAccounts = claudeAccounts
         self.onSaveConfiguration = onSaveConfiguration
         self.onSaveClaudeCredentials = onSaveClaudeCredentials
         self.onTestClaudeConnection = onTestClaudeConnection
         self.onFinish = onFinish
-        let normalized = Self.normalizedProfiles(from: snapshot.providerProfiles)
+        self.onUnsavedSensitiveInputChanged = onUnsavedSensitiveInputChanged
+
+        let draft = OnboardingDraftStore().load()
+        let normalized = Self.normalizedProfiles(from: draft?.profiles ?? snapshot.providerProfiles)
         _profiles = State(initialValue: normalized)
-        _preferences = State(initialValue: snapshot.userPreferences)
-        let preselected = Set(normalized.filter { $0.isEnabled }.map { $0.providerId })
+        _preferences = State(initialValue: draft?.preferences ?? snapshot.userPreferences)
+        let preselected = draft?.selectedProviders ?? Set(normalized.filter { $0.isEnabled }.map { $0.providerId })
         _selectedProviders = State(initialValue: preselected)
+        _currentIndex = State(initialValue: draft?.currentIndex ?? 0)
         _claudeCredentialsSaved = State(initialValue: Self.hasConfiguredClaudeAccount(claudeAccounts))
     }
 
@@ -71,6 +77,11 @@ struct OnboardingWizardView: View {
         .frame(width: 520, height: 580, alignment: .topLeading)
         .background(Color(nsColor: .windowBackgroundColor))
         .animation(.easeInOut(duration: 0.3), value: selectedProviders)
+        .onChange(of: selectedProviders) { _ in saveDraft() }
+        .onChange(of: profiles) { _ in saveDraft() }
+        .onChange(of: preferences) { _ in saveDraft() }
+        .onChange(of: currentIndex) { _ in saveDraft() }
+        .onAppear { saveDraft() }
     }
 
     private var progressBar: some View {
@@ -101,7 +112,8 @@ struct OnboardingWizardView: View {
                 onCredentialsSaved: {
                     claudeCredentialsSaved = true
                     message = nil
-                }
+                },
+                onSensitiveInputChanged: onUnsavedSensitiveInputChanged
             )
         case .credentials(let providerId):
             GenericProviderStepView(providerId: providerId, profiles: $profiles)
@@ -209,8 +221,21 @@ struct OnboardingWizardView: View {
         if let error = await onSaveConfiguration(snapshot) {
             message = error
         } else {
+            OnboardingDraftStore().clear()
+            onUnsavedSensitiveInputChanged(false)
             onFinish()
         }
+    }
+
+    private func saveDraft() {
+        OnboardingDraftStore().save(
+            OnboardingDraft(
+                profiles: profiles,
+                preferences: preferences,
+                selectedProviders: selectedProviders,
+                currentIndex: clampedIndex
+            )
+        )
     }
 
     private static func normalizedProfiles(

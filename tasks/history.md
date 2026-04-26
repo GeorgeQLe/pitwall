@@ -2,6 +2,9 @@
 
 ## 2026-04-25
 
+- Onboarding setup resilience and paste support shipped: installed a minimal macOS app/Edit menu for accessory-mode text editing commands so `Cmd+V` works in Claude credential fields; changed the Claude label field to `Label (optional)` and removed it from the save-required gate, falling back to the org id or `"Claude account"` for display when blank; added `OnboardingDraftStore` to persist only non-secret setup draft state (selected providers, provider plan/auth metadata, preferences, current wizard step) in `UserDefaults`; kept the Claude session key memory-only until `Save Credentials`; and added an onboarding panel close confirmation only when an unsaved session key is present, with forced close after successful setup completion.
+- Validation: `swift build` passes, `swift test` passes **222 / 222** with 0 failures, and `make install` passes with ad-hoc signing + relaunch of `/Applications/Pitwall.app`.
+
 - Onboarding Claude credential help animation refined: changed `ClaudeCredentialStepView` so the "How do I find these values?" instructions reveal inside a clipped region below the toggle, with the toggle layered above the moving content. Removed the opacity portion of the transition so the text slides down from the masked top edge instead of popping/fading over the control.
 - Validation: `swift build` passes with no warnings emitted.
 
