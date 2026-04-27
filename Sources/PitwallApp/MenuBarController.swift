@@ -9,6 +9,7 @@ final class MenuBarController: NSObject {
     private static let onboardingCompletedKey = "pitwall.onboarding.completed.v1"
 
     private let formatter = MenuBarStatusFormatter()
+    private let pacingCalculator = PacingCalculator()
     private let rotationController = ProviderRotationController()
     private let providerStateFactory = ProviderStateFactory()
     private let popoverController: PopoverController
@@ -106,6 +107,7 @@ final class MenuBarController: NSObject {
             systemSymbolName: "gauge.with.dots.needle.67percent",
             accessibilityDescription: "Pitwall"
         )
+        item.button?.imagePosition = .imageLeading
         item.button?.toolTip = "Pitwall provider pacing"
         statusItem = item
 
@@ -234,7 +236,9 @@ final class MenuBarController: NSObject {
     }
 
     private func updateStatusTitle() {
-        statusItem?.button?.toolTip = formatter.format(appState: appState, preferences: preferences)
+        let detail = formatter.format(appState: appState, preferences: preferences)
+        statusItem?.button?.title = formatter.menuBarTitle(appState: appState, preferences: preferences)
+        statusItem?.button?.toolTip = detail
     }
 
     private func updatePopover() {
@@ -278,6 +282,8 @@ final class MenuBarController: NSObject {
                 phase4Settings: loadedPhase4Settings
             )
             await reloadProviderHistory()
+            let refreshOutcome = await refreshCoordinator.refreshProviders(trigger: .automatic)
+            applyRefreshOutcome(refreshOutcome)
             await refreshGitHubHeatmapIfNeeded(trigger: .automatic)
 
             _ = showOnboardingIfNeeded
@@ -640,6 +646,7 @@ final class MenuBarController: NSObject {
             maximumRetentionInterval: phase4Settings.history.maximumRetentionInterval
         ).retainedSnapshots(from: snapshots)
         try? await providerHistoryStore.save(providerHistorySnapshots)
+        hydrateClaudeFromHistoryIfNeeded()
         updatePopover()
     }
 
@@ -729,6 +736,121 @@ final class MenuBarController: NSObject {
     private func replaceProviderState(_ provider: ProviderState) {
         appState.providers.removeAll { $0.providerId == provider.providerId }
         appState.providers.append(provider)
+    }
+
+    private func hydrateClaudeFromHistoryIfNeeded() {
+        guard let claudeIndex = appState.providers.firstIndex(where: { $0.providerId == .claude }) else {
+            return
+        }
+
+        let currentClaude = appState.providers[claudeIndex]
+        guard currentClaude.pacingState?.weeklyUtilizationPercent == nil else {
+            return
+        }
+
+        guard
+            currentClaude.status == .configured || currentClaude.status == .stale || currentClaude.status == .degraded,
+            let accountId = preferredClaudeAccountId(),
+            let latest = providerHistorySnapshots
+                .filter({ $0.providerId == .claude && $0.accountId == accountId })
+                .max(by: { $0.recordedAt < $1.recordedAt })
+        else {
+            return
+        }
+
+        let resetAt = latest.weeklyResetAt ?? latest.sessionResetAt
+        let retainedUsageSnapshots = providerHistorySnapshots
+            .filter { $0.providerId == .claude && $0.accountId == accountId }
+            .compactMap { snapshot -> UsageSnapshot? in
+                guard let weeklyUtilizationPercent = snapshot.weeklyUtilizationPercent else {
+                    return nil
+                }
+
+                return UsageSnapshot(
+                    recordedAt: snapshot.recordedAt,
+                    weeklyUtilizationPercent: weeklyUtilizationPercent
+                )
+            }
+            .sorted { $0.recordedAt < $1.recordedAt }
+        let dailyBudget = latest.weeklyUtilizationPercent.flatMap { weeklyUtilizationPercent in
+            latest.weeklyResetAt.map { weeklyResetAt in
+                pacingCalculator.dailyBudget(
+                    weeklyUtilizationPercent: weeklyUtilizationPercent,
+                    resetAt: weeklyResetAt,
+                    now: Date(),
+                    retainedSnapshots: retainedUsageSnapshots
+                )
+            }
+        }
+        let usageRowsPayload: ProviderSpecificPayload? = {
+            var values: [String: String] = [:]
+            if let sessionPercent = latest.sessionUtilizationPercent {
+                values["Session"] = [
+                    String(sessionPercent),
+                    latest.sessionResetAt.map { MenuBarStatusFormatter.resetText(
+                        resetWindow: ResetWindow(resetsAt: $0),
+                        preference: preferences.resetDisplayPreference,
+                        now: Date()
+                    ) ?? "Unknown reset" } ?? "Unknown reset",
+                    latest.confidence.rawValue
+                ].joined(separator: "|")
+            }
+            if let weeklyPercent = latest.weeklyUtilizationPercent {
+                values["Weekly"] = [
+                    String(weeklyPercent),
+                    latest.weeklyResetAt.map { MenuBarStatusFormatter.resetText(
+                        resetWindow: ResetWindow(resetsAt: $0),
+                        preference: preferences.resetDisplayPreference,
+                        now: Date()
+                    ) ?? "Unknown reset" } ?? "Unknown reset",
+                    latest.confidence.rawValue
+                ].joined(separator: "|")
+            }
+
+            guard !values.isEmpty else {
+                return nil
+            }
+
+            return ProviderSpecificPayload(source: "usageRows", values: values)
+        }()
+
+        appState.providers[claudeIndex] = ProviderState(
+            providerId: currentClaude.providerId,
+            displayName: currentClaude.displayName,
+            status: .configured,
+            confidence: latest.confidence,
+            headline: latest.headline,
+            primaryValue: latest.weeklyUtilizationPercent.map { Self.formatPercent($0) + " used" } ?? currentClaude.primaryValue,
+            secondaryValue: currentClaude.primaryValue ?? currentClaude.secondaryValue,
+            resetWindow: ResetWindow(resetsAt: resetAt),
+            lastUpdatedAt: latest.recordedAt,
+            pacingState: PacingState(
+                weeklyUtilizationPercent: latest.weeklyUtilizationPercent,
+                dailyBudget: dailyBudget,
+                todayUsage: dailyBudget?.todayUsage
+            ),
+            confidenceExplanation: "Showing the last successful Claude usage snapshot while Pitwall refreshes current data.",
+            actions: currentClaude.actions,
+            payloads: usageRowsPayload.map { [$0] } ?? currentClaude.payloads
+        )
+    }
+
+    private func preferredClaudeAccountId() -> String? {
+        let claudeAccountIds = appState.providers
+        _ = claudeAccountIds
+        return providerHistorySnapshots
+            .filter { $0.providerId == .claude }
+            .max(by: { $0.recordedAt < $1.recordedAt })?
+            .accountId
+    }
+
+    private static func formatPercent(_ value: Double) -> String {
+        let rounded = value.rounded()
+        if abs(value - rounded) < 0.05 {
+            return "\(Int(rounded))%"
+        }
+
+        return String(format: "%.1f%%", value)
     }
 
     private func showContextMenu() {

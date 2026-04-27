@@ -271,6 +271,10 @@ public struct ClaudeUsageClient: Sendable {
             "accountLabel": account.label,
             "organizationId": account.organizationId
         ]
+        if let extraUsage = response.extraUsage {
+            values["extraUsageUsedCredits"] = Self.formatDecimal(extraUsage.usedCredits)
+            values["extraUsageMonthlyLimit"] = Self.formatDecimal(extraUsage.monthlyLimit)
+        }
         if !response.unknownSectionKeys.isEmpty {
             values["unknownSectionKeys"] = response.unknownSectionKeys.sorted().joined(separator: ",")
         }
@@ -316,6 +320,14 @@ public struct ClaudeUsageClient: Sendable {
             return "\(Int(rounded))%"
         }
         return String(format: "%.1f%%", value)
+    }
+
+    private static func formatDecimal(_ value: Double) -> String {
+        let rounded = value.rounded()
+        if abs(value - rounded) < 0.000_001 {
+            return "\(Int(rounded))"
+        }
+        return String(format: "%.1f", value)
     }
 
     private static func formatDate(_ date: Date) -> String {

@@ -14,6 +14,7 @@ public struct ProviderCardViewModel: Equatable, Sendable {
     public var resetText: String?
     public var lastUpdatedText: String
     public var recommendedActionText: String
+    public var actionReasonText: String?
     public var badges: [String]
     public var actions: [ProviderAction]
 
@@ -37,6 +38,7 @@ public struct ProviderCardViewModel: Equatable, Sendable {
         )
         self.lastUpdatedText = Self.lastUpdatedText(provider.lastUpdatedAt, now: now)
         self.recommendedActionText = ProviderDisplayText.action(Self.recommendedAction(for: provider))
+        self.actionReasonText = Self.actionReasonText(for: provider)
         self.badges = Self.badges(for: provider)
         self.actions = provider.actions
     }
@@ -102,6 +104,51 @@ public struct ProviderCardViewModel: Equatable, Sendable {
         }
     }
 
+    private static func actionReasonText(for provider: ProviderState) -> String? {
+        guard let pacing = provider.pacingState else {
+            return nil
+        }
+
+        var clauses: [String] = []
+
+        if let weeklyUtilization = pacing.weeklyUtilizationPercent,
+           let weeklyPace = pacing.weeklyPace,
+           let expected = weeklyPace.expectedUtilizationPercent {
+            let delta = weeklyUtilization - expected
+            let direction = delta >= 0 ? "ahead" : "under"
+            clauses.append(
+                "Used \(formatPercent(weeklyUtilization)) vs \(formatPercent(expected)) expected by now, \(formatPoints(abs(delta))) pts \(direction) pace."
+            )
+        } else if let weeklyUtilization = pacing.weeklyUtilizationPercent {
+            clauses.append("Used \(formatPercent(weeklyUtilization)) this week.")
+        }
+
+        if let dailyBudget = pacing.dailyBudget {
+            clauses.append(
+                "\(formatPercent(dailyBudget.remainingUtilizationPercent)) remains, with \(formatPercent(dailyBudget.dailyBudgetPercent))/day for \(formatDays(dailyBudget.daysRemaining))."
+            )
+        }
+
+        if let todayUsage = pacing.todayUsage,
+           let todayDelta = todayUsage.utilizationDeltaPercent {
+            let prefix: String
+            switch todayUsage.status {
+            case .exact:
+                prefix = "Today"
+            case .estimatedFromSameDayBaseline:
+                prefix = "Today est."
+            case .unknown:
+                prefix = ""
+            }
+
+            if !prefix.isEmpty {
+                clauses.append("\(prefix): \(formatPercent(todayDelta)) used.")
+            }
+        }
+
+        return clauses.isEmpty ? nil : clauses.joined(separator: " ")
+    }
+
     private static func lastUpdatedText(_ date: Date?, now: Date) -> String {
         guard let date else {
             return "Not updated"
@@ -146,6 +193,15 @@ public struct ProviderCardViewModel: Equatable, Sendable {
         }
 
         return String(format: "%.1fd", value)
+    }
+
+    private static func formatPoints(_ value: Double) -> String {
+        let rounded = value.rounded()
+        if abs(value - rounded) < 0.05 {
+            return "\(Int(rounded))"
+        }
+
+        return String(format: "%.1f", value)
     }
 }
 

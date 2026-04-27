@@ -16,6 +16,13 @@ struct DisplayPreferencesView: View {
             }
             .pickerStyle(.segmented)
 
+            Picker("Claude tray theme", selection: menuBarTheme) {
+                ForEach(MenuBarTheme.allCases, id: \.self) { theme in
+                    Text(themeLabel(for: theme)).tag(theme)
+                }
+            }
+            .pickerStyle(.segmented)
+
             Picker("Tray rotation", selection: providerRotationMode) {
                 Text("Rotate").tag(ProviderRotationMode.automatic)
                 Text("Pin").tag(ProviderRotationMode.pinned)
@@ -73,5 +80,23 @@ struct DisplayPreferencesView: View {
             get: { preferences.rotationInterval },
             set: { preferences.rotationInterval = $0 }
         )
+    }
+
+    private var menuBarTheme: Binding<MenuBarTheme> {
+        Binding(
+            get: { preferences.menuBarTheme },
+            set: { preferences.menuBarTheme = $0 }
+        )
+    }
+
+    private func themeLabel(for theme: MenuBarTheme) -> String {
+        switch theme {
+        case .running:
+            return "Running 🚶"
+        case .racecar:
+            return "Racecar 🏎️"
+        case .f1Quali:
+            return "F1 Quali 🟣"
+        }
     }
 }

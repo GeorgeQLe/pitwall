@@ -19,9 +19,15 @@ final class ProviderCardViewModelTests: XCTestCase {
                     remainingUtilizationPercent: 68.8,
                     daysRemaining: 2.5,
                     dailyBudgetPercent: 27.52,
-                    todayUsage: TodayUsage(status: .unknown)
+                    todayUsage: TodayUsage(status: .exact, utilizationDeltaPercent: 12)
                 ),
-                weeklyPace: PaceEvaluation(label: .underusing, action: .push)
+                todayUsage: TodayUsage(status: .exact, utilizationDeltaPercent: 12),
+                weeklyPace: PaceEvaluation(
+                    label: .underusing,
+                    action: .push,
+                    paceRatio: 0.55,
+                    expectedUtilizationPercent: 57.1
+                )
             ),
             confidenceExplanation: "Claude returned fresh usage data."
         )
@@ -36,6 +42,10 @@ final class ProviderCardViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.resetText, "1h 30m")
         XCTAssertEqual(viewModel.lastUpdatedText, "Updated 5m ago")
         XCTAssertEqual(viewModel.recommendedActionText, "push")
+        XCTAssertEqual(
+            viewModel.actionReasonText,
+            "Used 31.2% vs 57.1% expected by now, 25.9 pts under pace. 68.8% remains, with 27.5%/day for 2.5d. Today: 12% used."
+        )
         XCTAssertEqual(viewModel.badges, [])
     }
 

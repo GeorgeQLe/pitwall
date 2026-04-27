@@ -97,6 +97,13 @@ struct PopoverContentView: View {
             Text(card.headline)
                 .font(.system(size: 13, weight: .medium))
 
+            if let actionReasonText = card.actionReasonText {
+                Text(actionReasonText)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             HStack(spacing: 10) {
                 metricTile(title: "Budget", value: card.secondaryMetric ?? "Unavailable")
                 metricTile(title: "Reset", value: card.resetText ?? "Unknown")
