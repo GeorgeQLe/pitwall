@@ -51,6 +51,18 @@ final class CodexAuthControllerTests: XCTestCase {
         XCTAssertEqual(status.headline, "Codex CLI unavailable")
     }
 
+    func testParseStatusSanitizesTerminalNoise() {
+        let status = CodexAuthController.parseStatus(.init(
+            stdout: "^\u{0004}\u{0008}\u{0008}\u{001B}[33mLogged in using ChatGPT\u{001B}[0m",
+            exitCode: 0
+        ))
+
+        XCTAssertEqual(status.status, .configured)
+        XCTAssertEqual(status.authMode, .chatgpt)
+        XCTAssertEqual(status.headline, "Connected with ChatGPT")
+        XCTAssertEqual(status.detail, "Logged in using ChatGPT")
+    }
+
     func testStartChatGPTLoginParsesDeviceFlowOpensBrowserAndRefreshesStatus() async throws {
         let runner = StubDeviceAuthRunner(
             events: [
@@ -108,6 +120,31 @@ final class CodexAuthControllerTests: XCTestCase {
         XCTAssertEqual(state.verificationURL, "https://chatgpt.com/device")
         XCTAssertFalse(state.didOpenBrowser)
         XCTAssertTrue(state.canCancel)
+    }
+
+    func testStartChatGPTLoginParsesNoisyTerminalOutput() async throws {
+        let runner = StubDeviceAuthRunner(
+            events: [
+                .stdout("\u{001B}[2mOpen this URL in your browser:\u{001B}[0m\nhttps://auth.openai.com/device\n"),
+                .stderr("Then enter code \u{001B}[1mABCD-EFGH\u{001B}[0m\n")
+            ],
+            result: .success(.init(exitCode: 1)),
+            holdUntilCancelled: true
+        )
+        let browser = StubBrowserOpener(error: StubBrowserOpener.OpenError.failed)
+        let controller = CodexAuthController(
+            commandRunner: StubRunner(responses: [.init(stdout: "Not logged in", exitCode: 0)]),
+            deviceAuthRunner: runner,
+            browserOpener: browser
+        )
+
+        _ = await controller.startChatGPTLogin()
+        let state = await waitForState(controller) {
+            $0.phase == .awaitingBrowser && $0.failureReason == .browserOpenFailed
+        }
+
+        XCTAssertEqual(state.deviceCode, "ABCD-EFGH")
+        XCTAssertEqual(state.verificationURL, "https://auth.openai.com/device")
     }
 
     func testRetryOpenChatGPTLoginBrowserUpdatesState() async throws {

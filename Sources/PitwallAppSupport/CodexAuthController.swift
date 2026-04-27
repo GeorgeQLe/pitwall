@@ -137,6 +137,89 @@ public struct ProcessExecutionResult: Equatable, Sendable {
             .joined(separator: "\n")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    public var sanitizedCombinedOutput: String {
+        Self.sanitizeTerminalOutput(combinedOutput)
+    }
+
+    static func sanitizeTerminalOutput(_ text: String) -> String {
+        var sanitized = stripTerminalEscapeSequences(from: text)
+        sanitized = applyBackspaces(in: sanitized)
+        sanitized = sanitized.unicodeScalars
+            .filter { scalar in
+                if scalar == "\n" || scalar == "\r" || scalar == "\t" {
+                    return true
+                }
+                return !CharacterSet.controlCharacters.contains(scalar)
+            }
+            .map(Character.init)
+            .reduce(into: "") { $0.append($1) }
+        return sanitized.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func stripTerminalEscapeSequences(from text: String) -> String {
+        var result = ""
+        var index = text.startIndex
+
+        while index < text.endIndex {
+            let character = text[index]
+            guard character == "\u{001B}" else {
+                result.append(character)
+                index = text.index(after: index)
+                continue
+            }
+
+            let nextIndex = text.index(after: index)
+            guard nextIndex < text.endIndex else { break }
+
+            switch text[nextIndex] {
+            case "[":
+                index = text.index(after: nextIndex)
+                while index < text.endIndex {
+                    let scalar = text[index].unicodeScalars.first?.value ?? 0
+                    index = text.index(after: index)
+                    if (0x40...0x7E).contains(scalar) {
+                        break
+                    }
+                }
+            case "]":
+                index = text.index(after: nextIndex)
+                while index < text.endIndex {
+                    let current = text[index]
+                    if current == "\u{0007}" {
+                        index = text.index(after: index)
+                        break
+                    }
+                    if current == "\u{001B}" {
+                        let afterEscape = text.index(after: index)
+                        if afterEscape < text.endIndex, text[afterEscape] == "\\" {
+                            index = text.index(after: afterEscape)
+                            break
+                        }
+                    }
+                    index = text.index(after: index)
+                }
+            default:
+                index = text.index(after: nextIndex)
+            }
+        }
+
+        return result
+    }
+
+    private static func applyBackspaces(in text: String) -> String {
+        var result: [Character] = []
+        for character in text {
+            if character == "\u{0008}" {
+                if !result.isEmpty {
+                    result.removeLast()
+                }
+            } else {
+                result.append(character)
+            }
+        }
+        return String(result)
+    }
 }
 
 public protocol CodexCommandRunning: Sendable {
@@ -368,7 +451,7 @@ public actor CodexAuthController: CodexAuthControlling {
         }
 
         observedDeviceAuthOutput += text
-        let outputToParse = observedDeviceAuthOutput
+        let outputToParse = ProcessExecutionResult.sanitizeTerminalOutput(observedDeviceAuthOutput)
 
         if chatGPTLoginState.verificationURL == nil,
            let url = Self.extractVerificationURL(from: outputToParse) {
@@ -525,7 +608,7 @@ public actor CodexAuthController: CodexAuthControlling {
     }
 
     private static func classifyFailure(_ result: ProcessExecutionResult) -> CodexDeviceAuthFailureReason {
-        let normalized = result.combinedOutput.lowercased()
+        let normalized = result.sanitizedCombinedOutput.lowercased()
         if normalized.contains("cancelled")
             || normalized.contains("canceled")
             || normalized.contains("rejected")
@@ -583,7 +666,7 @@ public actor CodexAuthController: CodexAuthControlling {
     }
 
     public static func parseStatus(_ result: ProcessExecutionResult) -> CodexSetupState {
-        let output = result.combinedOutput
+        let output = result.sanitizedCombinedOutput
         let normalized = output.lowercased()
 
         if normalized.contains("logged in using chatgpt") {
@@ -698,8 +781,15 @@ public actor ProcessCodexDeviceAuthFlowRunner: CodexDeviceAuthFlowRunning {
         onEvent: @escaping @Sendable (CodexDeviceAuthStreamEvent) async -> Void
     ) async throws -> ProcessExecutionResult {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["codex", "login", "--device-auth"]
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/script")
+        process.arguments = [
+            "-q",
+            "/dev/null",
+            "/usr/bin/env",
+            "codex",
+            "login",
+            "--device-auth"
+        ]
 
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
