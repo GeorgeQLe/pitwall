@@ -2,6 +2,9 @@
 
 ## 2026-04-27
 
+- Browser-first Codex auth shipped: replaced the old Terminal handoff with an app-owned `codex login --device-auth` flow that streams the CLI output, extracts the verification URL and device code, opens the browser directly, shows live progress/cancel/retry state in Settings and onboarding, waits for CLI completion, and refreshes Codex status automatically. Kept the API-key path headless through `codex login --with-api-key`, tightened passive Codex detection/status merging so CLI-verified auth upgrades the provider state, and normalized failure messaging to avoid surfacing raw device-auth output or secrets. Updated the clean-room spec note to reflect app-orchestrated device auth through the supported CLI.
+- Validation: `swift test` passes **236 / 236** with 0 failures and 0 regressions. No build/test warnings were left unresolved.
+
 - Codex auth-mode UX tightened: replaced the free-text auth mode field with a menu picker for Codex in both the onboarding "Connect Codex" step and the provider settings row. The persisted provider profile still stores auth mode as a string, so no storage migration was needed; non-Codex providers keep the existing text-field behavior.
 - Onboarding save/test feedback refined: the wizard footer now shows a small progress indicator and busy message while saving Claude credentials and testing the configuration, then returns to the normal footer message once the async work completes.
 - Reinstalled the macOS app via `make uninstall` followed by `make install`; `/Applications/Pitwall.app` was rebuilt, ad-hoc signed, verified by `codesign`, copied into `/Applications`, and relaunched. Application Support and Keychain state were preserved by the uninstall path.
