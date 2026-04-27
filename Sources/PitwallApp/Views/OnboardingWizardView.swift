@@ -4,9 +4,17 @@ import SwiftUI
 
 struct OnboardingWizardView: View {
     let claudeAccounts: [ClaudeAccountSetupState]
+    let initialCodexSetupState: CodexSetupState
     let onSaveConfiguration: (ProviderConfigurationSnapshot) async -> String?
     let onSaveClaudeCredentials: (ClaudeCredentialInput) async -> String?
     let onTestClaudeConnection: (String?) async -> ClaudeConnectionTestOutcome
+    let onStartCodexChatGPTLogin: () async -> CodexDeviceAuthSessionState
+    let onCurrentCodexChatGPTLoginState: () async -> CodexDeviceAuthSessionState
+    let onRetryCodexChatGPTLoginBrowser: () async -> CodexDeviceAuthSessionState
+    let onCancelCodexChatGPTLogin: () async -> CodexDeviceAuthSessionState
+    let onConnectCodexAPIKey: (String) async -> CodexConnectionOutcome
+    let onDisconnectCodex: () async -> CodexConnectionOutcome
+    let onRefreshCodexStatus: () async -> CodexSetupState
     let onFinish: () -> Void
     let onUnsavedSensitiveInputChanged: (Bool) -> Void
 
@@ -21,20 +29,37 @@ struct OnboardingWizardView: View {
     @State private var claudeCredentialsSaved: Bool
     @State private var claudeCredentialDraft: ClaudeCredentialDraft
     @State private var savedClaudeAccountIds: Set<String>
+    @State private var codexSetupState: CodexSetupState
 
     init(
         snapshot: ProviderConfigurationSnapshot,
         claudeAccounts: [ClaudeAccountSetupState],
+        codexSetupState: CodexSetupState,
         onSaveConfiguration: @escaping (ProviderConfigurationSnapshot) async -> String?,
         onSaveClaudeCredentials: @escaping (ClaudeCredentialInput) async -> String?,
         onTestClaudeConnection: @escaping (String?) async -> ClaudeConnectionTestOutcome,
+        onStartCodexChatGPTLogin: @escaping () async -> CodexDeviceAuthSessionState,
+        onCurrentCodexChatGPTLoginState: @escaping () async -> CodexDeviceAuthSessionState,
+        onRetryCodexChatGPTLoginBrowser: @escaping () async -> CodexDeviceAuthSessionState,
+        onCancelCodexChatGPTLogin: @escaping () async -> CodexDeviceAuthSessionState,
+        onConnectCodexAPIKey: @escaping (String) async -> CodexConnectionOutcome,
+        onDisconnectCodex: @escaping () async -> CodexConnectionOutcome,
+        onRefreshCodexStatus: @escaping () async -> CodexSetupState,
         onFinish: @escaping () -> Void,
         onUnsavedSensitiveInputChanged: @escaping (Bool) -> Void = { _ in }
     ) {
         self.claudeAccounts = claudeAccounts
+        self.initialCodexSetupState = codexSetupState
         self.onSaveConfiguration = onSaveConfiguration
         self.onSaveClaudeCredentials = onSaveClaudeCredentials
         self.onTestClaudeConnection = onTestClaudeConnection
+        self.onStartCodexChatGPTLogin = onStartCodexChatGPTLogin
+        self.onCurrentCodexChatGPTLoginState = onCurrentCodexChatGPTLoginState
+        self.onRetryCodexChatGPTLoginBrowser = onRetryCodexChatGPTLoginBrowser
+        self.onCancelCodexChatGPTLogin = onCancelCodexChatGPTLogin
+        self.onConnectCodexAPIKey = onConnectCodexAPIKey
+        self.onDisconnectCodex = onDisconnectCodex
+        self.onRefreshCodexStatus = onRefreshCodexStatus
         self.onFinish = onFinish
         self.onUnsavedSensitiveInputChanged = onUnsavedSensitiveInputChanged
 
@@ -48,6 +73,7 @@ struct OnboardingWizardView: View {
         _claudeCredentialsSaved = State(initialValue: Self.hasConfiguredClaudeAccount(claudeAccounts))
         _claudeCredentialDraft = State(initialValue: Self.initialClaudeCredentialDraft(from: claudeAccounts))
         _savedClaudeAccountIds = State(initialValue: Set(claudeAccounts.map(\.accountId)))
+        _codexSetupState = State(initialValue: codexSetupState)
     }
 
     private var steps: [OnboardingWizardStep] {
@@ -115,6 +141,19 @@ struct OnboardingWizardView: View {
                 onSaveClaudeCredentials: onSaveClaudeCredentials,
                 onTestClaudeConnection: onTestClaudeConnection,
                 onHelpExpanded: onScrollToClaudeHelp,
+                onSensitiveInputChanged: onUnsavedSensitiveInputChanged
+            )
+        case .credentials(.codex):
+            CodexCredentialStepView(
+                profile: codexProfileBinding,
+                setupState: $codexSetupState,
+                onStartChatGPTLogin: onStartCodexChatGPTLogin,
+                onCurrentChatGPTLoginState: onCurrentCodexChatGPTLoginState,
+                onRetryChatGPTLoginBrowser: onRetryCodexChatGPTLoginBrowser,
+                onCancelChatGPTLogin: onCancelCodexChatGPTLogin,
+                onConnectAPIKey: onConnectCodexAPIKey,
+                onDisconnect: onDisconnectCodex,
+                onRefreshStatus: onRefreshCodexStatus,
                 onSensitiveInputChanged: onUnsavedSensitiveInputChanged
             )
         case .credentials(let providerId):
@@ -190,6 +229,8 @@ struct OnboardingWizardView: View {
             return !selectedProviders.isEmpty
         case .credentials(.claude):
             return claudeCanAdvance
+        case .credentials(.codex):
+            return codexCanAdvance
         case .credentials(let providerId):
             return profileIsComplete(for: providerId)
         default:
@@ -201,6 +242,8 @@ struct OnboardingWizardView: View {
         switch currentStep {
         case .credentials(.claude) where !claudeCanAdvance:
             return "Enter a Claude org id and session key to continue."
+        case .credentials(.codex) where !codexCanAdvance:
+            return "Finish a Codex CLI login and verify the status to continue."
         case .credentials(let providerId) where !profileIsComplete(for: providerId):
             return "Enter the required \(displayName(for: providerId)) values to continue."
         default:
@@ -214,6 +257,10 @@ struct OnboardingWizardView: View {
         }
 
         return claudeCredentialsSaved && claudeCredentialDraft.sessionKey.isEmpty
+    }
+
+    private var codexCanAdvance: Bool {
+        codexSetupState.status == .configured
     }
 
     private func continueFromCurrentStep() async {
@@ -330,9 +377,27 @@ struct OnboardingWizardView: View {
     }
 
     private func profileIsComplete(for providerId: ProviderID) -> Bool {
+        if providerId == .codex {
+            return codexCanAdvance
+        }
         guard let profile = profiles.first(where: { $0.providerId == providerId }) else { return false }
         return !(profile.planProfile ?? "").trimmed.isEmpty
             && !(profile.authMode ?? "").trimmed.isEmpty
+    }
+
+    private var codexProfileBinding: Binding<ProviderProfileConfiguration> {
+        binding(for: .codex)
+    }
+
+    private func binding(for providerId: ProviderID) -> Binding<ProviderProfileConfiguration> {
+        guard let index = profiles.firstIndex(where: { $0.providerId == providerId }) else {
+            return .constant(ProviderProfileConfiguration(providerId: providerId))
+        }
+
+        return Binding(
+            get: { profiles[index] },
+            set: { profiles[index] = $0 }
+        )
     }
 
     private func displayName(for providerId: ProviderID) -> String {

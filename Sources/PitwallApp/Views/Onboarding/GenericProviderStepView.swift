@@ -16,6 +16,13 @@ struct GenericProviderStepView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if providerId == .codex {
+                Text("Pitwall does not launch ChatGPT OAuth for Codex yet. Sign in with the Codex CLI first, then Pitwall will detect local auth.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             if !isComplete {
                 Text("Enter both required values to continue.")
                     .font(.system(size: 11))
@@ -40,6 +47,9 @@ struct GenericProviderStepView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     bullet("Plan or profile: the subscription tier or profile name you recognise (e.g. “Pro”, “Team workspace”).")
                     bullet("Auth mode: how you log in — ChatGPT SSO, API key, OAuth, etc.")
+                    if providerId == .codex {
+                        bullet("Codex login is detected from local CLI state only. Pitwall does not open the ChatGPT sign-in flow from this screen.")
+                    }
                     Text("Direct credential sync for \(displayName) is not yet implemented — tracked under Pitwall's post-v1 roadmap.")
                         .font(.system(size: 11))
                         .italic()

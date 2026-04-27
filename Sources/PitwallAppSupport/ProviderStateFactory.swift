@@ -195,7 +195,7 @@ public struct ProviderStateFactory: Sendable {
             confidence: .observedOnly,
             headline: "\(displayName(for: providerId)) setup pending",
             primaryValue: profile.planProfile ?? "No profile selected",
-            secondaryValue: profile.authMode ?? "Passive detection available",
+            secondaryValue: secondaryValue(for: providerId, authMode: profile.authMode),
             confidenceExplanation: "\(displayName(for: providerId)) remains visible as a configurable provider until local metadata or telemetry is available.",
             actions: [
                 ProviderAction(kind: .configure, title: "Configure"),
@@ -235,5 +235,18 @@ public struct ProviderStateFactory: Sendable {
         default:
             return providerId.rawValue.capitalized
         }
+    }
+
+    private func secondaryValue(for providerId: ProviderID, authMode: String?) -> String {
+        guard let authMode, !authMode.isEmpty else {
+            return "Passive detection available"
+        }
+
+        if providerId == .codex,
+           let mode = CodexAuthMode(rawValue: authMode) {
+            return mode.displayName
+        }
+
+        return authMode
     }
 }

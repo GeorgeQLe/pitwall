@@ -258,7 +258,7 @@ Accuracy Mode:
 Telemetry mode:
 
 - Opt-in and off by default.
-- Reuses existing CLI auth only; no new Codex login flow.
+- Reuses the supported Codex CLI auth paths, including app-orchestrated device auth for ChatGPT sign-in and CLI-owned API-key login.
 - Candidate endpoints, when auth mode supports them:
   - `https://chatgpt.com/backend-api/wham/usage`
   - `{base_url}/api/codex/usage`

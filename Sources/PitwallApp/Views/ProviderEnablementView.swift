@@ -33,10 +33,19 @@ struct ProviderEnablementView: View {
 
             HStack(spacing: 8) {
                 TextField("Plan or profile", text: binding.planProfile)
-                authModeControl(for: providerId, binding: binding.authMode)
+                if providerId != .codex {
+                    authModeControl(for: providerId, binding: binding.authMode)
+                }
             }
             .textFieldStyle(.roundedBorder)
             .font(.system(size: 12))
+
+            if providerId == .codex {
+                Text("Codex authentication is managed in the dedicated Codex Connection section below.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(.vertical, 4)
     }

@@ -44,6 +44,27 @@ final class ProviderDetectionTests: XCTestCase {
         XCTAssertTrue(state.actions.contains { $0.kind == .configure })
     }
 
+    func testCodexPassiveDetectionRequiresLocalAuth() throws {
+        let snapshot = LocalProviderFileSnapshot(
+            homePath: "/Users/example/.codex",
+            files: [
+                "config.toml": "model = \"gpt-5.4\"\n",
+                "history.jsonl": "{}\n"
+            ]
+        )
+
+        let state = try CodexLocalDetector().detect(from: snapshot)
+
+        XCTAssertEqual(state.providerId, .codex)
+        XCTAssertEqual(state.status, .missingConfiguration)
+        XCTAssertEqual(state.confidence, .observedOnly)
+        XCTAssertEqual(state.headline, "Codex login not detected")
+        XCTAssertEqual(state.secondaryValue, "CLI auth not detected")
+        XCTAssertEqual(state.payloads.first?.values["installDetected"], "true")
+        XCTAssertEqual(state.payloads.first?.values["authDetected"], "false")
+        XCTAssertEqual(state.payloads.first?.values["activityDetected"], "true")
+    }
+
     func testGeminiPassiveDetectionReportsSafeSignalsOnly() throws {
         let snapshot = LocalProviderFileSnapshot(
             homePath: "/Users/example/.gemini",

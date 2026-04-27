@@ -31,6 +31,63 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertEqual(outcome.appState.provider(for: .gemini)?.status, .configured)
     }
 
+    func testCodexWithoutAuthRemainsUnconfigured() async {
+        let coordinator = ProviderRefreshCoordinator(
+            configurationStore: ProviderConfigurationStore(userDefaults: isolatedDefaults()),
+            secretStore: InMemorySecretStore(),
+            claudeClient: FakeClaudeUsageClient(),
+            snapshotLoader: FakeSnapshotLoader(
+                codexSnapshot: LocalProviderFileSnapshot(
+                    homePath: "/codex",
+                    files: ["config.toml": "", "history.jsonl": ""]
+                ),
+                geminiSnapshot: LocalProviderFileSnapshot(
+                    homePath: "/gemini",
+                    files: ["settings.json": #"{"selectedAuthType":"oauth-personal"}"#]
+                )
+            ),
+            now: { Date(timeIntervalSince1970: 1_700_000_000) }
+        )
+
+        let outcome = await coordinator.refreshProviders(trigger: .manual)
+        let codex = outcome.appState.provider(for: .codex)
+
+        XCTAssertEqual(codex?.status, .missingConfiguration)
+        XCTAssertEqual(codex?.headline, "Codex login not detected")
+        XCTAssertEqual(codex?.secondaryValue, "CLI auth not detected")
+    }
+
+    func testCodexCLIStatusOverridesPassiveMissingAuth() async {
+        let coordinator = ProviderRefreshCoordinator(
+            configurationStore: ProviderConfigurationStore(userDefaults: isolatedDefaults()),
+            secretStore: InMemorySecretStore(),
+            claudeClient: FakeClaudeUsageClient(),
+            snapshotLoader: FakeSnapshotLoader(
+                codexSnapshot: LocalProviderFileSnapshot(
+                    homePath: "/codex",
+                    files: ["config.toml": "", "history.jsonl": ""]
+                )
+            ),
+            codexAuthStatusProvider: FakeCodexStatusProvider(
+                state: CodexSetupState(
+                    status: .configured,
+                    authMode: .chatgpt,
+                    headline: "Connected with ChatGPT",
+                    detail: "Logged in using ChatGPT"
+                )
+            ),
+            now: { Date(timeIntervalSince1970: 1_700_000_000) }
+        )
+
+        let outcome = await coordinator.refreshProviders(trigger: .manual)
+        let codex = outcome.appState.provider(for: .codex)
+
+        XCTAssertEqual(codex?.status, .configured)
+        XCTAssertEqual(codex?.headline, "Connected with ChatGPT")
+        XCTAssertEqual(codex?.secondaryValue, "ChatGPT")
+        XCTAssertTrue(codex?.confidenceExplanation.contains("Login verified through the Codex CLI.") == true)
+    }
+
     func testManualRefreshLoadsClaudeSecretAndDoesNotUseLiveSources() async throws {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let store = ProviderConfigurationStore(userDefaults: isolatedDefaults())
@@ -303,6 +360,18 @@ private actor FakeClaudeUsageClient: ClaudeUsageClienting {
         case let .failure(error):
             throw error
         }
+    }
+}
+
+private actor FakeCodexStatusProvider: CodexAuthStatusProviding {
+    let state: CodexSetupState
+
+    init(state: CodexSetupState) {
+        self.state = state
+    }
+
+    func status() async -> CodexSetupState {
+        state
     }
 }
 

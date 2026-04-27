@@ -15,7 +15,20 @@ public struct CodexLocalDetector: Sendable {
                 installDetected: installDetected,
                 authDetected: authDetected,
                 activityDetected: activityDetected,
-                rateLimitDetected: rateLimitDetected
+                rateLimitDetected: rateLimitDetected,
+                headline: "Codex configuration missing",
+                explanation: "Codex configuration was not found in the injected local evidence snapshot."
+            )
+        }
+
+        guard authDetected else {
+            return missingConfigurationState(
+                installDetected: installDetected,
+                authDetected: authDetected,
+                activityDetected: activityDetected,
+                rateLimitDetected: rateLimitDetected,
+                headline: "Codex login not detected",
+                explanation: "Codex configuration exists, but local CLI auth was not detected. Pitwall does not start ChatGPT OAuth itself; sign in with Codex first, then refresh."
             )
         }
 
@@ -46,15 +59,18 @@ public struct CodexLocalDetector: Sendable {
         installDetected: Bool,
         authDetected: Bool,
         activityDetected: Bool,
-        rateLimitDetected: Bool
+        rateLimitDetected: Bool,
+        headline: String,
+        explanation: String
     ) -> ProviderState {
         ProviderState(
             providerId: .codex,
             displayName: "Codex",
             status: .missingConfiguration,
             confidence: .observedOnly,
-            headline: "Codex configuration missing",
-            confidenceExplanation: "Codex configuration was not found in the injected local evidence snapshot.",
+            headline: headline,
+            secondaryValue: authDetected ? "CLI auth present" : "CLI auth not detected",
+            confidenceExplanation: explanation,
             actions: [
                 ProviderAction(kind: .configure, title: "Configure Codex")
             ],

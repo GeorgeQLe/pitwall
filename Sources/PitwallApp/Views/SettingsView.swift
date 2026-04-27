@@ -5,6 +5,7 @@ import SwiftUI
 
 struct SettingsView: View {
     let claudeAccounts: [ClaudeAccountSetupState]
+    let initialCodexSetupState: CodexSetupState
     let onSaveConfiguration: (ProviderConfigurationSnapshot) async -> String?
     let onSavePhase4Settings: (Phase4Settings) async -> String?
     let onSaveGitHubToken: (String, String) async -> GitHubHeatmapTokenStatus?
@@ -12,6 +13,13 @@ struct SettingsView: View {
     let onSaveClaudeCredentials: (ClaudeCredentialInput) async -> String?
     let onDeleteClaudeCredentials: (String) async -> String?
     let onTestClaudeConnection: (String?) async -> ClaudeConnectionTestOutcome
+    let onStartCodexChatGPTLogin: () async -> CodexDeviceAuthSessionState
+    let onCurrentCodexChatGPTLoginState: () async -> CodexDeviceAuthSessionState
+    let onRetryCodexChatGPTLoginBrowser: () async -> CodexDeviceAuthSessionState
+    let onCancelCodexChatGPTLogin: () async -> CodexDeviceAuthSessionState
+    let onConnectCodexAPIKey: (String) async -> CodexConnectionOutcome
+    let onDisconnectCodex: () async -> CodexConnectionOutcome
+    let onRefreshCodexStatus: () async -> CodexSetupState
     let onRefresh: () -> Void
     let loginItemService: LoginItemService?
     let updater: SPUUpdater?
@@ -26,11 +34,13 @@ struct SettingsView: View {
     @State private var automaticallyChecksForUpdates: Bool
     @State private var updateCheckInterval: TimeInterval
     @State private var claudeCredentialDraft = ClaudeCredentialDraft()
+    @State private var codexSetupState: CodexSetupState
 
     init(
         snapshot: ProviderConfigurationSnapshot,
         phase4Settings: Phase4Settings,
         claudeAccounts: [ClaudeAccountSetupState],
+        codexSetupState: CodexSetupState,
         onSaveConfiguration: @escaping (ProviderConfigurationSnapshot) async -> String?,
         onSavePhase4Settings: @escaping (Phase4Settings) async -> String?,
         onSaveGitHubToken: @escaping (String, String) async -> GitHubHeatmapTokenStatus?,
@@ -38,11 +48,19 @@ struct SettingsView: View {
         onSaveClaudeCredentials: @escaping (ClaudeCredentialInput) async -> String?,
         onDeleteClaudeCredentials: @escaping (String) async -> String?,
         onTestClaudeConnection: @escaping (String?) async -> ClaudeConnectionTestOutcome,
+        onStartCodexChatGPTLogin: @escaping () async -> CodexDeviceAuthSessionState,
+        onCurrentCodexChatGPTLoginState: @escaping () async -> CodexDeviceAuthSessionState,
+        onRetryCodexChatGPTLoginBrowser: @escaping () async -> CodexDeviceAuthSessionState,
+        onCancelCodexChatGPTLogin: @escaping () async -> CodexDeviceAuthSessionState,
+        onConnectCodexAPIKey: @escaping (String) async -> CodexConnectionOutcome,
+        onDisconnectCodex: @escaping () async -> CodexConnectionOutcome,
+        onRefreshCodexStatus: @escaping () async -> CodexSetupState,
         onRefresh: @escaping () -> Void,
         loginItemService: LoginItemService? = nil,
         updater: SPUUpdater? = nil
     ) {
         self.claudeAccounts = claudeAccounts
+        self.initialCodexSetupState = codexSetupState
         self.onSaveConfiguration = onSaveConfiguration
         self.onSavePhase4Settings = onSavePhase4Settings
         self.onSaveGitHubToken = onSaveGitHubToken
@@ -50,6 +68,13 @@ struct SettingsView: View {
         self.onSaveClaudeCredentials = onSaveClaudeCredentials
         self.onDeleteClaudeCredentials = onDeleteClaudeCredentials
         self.onTestClaudeConnection = onTestClaudeConnection
+        self.onStartCodexChatGPTLogin = onStartCodexChatGPTLogin
+        self.onCurrentCodexChatGPTLoginState = onCurrentCodexChatGPTLoginState
+        self.onRetryCodexChatGPTLoginBrowser = onRetryCodexChatGPTLoginBrowser
+        self.onCancelCodexChatGPTLogin = onCancelCodexChatGPTLogin
+        self.onConnectCodexAPIKey = onConnectCodexAPIKey
+        self.onDisconnectCodex = onDisconnectCodex
+        self.onRefreshCodexStatus = onRefreshCodexStatus
         self.onRefresh = onRefresh
         self.loginItemService = loginItemService
         self.updater = updater
@@ -61,6 +86,7 @@ struct SettingsView: View {
         _launchAtLoginEnabled = State(initialValue: loginItemService?.isEnabled ?? false)
         _automaticallyChecksForUpdates = State(initialValue: updater?.automaticallyChecksForUpdates ?? false)
         _updateCheckInterval = State(initialValue: updater?.updateCheckInterval ?? UpdateCheckCadence.daily.interval)
+        _codexSetupState = State(initialValue: codexSetupState)
     }
 
     var body: some View {
@@ -77,6 +103,18 @@ struct SettingsView: View {
                         onSave: onSaveClaudeCredentials,
                         onDelete: onDeleteClaudeCredentials,
                         onTest: onTestClaudeConnection
+                    )
+                    Divider()
+                    CodexCredentialSetupView(
+                        profile: codexProfileBinding,
+                        setupState: $codexSetupState,
+                        onStartChatGPTLogin: onStartCodexChatGPTLogin,
+                        onCurrentChatGPTLoginState: onCurrentCodexChatGPTLoginState,
+                        onRetryChatGPTLoginBrowser: onRetryCodexChatGPTLoginBrowser,
+                        onCancelChatGPTLogin: onCancelCodexChatGPTLogin,
+                        onConnectAPIKey: onConnectCodexAPIKey,
+                        onDisconnect: onDisconnectCodex,
+                        onRefreshStatus: onRefreshCodexStatus
                     )
                     Divider()
                     DisplayPreferencesView(preferences: $preferences)
@@ -179,6 +217,21 @@ struct SettingsView: View {
         PitwallAppSupport.supportedProviders.map { providerId in
             profiles.first(where: { $0.providerId == providerId }) ?? ProviderProfileConfiguration(providerId: providerId)
         }
+    }
+
+    private var codexProfileBinding: Binding<ProviderProfileConfiguration> {
+        binding(for: .codex)
+    }
+
+    private func binding(for providerId: ProviderID) -> Binding<ProviderProfileConfiguration> {
+        guard let index = profiles.firstIndex(where: { $0.providerId == providerId }) else {
+            return .constant(ProviderProfileConfiguration(providerId: providerId))
+        }
+
+        return Binding(
+            get: { profiles[index] },
+            set: { profiles[index] = $0 }
+        )
     }
 
     private var notificationPreferences: Binding<NotificationPreferences> {

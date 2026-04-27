@@ -15,6 +15,7 @@ final class MenuBarController: NSObject {
     private let configurationStore: ProviderConfigurationStore
     private let secretStore: any ProviderSecretStore
     private let claudeSettings: ClaudeAccountSettings
+    private let codexAuthController: any CodexAuthControlling
     private let refreshCoordinator: ProviderRefreshCoordinator
     private let phase4SettingsStore: Phase4SettingsStore
     private let providerHistoryStore: ProviderHistoryStore
@@ -47,10 +48,12 @@ final class MenuBarController: NSObject {
             configurationStore: configurationStore,
             secretStore: secretStore
         )
+        let codexAuthController = CodexAuthController()
 
         self.configurationStore = configurationStore
         self.secretStore = secretStore
         self.claudeSettings = claudeSettings
+        self.codexAuthController = codexAuthController
         self.phase4SettingsStore = Phase4SettingsStore()
         self.providerHistoryStore = providerHistoryStore
         self.diagnosticEventStore = diagnosticEventStore
@@ -68,6 +71,7 @@ final class MenuBarController: NSObject {
         self.refreshCoordinator = ProviderRefreshCoordinator(
             configurationStore: configurationStore,
             secretStore: secretStore,
+            codexAuthStatusProvider: codexAuthController,
             historyStore: providerHistoryStore,
             diagnosticEventStore: diagnosticEventStore
         )
@@ -288,10 +292,12 @@ final class MenuBarController: NSObject {
             let snapshot = await configurationStore.load()
             let loadedPhase4Settings = await phase4SettingsStore.load()
             let accounts = (try? await claudeSettings.setupStates()) ?? []
+            let codexSetupState = await codexAuthController.status()
             popoverController.showSettings(
                 snapshot: snapshot,
                 phase4Settings: loadedPhase4Settings,
                 claudeAccounts: accounts,
+                codexSetupState: codexSetupState,
                 onSaveConfiguration: { [weak self] snapshot in
                     await self?.saveConfiguration(snapshot) ?? "Settings controller is unavailable."
                 },
@@ -314,6 +320,31 @@ final class MenuBarController: NSObject {
                     await self?.testClaudeConnection(accountId: accountId)
                         ?? .unavailable("Settings controller is unavailable.")
                 },
+                onStartCodexChatGPTLogin: { [weak self] in
+                    await self?.startCodexChatGPTLogin() ?? .idle
+                },
+                onCurrentCodexChatGPTLoginState: { [weak self] in
+                    await self?.currentCodexChatGPTLoginState() ?? .idle
+                },
+                onRetryCodexChatGPTLoginBrowser: { [weak self] in
+                    await self?.retryCodexChatGPTLoginBrowser() ?? .idle
+                },
+                onCancelCodexChatGPTLogin: { [weak self] in
+                    await self?.cancelCodexChatGPTLogin() ?? .idle
+                },
+                onConnectCodexAPIKey: { [weak self] apiKey in
+                    await self?.connectCodexAPIKey(apiKey) ?? .unavailable("Settings controller is unavailable.")
+                },
+                onDisconnectCodex: { [weak self] in
+                    await self?.disconnectCodex() ?? .unavailable("Settings controller is unavailable.")
+                },
+                onRefreshCodexStatus: { [weak self] in
+                    await self?.refreshCodexStatus() ?? CodexSetupState(
+                        status: .unavailable,
+                        headline: "Settings controller is unavailable.",
+                        detail: "Codex status could not be refreshed."
+                    )
+                },
                 onRefresh: { [weak self] in
                     self?.refreshNow()
                 },
@@ -328,28 +359,57 @@ final class MenuBarController: NSObject {
         claudeAccounts: [ClaudeAccountSetupState]
     ) {
         guard let button = statusItem?.button else { return }
-        popoverController.presentOnboardingPanel(
-            anchoredTo: button,
-            snapshot: snapshot,
-            claudeAccounts: claudeAccounts,
-            onSaveConfiguration: { [weak self] snapshot in
-                guard let self else { return "Onboarding controller is unavailable." }
-                return await self.saveConfiguration(snapshot)
-            },
-            onSaveClaudeCredentials: { [weak self] input in
-                guard let self else { return "Onboarding controller is unavailable." }
-                return await self.saveClaudeCredentials(input)
-            },
-            onTestClaudeConnection: { [weak self] accountId in
-                await self?.testClaudeConnection(accountId: accountId)
-                    ?? .unavailable("Onboarding controller is unavailable.")
-            },
-            onFinish: { [weak self] in
-                self?.onboardingDefaults.set(true, forKey: Self.onboardingCompletedKey)
-                self?.popoverController.forceDismissOnboardingPanel()
-                self?.loadConfiguration(showOnboardingIfNeeded: false)
-            }
-        )
+        Task {
+            let codexSetupState = await codexAuthController.status()
+            popoverController.presentOnboardingPanel(
+                anchoredTo: button,
+                snapshot: snapshot,
+                claudeAccounts: claudeAccounts,
+                codexSetupState: codexSetupState,
+                onSaveConfiguration: { [weak self] snapshot in
+                    guard let self else { return "Onboarding controller is unavailable." }
+                    return await self.saveConfiguration(snapshot)
+                },
+                onSaveClaudeCredentials: { [weak self] input in
+                    guard let self else { return "Onboarding controller is unavailable." }
+                    return await self.saveClaudeCredentials(input)
+                },
+                onTestClaudeConnection: { [weak self] accountId in
+                    await self?.testClaudeConnection(accountId: accountId)
+                        ?? .unavailable("Onboarding controller is unavailable.")
+                },
+                onStartCodexChatGPTLogin: { [weak self] in
+                    await self?.startCodexChatGPTLogin() ?? .idle
+                },
+                onCurrentCodexChatGPTLoginState: { [weak self] in
+                    await self?.currentCodexChatGPTLoginState() ?? .idle
+                },
+                onRetryCodexChatGPTLoginBrowser: { [weak self] in
+                    await self?.retryCodexChatGPTLoginBrowser() ?? .idle
+                },
+                onCancelCodexChatGPTLogin: { [weak self] in
+                    await self?.cancelCodexChatGPTLogin() ?? .idle
+                },
+                onConnectCodexAPIKey: { [weak self] apiKey in
+                    await self?.connectCodexAPIKey(apiKey) ?? .unavailable("Onboarding controller is unavailable.")
+                },
+                onDisconnectCodex: { [weak self] in
+                    await self?.disconnectCodex() ?? .unavailable("Onboarding controller is unavailable.")
+                },
+                onRefreshCodexStatus: { [weak self] in
+                    await self?.refreshCodexStatus() ?? CodexSetupState(
+                        status: .unavailable,
+                        headline: "Onboarding controller is unavailable.",
+                        detail: "Codex status could not be refreshed."
+                    )
+                },
+                onFinish: { [weak self] in
+                    self?.onboardingDefaults.set(true, forKey: Self.onboardingCompletedKey)
+                    self?.popoverController.forceDismissOnboardingPanel()
+                    self?.loadConfiguration(showOnboardingIfNeeded: false)
+                }
+            )
+        }
     }
 
     private func saveConfiguration(_ snapshot: ProviderConfigurationSnapshot) async -> String? {
@@ -470,6 +530,67 @@ final class MenuBarController: NSObject {
                 canContinue: false
             )
         }
+    }
+
+    private func startCodexChatGPTLogin() async -> CodexDeviceAuthSessionState {
+        await codexAuthController.startChatGPTLogin()
+    }
+
+    private func currentCodexChatGPTLoginState() async -> CodexDeviceAuthSessionState {
+        let state = await codexAuthController.currentChatGPTLoginState()
+        if let finalSetupState = state.finalSetupState {
+            let refresh = await refreshCoordinator.refreshProviders(trigger: .manual)
+            applyRefreshOutcome(refresh)
+            _ = finalSetupState
+        }
+        return state
+    }
+
+    private func retryCodexChatGPTLoginBrowser() async -> CodexDeviceAuthSessionState {
+        await codexAuthController.retryOpenChatGPTLoginBrowser()
+    }
+
+    private func cancelCodexChatGPTLogin() async -> CodexDeviceAuthSessionState {
+        await codexAuthController.cancelChatGPTLogin()
+    }
+
+    private func connectCodexAPIKey(_ apiKey: String) async -> CodexConnectionOutcome {
+        do {
+            let setupState = try await codexAuthController.loginWithAPIKey(apiKey)
+            let refresh = await refreshCoordinator.refreshProviders(trigger: .manual)
+            applyRefreshOutcome(refresh)
+            return CodexConnectionOutcome(
+                message: setupState.status == .configured
+                    ? "Codex API key connected."
+                    : setupState.detail,
+                canContinue: setupState.status == .configured,
+                setupState: setupState
+            )
+        } catch {
+            return .unavailable("Could not connect Codex API key: \(error.localizedDescription)")
+        }
+    }
+
+    private func disconnectCodex() async -> CodexConnectionOutcome {
+        do {
+            let setupState = try await codexAuthController.logout()
+            let refresh = await refreshCoordinator.refreshProviders(trigger: .manual)
+            applyRefreshOutcome(refresh)
+            return CodexConnectionOutcome(
+                message: "Codex disconnected locally.",
+                canContinue: false,
+                setupState: setupState
+            )
+        } catch {
+            return .unavailable("Could not disconnect Codex: \(error.localizedDescription)")
+        }
+    }
+
+    private func refreshCodexStatus() async -> CodexSetupState {
+        let setupState = await codexAuthController.status()
+        let refresh = await refreshCoordinator.refreshProviders(trigger: .manual)
+        applyRefreshOutcome(refresh)
+        return setupState
     }
 
     private func applyRefreshOutcome(_ outcome: ProviderRefreshOutcome) {

@@ -45,6 +45,7 @@ public actor ProviderRefreshCoordinator {
     private let secretStore: any ProviderSecretStore
     private let claudeClient: any ClaudeUsageClienting
     private let snapshotLoader: any LocalProviderSnapshotLoading
+    private let codexAuthStatusProvider: (any CodexAuthStatusProviding)?
     private let historyStore: ProviderHistoryStore
     private let diagnosticEventStore: DiagnosticEventStore
     private let diagnosticsRedactor: DiagnosticsRedactor
@@ -60,6 +61,7 @@ public actor ProviderRefreshCoordinator {
         secretStore: any ProviderSecretStore,
         claudeClient: any ClaudeUsageClienting = ClaudeUsageClient(),
         snapshotLoader: any LocalProviderSnapshotLoading = LocalProviderSnapshotLoader(),
+        codexAuthStatusProvider: (any CodexAuthStatusProviding)? = nil,
         historyStore: ProviderHistoryStore = ProviderHistoryStore(),
         diagnosticEventStore: DiagnosticEventStore = DiagnosticEventStore(),
         diagnosticsRedactor: DiagnosticsRedactor = DiagnosticsRedactor(),
@@ -70,6 +72,7 @@ public actor ProviderRefreshCoordinator {
         self.secretStore = secretStore
         self.claudeClient = claudeClient
         self.snapshotLoader = snapshotLoader
+        self.codexAuthStatusProvider = codexAuthStatusProvider
         self.historyStore = historyStore
         self.diagnosticEventStore = diagnosticEventStore
         self.diagnosticsRedactor = diagnosticsRedactor
@@ -92,7 +95,7 @@ public actor ProviderRefreshCoordinator {
             diagnostics: &diagnostics,
             diagnosticEvents: &diagnosticEvents
         )
-        let codexState = refreshCodex(
+        let codexState = await refreshCodex(
             diagnostics: &diagnostics,
             diagnosticEvents: &diagnosticEvents,
             now: refreshDate
@@ -295,10 +298,16 @@ public actor ProviderRefreshCoordinator {
         diagnostics: inout [String],
         diagnosticEvents: inout [DiagnosticEvent],
         now refreshDate: Date
-    ) -> ProviderState {
+    ) async -> ProviderState {
         do {
             let snapshot = try snapshotLoader.loadCodexSnapshot()
-            return try CodexLocalDetector().detect(from: snapshot)
+            let passiveState = try CodexLocalDetector().detect(from: snapshot)
+            guard let codexAuthStatusProvider else {
+                return passiveState
+            }
+
+            let setupState = await codexAuthStatusProvider.status()
+            return mergedCodexState(passiveState: passiveState, setupState: setupState)
         } catch {
             diagnostics.append("Codex passive scan failed.")
             diagnosticEvents.append(DiagnosticEvent(
@@ -312,6 +321,47 @@ public actor ProviderRefreshCoordinator {
                 displayName: "Codex",
                 headline: "Codex local scan unavailable"
             )
+        }
+    }
+
+    private func mergedCodexState(
+        passiveState: ProviderState,
+        setupState: CodexSetupState
+    ) -> ProviderState {
+        switch setupState.status {
+        case .configured:
+            var merged = passiveState
+            merged.status = .configured
+            merged.headline = setupState.headline
+            merged.secondaryValue = setupState.authMode?.displayName ?? passiveState.secondaryValue ?? "CLI auth present"
+            merged.confidenceExplanation = "\(passiveState.confidenceExplanation) Login verified through the Codex CLI."
+            if merged.actions.isEmpty {
+                merged.actions = [
+                    ProviderAction(kind: .refresh, title: "Scan local evidence"),
+                    ProviderAction(kind: .openSettings, title: "Open settings")
+                ]
+            }
+            return merged
+
+        case .missing:
+            var merged = passiveState
+            if passiveState.status == .missingConfiguration,
+               passiveState.headline == "Codex configuration missing" {
+                return passiveState
+            }
+            merged.status = .missingConfiguration
+            merged.confidence = .observedOnly
+            merged.headline = setupState.headline
+            merged.secondaryValue = "CLI auth not detected"
+            merged.confidenceExplanation = setupState.detail
+            merged.actions = [
+                ProviderAction(kind: .configure, title: "Configure Codex"),
+                ProviderAction(kind: .openSettings, title: "Open settings")
+            ]
+            return merged
+
+        case .unavailable:
+            return passiveState
         }
     }
 
