@@ -15,6 +15,7 @@ struct OnboardingWizardView: View {
     @State private var selectedProviders: Set<ProviderID>
     @State private var currentIndex: Int
     @State private var message: String?
+    @State private var busyMessage: String?
     @State private var isSaving = false
     @State private var completedSteps: Set<OnboardingWizardStep> = []
     @State private var claudeCredentialsSaved: Bool
@@ -136,18 +137,19 @@ struct OnboardingWizardView: View {
             }
             .disabled(clampedIndex == 0 || isSaving)
 
-            if let message {
-                Text(message)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
+            if let busyMessage {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                        .accessibilityLabel(busyMessage)
+                    footerMessage(busyMessage)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(busyMessage)
+            } else if let message {
+                footerMessage(message)
             } else if let validationMessage {
-                Text(validationMessage)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
+                footerMessage(validationMessage)
             }
 
             Spacer()
@@ -173,6 +175,14 @@ struct OnboardingWizardView: View {
     }
 
     private var isLastStep: Bool { currentStep == .summary }
+
+    private func footerMessage(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11))
+            .foregroundStyle(.secondary)
+            .lineLimit(2)
+            .minimumScaleFactor(0.8)
+    }
 
     private var canAdvance: Bool {
         switch currentStep {
@@ -221,10 +231,14 @@ struct OnboardingWizardView: View {
         }
 
         isSaving = true
-        defer { isSaving = false }
+        message = nil
+        busyMessage = "Saving Claude credentials..."
+        defer {
+            isSaving = false
+            busyMessage = nil
+        }
 
         let input = claudeCredentialDraft.input
-        message = "Saving Claude credentials..."
         if let error = await onSaveClaudeCredentials(input) {
             message = error
             return false
@@ -233,6 +247,7 @@ struct OnboardingWizardView: View {
         claudeCredentialDraft.clearSensitiveFields()
         onUnsavedSensitiveInputChanged(false)
 
+        busyMessage = "Testing Claude configuration..."
         let outcome = await onTestClaudeConnection(input.accountId)
         message = outcome.message
         claudeCredentialsSaved = outcome.canContinue

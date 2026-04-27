@@ -33,7 +33,7 @@ struct ProviderEnablementView: View {
 
             HStack(spacing: 8) {
                 TextField("Plan or profile", text: binding.planProfile)
-                TextField("Auth mode", text: binding.authMode)
+                authModeControl(for: providerId, binding: binding.authMode)
             }
             .textFieldStyle(.roundedBorder)
             .font(.system(size: 12))
@@ -63,6 +63,26 @@ struct ProviderEnablementView: View {
         default:
             return providerId.rawValue.capitalized
         }
+    }
+
+    @ViewBuilder
+    private func authModeControl(for providerId: ProviderID, binding: Binding<String>) -> some View {
+        if providerId == .codex {
+            Picker("Auth mode", selection: binding) {
+                Text("Select auth mode").tag("")
+                ForEach(codexAuthModes, id: \.self) { mode in
+                    Text(mode).tag(mode)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+        } else {
+            TextField("Auth mode", text: binding)
+        }
+    }
+
+    private var codexAuthModes: [String] {
+        ["ChatGPT login", "API key"]
     }
 }
 

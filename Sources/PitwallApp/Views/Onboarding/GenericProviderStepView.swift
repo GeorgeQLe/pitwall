@@ -32,8 +32,7 @@ struct GenericProviderStepView: View {
                 GridRow {
                     Text("Auth mode")
                         .font(.system(size: 12, weight: .medium))
-                    TextField("e.g. ChatGPT login, API key", text: authModeBinding)
-                        .textFieldStyle(.roundedBorder)
+                    authModeControl
                 }
             }
 
@@ -62,6 +61,27 @@ struct GenericProviderStepView: View {
         case .gemini: return "Gemini"
         default: return providerId.rawValue.capitalized
         }
+    }
+
+    @ViewBuilder
+    private var authModeControl: some View {
+        if providerId == .codex {
+            Picker("Auth mode", selection: authModeBinding) {
+                Text("Select auth mode").tag("")
+                ForEach(codexAuthModes, id: \.self) { mode in
+                    Text(mode).tag(mode)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+        } else {
+            TextField("e.g. ChatGPT login, API key", text: authModeBinding)
+                .textFieldStyle(.roundedBorder)
+        }
+    }
+
+    private var codexAuthModes: [String] {
+        ["ChatGPT login", "API key"]
     }
 
     private var planProfileBinding: Binding<String> {
