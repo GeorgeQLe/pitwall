@@ -22,8 +22,11 @@ struct ProviderEnablementView: View {
         return VStack(alignment: .leading, spacing: 8) {
             Toggle(isOn: binding.isEnabled) {
                 HStack {
-                    Text(displayName(for: providerId))
-                        .font(.system(size: 13, weight: .medium))
+                    ProviderBrandView(
+                        providerId: providerId,
+                        displayName: displayName(for: providerId),
+                        style: .row
+                    )
                     Spacer()
                     Text(binding.wrappedValue.isEnabled ? "Visible" : "Skipped")
                         .font(.system(size: 11, weight: .medium))

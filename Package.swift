@@ -66,6 +66,9 @@ let package = Package(
                 .product(name: "Sparkle", package: "Sparkle")
             ],
             exclude: ["Info.plist", "Pitwall.entitlements"],
+            resources: [
+                .copy("Resources")
+            ],
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("ServiceManagement")

@@ -19,8 +19,11 @@ struct ToolSelectionStepView: View {
                 ForEach(PitwallAppSupport.supportedProviders, id: \.self) { providerId in
                     Toggle(isOn: binding(for: providerId)) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(displayName(for: providerId))
-                                .font(.system(size: 13, weight: .medium))
+                            ProviderBrandView(
+                                providerId: providerId,
+                                displayName: displayName(for: providerId),
+                                style: .row
+                            )
                             Text(subtitle(for: providerId))
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)

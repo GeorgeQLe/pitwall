@@ -41,8 +41,11 @@ struct ProviderCardView: View {
         HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(viewModel.displayName)
-                        .font(.system(size: 15, weight: .semibold))
+                    ProviderBrandView(
+                        providerId: viewModel.providerId,
+                        displayName: viewModel.displayName,
+                        style: .cardHeader
+                    )
                     StatusBadgeView(text: viewModel.statusText, style: badgeStyle)
                 }
 

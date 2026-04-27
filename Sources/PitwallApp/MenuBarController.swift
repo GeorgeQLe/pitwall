@@ -31,6 +31,7 @@ final class MenuBarController: NSObject {
     private let updater: SPUUpdater?
     private var statusItem: NSStatusItem?
     private var rotationTimer: Timer?
+    private var reservedStatusItemLength: CGFloat = 0
     private var appState: AppProviderState
     private var preferences: UserPreferences
     private var phase4Settings: Phase4Settings
@@ -237,8 +238,33 @@ final class MenuBarController: NSObject {
 
     private func updateStatusTitle() {
         let detail = formatter.format(appState: appState, preferences: preferences)
-        statusItem?.button?.title = formatter.menuBarTitle(appState: appState, preferences: preferences)
+        let title = formatter.menuBarTitle(appState: appState, preferences: preferences)
+        statusItem?.button?.title = title
         statusItem?.button?.toolTip = detail
+        reserveStatusItemLength(currentTitle: title)
+    }
+
+    private func reserveStatusItemLength(currentTitle: String) {
+        guard let statusItem, let button = statusItem.button else {
+            return
+        }
+
+        let font = button.font ?? NSFont.menuBarFont(ofSize: 0)
+        let providerTitles = appState.orderedProviders.map {
+            formatter.menuBarTitle(provider: $0, preferences: preferences)
+        }
+        let candidateTitles = providerTitles + [currentTitle, "Configure"]
+        let widestTitle = candidateTitles
+            .map { ($0 as NSString).size(withAttributes: [.font: font]).width }
+            .max() ?? 0
+
+        let imageWidth = button.image?.size.width ?? 0
+        let imagePadding: CGFloat = imageWidth > 0 ? 8 : 0
+        let chromePadding: CGFloat = 18
+        let targetLength = ceil(widestTitle + imageWidth + imagePadding + chromePadding)
+
+        reservedStatusItemLength = max(reservedStatusItemLength, targetLength)
+        statusItem.length = reservedStatusItemLength
     }
 
     private func updatePopover() {
