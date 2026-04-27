@@ -2,6 +2,9 @@
 
 ## 2026-04-27
 
+- Codex ChatGPT sign-in completion fix shipped: `ProcessCodexDeviceAuthFlowRunner` now runs `codex login --device-auth` under `/usr/bin/script` so the CLI gets a pseudo-terminal instead of plain pipes, which keeps the device-auth flow anchored to the local Codex session rather than only completing in the browser. `ProcessExecutionResult` now normalizes ANSI/control-sequence noise before status parsing or device-code extraction, preventing terminal formatting from corrupting the parsed verification URL or one-time code.
+- Validation: `swift test --filter CodexAuthControllerTests` passes **13 / 13** and `swift test --filter ProviderRefreshCoordinatorTests` passes **7 / 7** with 0 failures and no unresolved warnings.
+
 - Provider branding and popover stability tightened: added `ProviderBrandView` plus bundled Claude logo assets under `Sources/PitwallApp/Resources/Brand/`, wired SwiftPM resource copying in `Package.swift`, and swapped provider labels in onboarding, settings enablement, and provider cards to use branded rendering while preserving text fallbacks for non-Claude providers. Also fixed the rotating-provider popover drift by reserving the menu bar status item width in `Sources/PitwallApp/MenuBarController.swift` so provider title changes no longer shift the popover anchor.
 - Validation: `swift test` passes **240 / 240** with 0 failures and no unresolved warnings.
 
