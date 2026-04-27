@@ -1,5 +1,12 @@
 # History
 
+## 2026-04-27
+
+- Codex auth-mode UX tightened: replaced the free-text auth mode field with a menu picker for Codex in both the onboarding "Connect Codex" step and the provider settings row. The persisted provider profile still stores auth mode as a string, so no storage migration was needed; non-Codex providers keep the existing text-field behavior.
+- Onboarding save/test feedback refined: the wizard footer now shows a small progress indicator and busy message while saving Claude credentials and testing the configuration, then returns to the normal footer message once the async work completes.
+- Reinstalled the macOS app via `make uninstall` followed by `make install`; `/Applications/Pitwall.app` was rebuilt, ad-hoc signed, verified by `codesign`, copied into `/Applications`, and relaunched. Application Support and Keychain state were preserved by the uninstall path.
+- Validation: `swift build` passes, `swift test` passes **222 / 222** with 0 failures and 0 regressions, and `make install` passes with codesign verification and relaunch.
+
 ## 2026-04-26
 
 - Claude onboarding workflow unified: removed the separate Save/Test action buttons from the onboarding "Connect Claude" step and made the wizard's existing `Continue` action save the draft credentials, clear the in-memory session key, run the Claude connection check, and advance only when the connection result is acceptable. Settings keeps explicit Save Credentials / Test Connection controls for account maintenance. Added shared credential-draft state so onboarding can drive the form from the footer, added a typed connection-test outcome for blocking auth-expired/missing states, and updated the summary step to reflect accounts saved during the current wizard session.
