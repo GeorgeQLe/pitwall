@@ -11,7 +11,7 @@ struct SettingsView: View {
     let onExportDiagnostics: () async -> String
     let onSaveClaudeCredentials: (ClaudeCredentialInput) async -> String?
     let onDeleteClaudeCredentials: (String) async -> String?
-    let onTestClaudeConnection: (String?) async -> String
+    let onTestClaudeConnection: (String?) async -> ClaudeConnectionTestOutcome
     let onRefresh: () -> Void
     let loginItemService: LoginItemService?
     let updater: SPUUpdater?
@@ -25,6 +25,7 @@ struct SettingsView: View {
     @State private var launchAtLoginMessage: String?
     @State private var automaticallyChecksForUpdates: Bool
     @State private var updateCheckInterval: TimeInterval
+    @State private var claudeCredentialDraft = ClaudeCredentialDraft()
 
     init(
         snapshot: ProviderConfigurationSnapshot,
@@ -36,7 +37,7 @@ struct SettingsView: View {
         onExportDiagnostics: @escaping () async -> String,
         onSaveClaudeCredentials: @escaping (ClaudeCredentialInput) async -> String?,
         onDeleteClaudeCredentials: @escaping (String) async -> String?,
-        onTestClaudeConnection: @escaping (String?) async -> String,
+        onTestClaudeConnection: @escaping (String?) async -> ClaudeConnectionTestOutcome,
         onRefresh: @escaping () -> Void,
         loginItemService: LoginItemService? = nil,
         updater: SPUUpdater? = nil
@@ -72,6 +73,7 @@ struct SettingsView: View {
                     Divider()
                     ClaudeCredentialSetupView(
                         accounts: claudeAccounts,
+                        draft: $claudeCredentialDraft,
                         onSave: onSaveClaudeCredentials,
                         onDelete: onDeleteClaudeCredentials,
                         onTest: onTestClaudeConnection

@@ -5,7 +5,7 @@ import SwiftUI
 struct WizardSummaryStepView: View {
     let selectedProviders: Set<ProviderID>
     let preferences: UserPreferences
-    let claudeAccounts: [ClaudeAccountSetupState]
+    let claudeAccountCount: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -50,8 +50,8 @@ struct WizardSummaryStepView: View {
 
     private var claudeSummary: String {
         guard selectedProviders.contains(.claude) else { return "Not applicable — Claude is not selected." }
-        if claudeAccounts.isEmpty { return "No account saved yet — you can add credentials later from Settings." }
-        return "\(claudeAccounts.count) account\(claudeAccounts.count == 1 ? "" : "s") saved."
+        if claudeAccountCount == 0 { return "No account saved yet — you can add credentials later from Settings." }
+        return "\(claudeAccountCount) account\(claudeAccountCount == 1 ? "" : "s") saved."
     }
 
     private var rotationSummary: String {

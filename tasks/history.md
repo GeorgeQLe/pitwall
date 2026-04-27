@@ -1,5 +1,10 @@
 # History
 
+## 2026-04-26
+
+- Claude onboarding workflow unified: removed the separate Save/Test action buttons from the onboarding "Connect Claude" step and made the wizard's existing `Continue` action save the draft credentials, clear the in-memory session key, run the Claude connection check, and advance only when the connection result is acceptable. Settings keeps explicit Save Credentials / Test Connection controls for account maintenance. Added shared credential-draft state so onboarding can drive the form from the footer, added a typed connection-test outcome for blocking auth-expired/missing states, and updated the summary step to reflect accounts saved during the current wizard session.
+- Validation: `swift test` passes **222 / 222** with 0 failures and 0 regressions. `git diff --check` passes with no whitespace issues. No warnings emitted by the Swift build/test output.
+
 ## 2026-04-25
 
 - Onboarding setup resilience and paste support shipped: installed a minimal macOS app/Edit menu for accessory-mode text editing commands so `Cmd+V` works in Claude credential fields; changed the Claude label field to `Label (optional)` and removed it from the save-required gate, falling back to the org id or `"Claude account"` for display when blank; added `OnboardingDraftStore` to persist only non-secret setup draft state (selected providers, provider plan/auth metadata, preferences, current wizard step) in `UserDefaults`; kept the Claude session key memory-only until `Save Credentials`; and added an onboarding panel close confirmation only when an unsaved session key is present, with forced close after successful setup completion.

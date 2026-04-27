@@ -84,7 +84,7 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         claudeAccounts: [ClaudeAccountSetupState],
         onSaveConfiguration: @escaping (ProviderConfigurationSnapshot) async -> String?,
         onSaveClaudeCredentials: @escaping (ClaudeCredentialInput) async -> String?,
-        onTestClaudeConnection: @escaping (String?) async -> String,
+        onTestClaudeConnection: @escaping (String?) async -> ClaudeConnectionTestOutcome,
         onFinish: @escaping () -> Void
     ) {
         let wizard = OnboardingWizardView(
@@ -201,7 +201,7 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         onExportDiagnostics: @escaping () async -> String,
         onSaveClaudeCredentials: @escaping (ClaudeCredentialInput) async -> String?,
         onDeleteClaudeCredentials: @escaping (String) async -> String?,
-        onTestClaudeConnection: @escaping (String?) async -> String,
+        onTestClaudeConnection: @escaping (String?) async -> ClaudeConnectionTestOutcome,
         onRefresh: @escaping () -> Void,
         loginItemService: LoginItemService? = nil,
         updater: SPUUpdater? = nil

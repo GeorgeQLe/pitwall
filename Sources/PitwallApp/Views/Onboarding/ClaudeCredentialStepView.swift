@@ -4,10 +4,10 @@ import SwiftUI
 
 struct ClaudeCredentialStepView: View {
     let accounts: [ClaudeAccountSetupState]
+    @Binding var credentialDraft: ClaudeCredentialDraft
     let onSaveClaudeCredentials: (ClaudeCredentialInput) async -> String?
-    let onTestClaudeConnection: (String?) async -> String
+    let onTestClaudeConnection: (String?) async -> ClaudeConnectionTestOutcome
     let onHelpExpanded: () -> Void
-    let onCredentialsSaved: () -> Void
     let onSensitiveInputChanged: (Bool) -> Void
     @State private var isHelpExpanded = false
 
@@ -23,10 +23,12 @@ struct ClaudeCredentialStepView: View {
 
             ClaudeCredentialSetupView(
                 accounts: accounts,
+                draft: $credentialDraft,
                 onSave: onSaveClaudeCredentials,
                 onDelete: { _ in "Delete saved accounts from Settings." },
                 onTest: onTestClaudeConnection,
-                onSaveSucceeded: onCredentialsSaved,
+                showsInlineActions: false,
+                allowsAccountDeletion: false,
                 onSensitiveInputChanged: onSensitiveInputChanged
             )
 

@@ -311,7 +311,8 @@ final class MenuBarController: NSObject {
                     await self?.deleteClaudeCredentials(accountId: accountId) ?? "Settings controller is unavailable."
                 },
                 onTestClaudeConnection: { [weak self] accountId in
-                    await self?.testClaudeConnection(accountId: accountId) ?? "Settings controller is unavailable."
+                    await self?.testClaudeConnection(accountId: accountId)
+                        ?? .unavailable("Settings controller is unavailable.")
                 },
                 onRefresh: { [weak self] in
                     self?.refreshNow()
@@ -340,7 +341,8 @@ final class MenuBarController: NSObject {
                 return await self.saveClaudeCredentials(input)
             },
             onTestClaudeConnection: { [weak self] accountId in
-                await self?.testClaudeConnection(accountId: accountId) ?? "Onboarding controller is unavailable."
+                await self?.testClaudeConnection(accountId: accountId)
+                    ?? .unavailable("Onboarding controller is unavailable.")
             },
             onFinish: { [weak self] in
                 self?.onboardingDefaults.set(true, forKey: Self.onboardingCompletedKey)
@@ -440,7 +442,7 @@ final class MenuBarController: NSObject {
         }
     }
 
-    private func testClaudeConnection(accountId: String?) async -> String {
+    private func testClaudeConnection(accountId: String?) async -> ClaudeConnectionTestOutcome {
         let claudeState = await refreshCoordinator.testClaudeConnection(accountId: accountId)
         replaceProviderState(claudeState)
         updatePopover()
@@ -448,13 +450,25 @@ final class MenuBarController: NSObject {
 
         switch claudeState.status {
         case .configured:
-            return "Claude connection succeeded."
+            return ClaudeConnectionTestOutcome(
+                message: "Claude connection succeeded.",
+                canContinue: true
+            )
         case .expired:
-            return "Claude auth expired or invalid. Replace the saved credentials."
+            return ClaudeConnectionTestOutcome(
+                message: "Claude auth expired or invalid. Replace the saved credentials.",
+                canContinue: false
+            )
         case .stale, .degraded:
-            return "Claude connection could not be verified; showing stale or degraded state."
+            return ClaudeConnectionTestOutcome(
+                message: "Claude connection could not be verified; showing stale or degraded state.",
+                canContinue: true
+            )
         case .missingConfiguration:
-            return "Claude credentials are missing."
+            return ClaudeConnectionTestOutcome(
+                message: "Claude credentials are missing.",
+                canContinue: false
+            )
         }
     }
 

@@ -2,18 +2,83 @@ import PitwallAppSupport
 import PitwallCore
 import SwiftUI
 
+struct ClaudeConnectionTestOutcome: Equatable, Sendable {
+    var message: String
+    var canContinue: Bool
+
+    static func unavailable(_ message: String) -> ClaudeConnectionTestOutcome {
+        ClaudeConnectionTestOutcome(message: message, canContinue: false)
+    }
+}
+
+struct ClaudeCredentialDraft: Equatable {
+    var accountId: String
+    var label: String
+    var organizationId: String
+    var sessionKey: String
+
+    init(
+        accountId: String = UUID().uuidString,
+        label: String = "",
+        organizationId: String = "",
+        sessionKey: String = ""
+    ) {
+        self.accountId = accountId
+        self.label = label
+        self.organizationId = organizationId
+        self.sessionKey = sessionKey
+    }
+
+    var canSave: Bool {
+        !organizationId.trimmed.isEmpty && !sessionKey.isEmpty
+    }
+
+    var input: ClaudeCredentialInput {
+        ClaudeCredentialInput(
+            accountId: accountId,
+            label: displayLabel,
+            organizationId: organizationId.trimmed,
+            sessionKey: sessionKey
+        )
+    }
+
+    mutating func apply(_ account: ClaudeAccountSetupState) {
+        accountId = account.accountId
+        label = account.label
+        organizationId = account.organizationId
+        sessionKey = ""
+    }
+
+    mutating func clearSensitiveFields() {
+        sessionKey = ""
+    }
+
+    private var displayLabel: String {
+        let trimmedLabel = label.trimmed
+        if !trimmedLabel.isEmpty {
+            return trimmedLabel
+        }
+
+        let trimmedOrganizationId = organizationId.trimmed
+        if !trimmedOrganizationId.isEmpty {
+            return trimmedOrganizationId
+        }
+
+        return "Claude account"
+    }
+}
+
 struct ClaudeCredentialSetupView: View {
     let accounts: [ClaudeAccountSetupState]
+    @Binding var draft: ClaudeCredentialDraft
     let onSave: (ClaudeCredentialInput) async -> String?
     let onDelete: (String) async -> String?
-    let onTest: (String?) async -> String
+    let onTest: (String?) async -> ClaudeConnectionTestOutcome
+    var showsInlineActions = true
+    var allowsAccountDeletion = true
     var onSaveSucceeded: () -> Void = {}
     var onSensitiveInputChanged: (Bool) -> Void = { _ in }
 
-    @State private var accountId = UUID().uuidString
-    @State private var label = ""
-    @State private var organizationId = ""
-    @State private var sessionKey = ""
     @State private var selectedAccountId: String?
     @State private var message: String?
     @State private var isBusy = false
@@ -60,17 +125,17 @@ struct ClaudeCredentialSetupView: View {
 
                         Button("Use") {
                             selectedAccountId = account.accountId
-                            accountId = account.accountId
-                            label = account.label
-                            organizationId = account.organizationId
-                            sessionKey = ""
+                            draft.apply(account)
+                            onSensitiveInputChanged(false)
                         }
                         .controlSize(.small)
 
-                        Button("Delete") {
-                            Task { await delete(account.accountId) }
+                        if allowsAccountDeletion {
+                            Button("Delete") {
+                                Task { await delete(account.accountId) }
+                            }
+                            .controlSize(.small)
                         }
-                        .controlSize(.small)
                     }
                 }
             }
@@ -82,23 +147,23 @@ struct ClaudeCredentialSetupView: View {
             GridRow {
                 Text("Label (optional)")
                     .font(.system(size: 12, weight: .medium))
-                TextField("Claude account", text: $label)
+                TextField("Claude account", text: $draft.label)
                     .textFieldStyle(.roundedBorder)
             }
 
             GridRow {
                 Text("Org id")
                     .font(.system(size: 12, weight: .medium))
-                TextField("lastActiveOrg", text: $organizationId)
+                TextField("lastActiveOrg", text: $draft.organizationId)
                     .textFieldStyle(.roundedBorder)
             }
 
             GridRow {
                 Text("Session key")
                     .font(.system(size: 12, weight: .medium))
-                SecureField("sessionKey", text: $sessionKey)
+                SecureField("sessionKey", text: $draft.sessionKey)
                     .textFieldStyle(.roundedBorder)
-                    .onChange(of: sessionKey) { newValue in
+                    .onChange(of: draft.sessionKey) { newValue in
                         onSensitiveInputChanged(!newValue.isEmpty)
                     }
             }
@@ -107,21 +172,23 @@ struct ClaudeCredentialSetupView: View {
 
     private var actions: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Button("Save Credentials") {
-                    Task { await save() }
-                }
-                .disabled(isBusy || organizationId.trimmed.isEmpty || sessionKey.isEmpty)
+            if showsInlineActions {
+                HStack(spacing: 8) {
+                    Button("Save Credentials") {
+                        Task { await save() }
+                    }
+                    .disabled(isBusy || !draft.canSave)
 
-                Button("Test Connection") {
-                    Task { await testConnection() }
-                }
-                .disabled(isBusy || accounts.isEmpty && selectedAccountId == nil)
+                    Button("Test Connection") {
+                        Task { await testConnection() }
+                    }
+                    .disabled(isBusy || accounts.isEmpty && selectedAccountId == nil)
 
-                Spacer()
+                    Spacer()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
 
             if let message {
                 Text(message)
@@ -136,18 +203,13 @@ struct ClaudeCredentialSetupView: View {
         isBusy = true
         defer { isBusy = false }
 
-        let input = ClaudeCredentialInput(
-            accountId: accountId,
-            label: displayLabel,
-            organizationId: organizationId.trimmed,
-            sessionKey: sessionKey
-        )
+        let input = draft.input
 
         if let error = await onSave(input) {
             message = error
         } else {
             selectedAccountId = input.accountId
-            sessionKey = ""
+            draft.clearSensitiveFields()
             message = "Claude credentials saved. The session key field was cleared."
             onSensitiveInputChanged(false)
             onSaveSucceeded()
@@ -171,7 +233,7 @@ struct ClaudeCredentialSetupView: View {
     private func testConnection() async {
         isBusy = true
         defer { isBusy = false }
-        message = await onTest(selectedAccountId)
+        message = await onTest(selectedAccountId).message
     }
 
     private func statusText(for account: ClaudeAccountSetupState) -> String {
@@ -194,19 +256,6 @@ struct ClaudeCredentialSetupView: View {
         }
     }
 
-    private var displayLabel: String {
-        let trimmedLabel = label.trimmed
-        if !trimmedLabel.isEmpty {
-            return trimmedLabel
-        }
-
-        let trimmedOrganizationId = organizationId.trimmed
-        if !trimmedOrganizationId.isEmpty {
-            return trimmedOrganizationId
-        }
-
-        return "Claude account"
-    }
 }
 
 private extension String {
