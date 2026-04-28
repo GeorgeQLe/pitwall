@@ -2,6 +2,9 @@
 
 ## 2026-04-27
 
+- Codex usage telemetry shipped: researched the current Codex OAuth usage path and verified that the supported boundary is the local Codex CLI app-server, not direct token scraping. Added `CodexAppServerUsageClient`, which launches `codex app-server --listen stdio://`, initializes JSON-RPC, calls `account/rateLimits/read`, and parses provider-supplied rate-limit windows, reset timestamps, credits, plan type, and model-specific buckets without reading `auth.json` token values. `MenuBarController` now supplies the telemetry client to `ProviderRefreshCoordinator`; successful ChatGPT-auth telemetry upgrades Codex to `.providerSupplied`, while CLI/network/schema failures fall back to passive local evidence with redacted diagnostics. Added research notes and updated the clean-room Codex telemetry spec to document the app-server integration boundary.
+- Validation: live app-server probe confirmed `account/rateLimits/read` returns Codex five-hour and weekly usage buckets; `swift test` passes **245 / 245** with 0 failures; `git diff --check` passes.
+
 - Codex ChatGPT sign-in completion fix shipped: `ProcessCodexDeviceAuthFlowRunner` now runs `codex login --device-auth` under `/usr/bin/script` so the CLI gets a pseudo-terminal instead of plain pipes, which keeps the device-auth flow anchored to the local Codex session rather than only completing in the browser. `ProcessExecutionResult` now normalizes ANSI/control-sequence noise before status parsing or device-code extraction, preventing terminal formatting from corrupting the parsed verification URL or one-time code.
 - Validation: `swift test --filter CodexAuthControllerTests` passes **13 / 13** and `swift test --filter ProviderRefreshCoordinatorTests` passes **7 / 7** with 0 failures and no unresolved warnings.
 

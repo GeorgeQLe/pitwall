@@ -88,6 +88,128 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertTrue(codex?.confidenceExplanation.contains("Login verified through the Codex CLI.") == true)
     }
 
+    func testCodexTelemetryUpgradesPassiveStateToProviderSuppliedUsage() async {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let coordinator = ProviderRefreshCoordinator(
+            configurationStore: ProviderConfigurationStore(userDefaults: isolatedDefaults()),
+            secretStore: InMemorySecretStore(),
+            claudeClient: FakeClaudeUsageClient(),
+            snapshotLoader: FakeSnapshotLoader(
+                codexSnapshot: LocalProviderFileSnapshot(
+                    homePath: "/codex",
+                    files: ["config.toml": "", "auth.json": "", "history.jsonl": ""]
+                )
+            ),
+            codexAuthStatusProvider: FakeCodexStatusProvider(
+                state: CodexSetupState(
+                    status: .configured,
+                    authMode: .chatgpt,
+                    headline: "Connected with ChatGPT",
+                    detail: "Logged in using ChatGPT"
+                )
+            ),
+            codexUsageClient: FakeCodexUsageClient(result: .success(CodexUsageClientResult(
+                rateLimits: CodexRateLimitSnapshot(
+                    limitId: "codex",
+                    primary: CodexRateLimitWindow(
+                        usedPercent: 30,
+                        windowDurationMinutes: 300,
+                        resetsAt: now.addingTimeInterval(3 * 60 * 60)
+                    ),
+                    secondary: CodexRateLimitWindow(
+                        usedPercent: 26,
+                        windowDurationMinutes: 10_080,
+                        resetsAt: now.addingTimeInterval(3 * 24 * 60 * 60)
+                    ),
+                    credits: CodexCreditsSnapshot(hasCredits: false, unlimited: false, balance: "0"),
+                    planType: "pro"
+                ),
+                rateLimitsByLimitId: [
+                    "codex": CodexRateLimitSnapshot(
+                        limitId: "codex",
+                        primary: CodexRateLimitWindow(
+                            usedPercent: 30,
+                            windowDurationMinutes: 300,
+                            resetsAt: now.addingTimeInterval(3 * 60 * 60)
+                        ),
+                        secondary: CodexRateLimitWindow(
+                            usedPercent: 26,
+                            windowDurationMinutes: 10_080,
+                            resetsAt: now.addingTimeInterval(3 * 24 * 60 * 60)
+                        ),
+                        credits: CodexCreditsSnapshot(hasCredits: false, unlimited: false, balance: "0"),
+                        planType: "pro"
+                    ),
+                    "codex_bengalfox": CodexRateLimitSnapshot(
+                        limitId: "codex_bengalfox",
+                        limitName: "GPT-5.3-Codex-Spark",
+                        primary: CodexRateLimitWindow(usedPercent: 0),
+                        secondary: CodexRateLimitWindow(usedPercent: 0),
+                        planType: "pro"
+                    )
+                ],
+                fetchedAt: now
+            ))),
+            now: { now }
+        )
+
+        let outcome = await coordinator.refreshProviders(trigger: .manual)
+        let codex = outcome.appState.provider(for: .codex)
+        let rateLimitPayload = codex?.payloads.first { $0.source == "codex-rate-limits" }
+        let bucketsPayload = codex?.payloads.first { $0.source == "codex-rate-limit-buckets" }
+
+        XCTAssertEqual(codex?.status, .configured)
+        XCTAssertEqual(codex?.confidence, .providerSupplied)
+        XCTAssertEqual(codex?.headline, "Codex usage refreshed")
+        XCTAssertEqual(codex?.primaryValue, "26% used")
+        XCTAssertEqual(codex?.secondaryValue, "Pro")
+        XCTAssertEqual(codex?.resetWindow?.resetsAt, now.addingTimeInterval(3 * 24 * 60 * 60))
+        XCTAssertEqual(codex?.pacingState?.weeklyUtilizationPercent, 26)
+        XCTAssertEqual(codex?.pacingState?.sessionPace?.remainingWindowDuration, 3 * 60 * 60)
+        XCTAssertEqual(rateLimitPayload?.values["planType"], "pro")
+        XCTAssertEqual(rateLimitPayload?.values["credits"], "false|false|0")
+        XCTAssertTrue(bucketsPayload?.values["codex_bengalfox"]?.contains("GPT-5.3-Codex-Spark") == true)
+    }
+
+    func testCodexTelemetryFailureFallsBackToPassiveState() async {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let coordinator = ProviderRefreshCoordinator(
+            configurationStore: ProviderConfigurationStore(userDefaults: isolatedDefaults()),
+            secretStore: InMemorySecretStore(),
+            claudeClient: FakeClaudeUsageClient(),
+            snapshotLoader: FakeSnapshotLoader(
+                codexSnapshot: LocalProviderFileSnapshot(
+                    homePath: "/codex",
+                    files: ["config.toml": "", "auth.json": "", "history.jsonl": ""]
+                )
+            ),
+            codexAuthStatusProvider: FakeCodexStatusProvider(
+                state: CodexSetupState(
+                    status: .configured,
+                    authMode: .chatgpt,
+                    headline: "Connected with ChatGPT",
+                    detail: "Logged in using ChatGPT"
+                )
+            ),
+            codexUsageClient: FakeCodexUsageClient(result: .failure(.appServerError("network unavailable"))),
+            now: { now }
+        )
+
+        let outcome = await coordinator.refreshProviders(trigger: .manual)
+        let codex = outcome.appState.provider(for: .codex)
+
+        XCTAssertEqual(codex?.status, .configured)
+        XCTAssertEqual(codex?.confidence, .estimated)
+        XCTAssertEqual(codex?.headline, "Connected with ChatGPT")
+        XCTAssertNil(codex?.payloads.first { $0.source == "codex-rate-limits" })
+        XCTAssertTrue(outcome.diagnostics.contains("Codex telemetry unavailable."))
+        XCTAssertTrue(outcome.diagnosticEvents.contains {
+            $0.providerId == .codex &&
+                $0.summary == "Codex telemetry unavailable." &&
+                $0.details["reason"] == "usageRefreshUnavailable"
+        })
+    }
+
     func testManualRefreshLoadsClaudeSecretAndDoesNotUseLiveSources() async throws {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let store = ProviderConfigurationStore(userDefaults: isolatedDefaults())
@@ -372,6 +494,18 @@ private actor FakeCodexStatusProvider: CodexAuthStatusProviding {
 
     func status() async -> CodexSetupState {
         state
+    }
+}
+
+private actor FakeCodexUsageClient: CodexUsageClienting {
+    private let result: Result<CodexUsageClientResult, CodexUsageClientError>
+
+    init(result: Result<CodexUsageClientResult, CodexUsageClientError>) {
+        self.result = result
+    }
+
+    func fetchUsage(now: Date) async throws -> CodexUsageClientResult {
+        try result.get()
     }
 }
 

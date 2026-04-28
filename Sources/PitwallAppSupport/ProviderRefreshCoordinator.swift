@@ -46,6 +46,7 @@ public actor ProviderRefreshCoordinator {
     private let claudeClient: any ClaudeUsageClienting
     private let snapshotLoader: any LocalProviderSnapshotLoading
     private let codexAuthStatusProvider: (any CodexAuthStatusProviding)?
+    private let codexUsageClient: (any CodexUsageClienting)?
     private let historyStore: ProviderHistoryStore
     private let diagnosticEventStore: DiagnosticEventStore
     private let diagnosticsRedactor: DiagnosticsRedactor
@@ -62,6 +63,7 @@ public actor ProviderRefreshCoordinator {
         claudeClient: any ClaudeUsageClienting = ClaudeUsageClient(),
         snapshotLoader: any LocalProviderSnapshotLoading = LocalProviderSnapshotLoader(),
         codexAuthStatusProvider: (any CodexAuthStatusProviding)? = nil,
+        codexUsageClient: (any CodexUsageClienting)? = nil,
         historyStore: ProviderHistoryStore = ProviderHistoryStore(),
         diagnosticEventStore: DiagnosticEventStore = DiagnosticEventStore(),
         diagnosticsRedactor: DiagnosticsRedactor = DiagnosticsRedactor(),
@@ -73,6 +75,7 @@ public actor ProviderRefreshCoordinator {
         self.claudeClient = claudeClient
         self.snapshotLoader = snapshotLoader
         self.codexAuthStatusProvider = codexAuthStatusProvider
+        self.codexUsageClient = codexUsageClient
         self.historyStore = historyStore
         self.diagnosticEventStore = diagnosticEventStore
         self.diagnosticsRedactor = diagnosticsRedactor
@@ -307,7 +310,14 @@ public actor ProviderRefreshCoordinator {
             }
 
             let setupState = await codexAuthStatusProvider.status()
-            return mergedCodexState(passiveState: passiveState, setupState: setupState)
+            let mergedState = mergedCodexState(passiveState: passiveState, setupState: setupState)
+            return await codexTelemetryState(
+                baseState: mergedState,
+                setupState: setupState,
+                diagnostics: &diagnostics,
+                diagnosticEvents: &diagnosticEvents,
+                now: refreshDate
+            )
         } catch {
             diagnostics.append("Codex passive scan failed.")
             diagnosticEvents.append(DiagnosticEvent(
@@ -322,6 +332,171 @@ public actor ProviderRefreshCoordinator {
                 headline: "Codex local scan unavailable"
             )
         }
+    }
+
+    private func codexTelemetryState(
+        baseState: ProviderState,
+        setupState: CodexSetupState,
+        diagnostics: inout [String],
+        diagnosticEvents: inout [DiagnosticEvent],
+        now refreshDate: Date
+    ) async -> ProviderState {
+        guard let codexUsageClient,
+              setupState.status == .configured,
+              setupState.authMode != .apiKey else {
+            return baseState
+        }
+
+        do {
+            let result = try await codexUsageClient.fetchUsage(now: refreshDate)
+            return codexUsageProviderState(
+                baseState: baseState,
+                result: result,
+                now: refreshDate
+            )
+        } catch {
+            diagnostics.append("Codex telemetry unavailable.")
+            diagnosticEvents.append(DiagnosticEvent(
+                providerId: .codex,
+                occurredAt: refreshDate,
+                summary: "Codex telemetry unavailable.",
+                details: ["reason": "usageRefreshUnavailable"]
+            ))
+
+            var fallback = baseState
+            fallback.confidenceExplanation = "\(baseState.confidenceExplanation) Codex quota telemetry failed, so Pitwall is showing local evidence only."
+            return fallback
+        }
+    }
+
+    private func codexUsageProviderState(
+        baseState: ProviderState,
+        result: CodexUsageClientResult,
+        now refreshDate: Date
+    ) -> ProviderState {
+        let snapshot = result.preferredRateLimit
+        let weeklyWindow = snapshot.secondary ?? snapshot.primary
+        let sessionWindow = snapshot.primary
+        let weeklyResetAt = weeklyWindow?.resetsAt
+        let sessionResetAt = sessionWindow?.resetsAt
+        let weeklyPace = weeklyWindow.flatMap {
+            paceEvaluation(for: $0, fallbackMinutes: 7 * 24 * 60, now: refreshDate, isWeekly: true)
+        }
+        let sessionPace = sessionWindow.flatMap {
+            paceEvaluation(for: $0, fallbackMinutes: 5 * 60, now: refreshDate, isWeekly: false)
+        }
+        let dailyBudget = weeklyWindow.flatMap { window -> DailyBudget? in
+            guard let resetAt = window.resetsAt else { return nil }
+            return PacingCalculator().dailyBudget(
+                weeklyUtilizationPercent: window.usedPercent,
+                resetAt: resetAt,
+                now: refreshDate,
+                retainedSnapshots: []
+            )
+        }
+
+        return ProviderState(
+            providerId: .codex,
+            displayName: "Codex",
+            status: .configured,
+            confidence: .providerSupplied,
+            headline: snapshot.rateLimitReachedType == nil
+                ? "Codex usage refreshed"
+                : "Codex usage limit reached",
+            primaryValue: weeklyWindow.map { "\(Self.formatPercent($0.usedPercent)) used" },
+            secondaryValue: snapshot.limitName ?? Self.displayPlanType(snapshot.planType) ?? baseState.secondaryValue,
+            resetWindow: ResetWindow(resetsAt: weeklyResetAt ?? sessionResetAt),
+            lastUpdatedAt: refreshDate,
+            pacingState: PacingState(
+                weeklyUtilizationPercent: weeklyWindow?.usedPercent,
+                remainingWindowDuration: (weeklyResetAt ?? sessionResetAt).map {
+                    max(0, $0.timeIntervalSince(refreshDate))
+                },
+                dailyBudget: dailyBudget,
+                todayUsage: dailyBudget?.todayUsage,
+                weeklyPace: weeklyPace,
+                sessionPace: sessionPace
+            ),
+            confidenceExplanation: "Codex returned provider-supplied rate-limit data through the local CLI app-server.",
+            actions: [
+                ProviderAction(kind: .refresh, title: "Refresh now"),
+                ProviderAction(kind: .openSettings, title: "Open settings")
+            ],
+            payloads: baseState.payloads + [
+                codexRateLimitPayload(from: snapshot),
+                codexRateLimitBucketsPayload(from: result.rateLimitsByLimitId)
+            ].compactMap { $0 }
+        )
+    }
+
+    private func paceEvaluation(
+        for window: CodexRateLimitWindow,
+        fallbackMinutes: Int,
+        now refreshDate: Date,
+        isWeekly: Bool
+    ) -> PaceEvaluation? {
+        guard let resetAt = window.resetsAt else {
+            return nil
+        }
+
+        let durationMinutes = window.windowDurationMinutes ?? fallbackMinutes
+        let windowStart = resetAt.addingTimeInterval(-Double(durationMinutes) * 60)
+        let calculator = PacingCalculator()
+        return isWeekly
+            ? calculator.evaluateWeeklyPace(
+                utilizationPercent: window.usedPercent,
+                windowStart: windowStart,
+                resetAt: resetAt,
+                now: refreshDate
+            )
+            : calculator.evaluateSessionPace(
+                utilizationPercent: window.usedPercent,
+                windowStart: windowStart,
+                resetAt: resetAt,
+                now: refreshDate
+            )
+    }
+
+    private func codexRateLimitPayload(
+        from snapshot: CodexRateLimitSnapshot
+    ) -> ProviderSpecificPayload {
+        var values: [String: String] = [:]
+        values["limitId"] = snapshot.limitId
+        values["limitName"] = snapshot.limitName
+        values["planType"] = snapshot.planType
+        values["rateLimitReachedType"] = snapshot.rateLimitReachedType
+        if let primary = snapshot.primary {
+            values["primary"] = Self.formatCodexWindow(primary)
+        }
+        if let secondary = snapshot.secondary {
+            values["secondary"] = Self.formatCodexWindow(secondary)
+        }
+        if let credits = snapshot.credits {
+            values["credits"] = [
+                String(credits.hasCredits),
+                String(credits.unlimited),
+                credits.balance ?? "unknown"
+            ].joined(separator: "|")
+        }
+
+        return ProviderSpecificPayload(source: "codex-rate-limits", values: values)
+    }
+
+    private func codexRateLimitBucketsPayload(
+        from snapshots: [String: CodexRateLimitSnapshot]?
+    ) -> ProviderSpecificPayload? {
+        guard let snapshots, !snapshots.isEmpty else {
+            return nil
+        }
+
+        let values = snapshots.reduce(into: [String: String]()) { partial, entry in
+            partial[entry.key] = [
+                entry.value.limitName ?? entry.key,
+                entry.value.primary.map(Self.formatCodexWindow) ?? "unknown",
+                entry.value.secondary.map(Self.formatCodexWindow) ?? "unknown"
+            ].joined(separator: "|")
+        }
+        return ProviderSpecificPayload(source: "codex-rate-limit-buckets", values: values)
     }
 
     private func mergedCodexState(
@@ -531,6 +706,55 @@ public actor ProviderRefreshCoordinator {
             return "decodingFailed"
         case let .unknown(value):
             return "unknown:\(value)"
+        }
+    }
+
+    private static func formatPercent(_ value: Double) -> String {
+        let rounded = value.rounded()
+        if abs(value - rounded) < 0.05 {
+            return "\(Int(rounded))%"
+        }
+
+        return String(format: "%.1f%%", value)
+    }
+
+    private static func formatCodexWindow(_ window: CodexRateLimitWindow) -> String {
+        [
+            String(window.usedPercent),
+            window.windowDurationMinutes.map(String.init) ?? "unknown",
+            window.resetsAt.map { ISO8601DateFormatter.pitwallAppSupport.string(from: $0) } ?? "unknown"
+        ].joined(separator: "|")
+    }
+
+    private static func displayPlanType(_ planType: String?) -> String? {
+        guard let planType else { return nil }
+
+        switch planType {
+        case "free":
+            return "Free"
+        case "go":
+            return "Go"
+        case "plus":
+            return "Plus"
+        case "pro":
+            return "Pro"
+        case "prolite":
+            return "Pro Lite"
+        case "team":
+            return "Team"
+        case "business", "self_serve_business_usage_based":
+            return "Business"
+        case "enterprise", "enterprise_cbp_usage_based":
+            return "Enterprise"
+        case "edu":
+            return "Edu"
+        case "unknown":
+            return nil
+        default:
+            return planType
+                .split(separator: "_")
+                .map { $0.prefix(1).uppercased() + $0.dropFirst() }
+                .joined(separator: " ")
         }
     }
 }

@@ -258,10 +258,10 @@ Accuracy Mode:
 Telemetry mode:
 
 - Opt-in and off by default.
-- Reuses the supported Codex CLI auth paths, including app-orchestrated device auth for ChatGPT sign-in and CLI-owned API-key login.
-- Candidate endpoints, when auth mode supports them:
-  - `https://chatgpt.com/backend-api/wham/usage`
-  - `{base_url}/api/codex/usage`
+- Reuses the supported Codex CLI auth paths, including app-orchestrated device auth for ChatGPT sign-in.
+- Preferred implementation: launch `codex app-server --listen stdio://`, initialize the JSON-RPC app-server protocol, then call `account/rateLimits/read`.
+- The CLI app-server performs the ChatGPT-authenticated usage request internally and currently reaches `https://chatgpt.com/backend-api/wham/usage`; Pitwall must treat that URL as a CLI implementation detail and should not read `auth.json` token values or call the endpoint directly.
+- API-key login remains supported for Codex auth setup, but ChatGPT plan quota telemetry should be skipped unless the CLI exposes a rate-limit response for that auth mode.
 - Parse provider-supplied fields when present: limit id, limit name, window label, used percent, reset time, window duration, credits, balance, unlimited flag, plan type.
 - If telemetry fails or response shape changes, mark telemetry degraded and fall back to passive or wrapper state.
 
