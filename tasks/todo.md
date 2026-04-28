@@ -81,6 +81,7 @@
 - [ ] `/run` — execute Phase 6b Step 6b.7 (regression tests for Sparkle integration and release pipeline).
 - [ ] `/run` — execute Phase 6b Step 6b.8 (end-to-end release validation). Blocked on all manual prerequisites.
 - [ ] `/run` — execute Phase 6b Step 6b.9 (refactor if needed while keeping tests green).
+- [ ] `/plan-phase 7` — Claude Code credential adoption: read OAuth tokens from `Claude Code-credentials` keychain item, query `api.anthropic.com/api/oauth/{profile,usage}` so onboarding requires zero sessionKey paste when Claude Code is installed. Manual sessionKey path stays as fallback. See `tasks/roadmap.md` → Phase 7.
 
 ## Completed Phases
 

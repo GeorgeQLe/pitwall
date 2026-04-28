@@ -838,3 +838,96 @@ Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native 
 - Deviations from plan: [none, or describe]
 - Tech debt / follow-ups: [none, or list]
 - Ready for next phase: yes/no
+
+## Phase 7: Claude Code Credential Adoption
+
+**Goal:** Let Pitwall authenticate Claude usage by adopting Claude Code's existing OAuth credentials from the macOS Keychain (`Claude Code-credentials`) and querying `api.anthropic.com/api/oauth/usage`, eliminating the manual `sessionKey` + `lastActiveOrg` paste flow when Claude Code is already installed and logged in. The manual sessionKey path remains as a fallback for users without Claude Code.
+
+**Scope:**
+- New `ClaudeCodeCredentialSource` in `PitwallCore` that reads the `Claude Code-credentials` generic keychain item, parses the `claudeAiOauth` JSON (`accessToken`, `refreshToken`, `expiresAt`, `subscriptionType`, `rateLimitTier`, `scopes`), and exposes a credential snapshot. Injectable for tests; macOS-only.
+- New `ClaudeOAuthUsageClient` in `PitwallCore` that calls `GET https://api.anthropic.com/api/oauth/profile` (org id + plan) and `GET /api/oauth/usage` (`five_hour`, `seven_day`, `seven_day_opus`, `seven_day_sonnet`, `extra_usage`) with `Authorization: Bearer <accessToken>` and `anthropic-beta: oauth-2025-04-20`. Maps the response into the existing Claude usage / pacing domain models so the pacing pipeline consumes it unchanged.
+- Token refresh path: on 401 from `/api/oauth/usage`, POST `https://console.anthropic.com/v1/oauth/token` with the stored refresh token; persist updated tokens back to the keychain item; surface a re-auth prompt if refresh fails.
+- Coordinator wiring: extend the Claude credential variant inside `ProviderRefreshCoordinator` so a `ClaudeAccount` can be backed by either a sessionKey + orgId (legacy) or a Claude Code adoption record. Pacing, history, diagnostics, and menu bar surfaces are unchanged.
+- Popover + onboarding UI: detect presence of the Claude Code keychain item from `ClaudeCredentialSetupView` and `OnboardingWizardView`'s Claude step. When present, the primary CTA becomes "Use Claude Code login"; the manual sessionKey form is collapsed under a disclosure. After adoption, show org id + subscription tier read-only.
+- Diagnostics redactor coverage extended to scrub `sk-ant-oat01-…`, `sk-ant-ort01-…`, and OAuth profile fields. Logs record only `subscriptionType`, `rateLimitTier`, and refresh outcome.
+- Clean-room note appended to `CLEAN_ROOM.md` confirming the endpoint set + adoption mechanism were discovered via Pitwall's own probing, not from `linuxlewis/claude-usage`.
+- macOS-only in this phase. Windows / Linux shells continue to use the manual sessionKey path; a follow-up phase can wire credential adoption to platform-native Claude Code installs once those exist.
+
+**Acceptance Criteria:**
+- [ ] With Claude Code installed and logged in, finishing the Claude onboarding step requires zero manual paste — Pitwall reads org id + token from keychain and shows live `five_hour` + `seven_day` utilization within one refresh tick.
+- [ ] Manual sessionKey + lastActiveOrg path remains fully functional for users without Claude Code; tests cover both flows.
+- [ ] Token refresh succeeds when `expiresAt` is in the past at refresh time; a 401 from `/api/oauth/usage` triggers a single refresh + retry before surfacing an error.
+- [ ] Forbidden-import contract unchanged: no new `import Security` / `import AppKit` / `import UserNotifications` outside the grandfathered locations.
+- [ ] No tokens, refresh tokens, or OAuth profile fields appear in diagnostic exports; `DiagnosticsRedactor` tests prove this.
+- [ ] `ClaudeCodeCredentialSource` and `ClaudeOAuthUsageClient` have unit tests with injected fixtures (no live network or live keychain access in tests).
+- [ ] `swift build` + `swift test` green on macOS with zero regressions; baseline rises from 212 to 212 + new tests.
+- [ ] `CLEAN_ROOM.md` updated with the discovery provenance note for the OAuth endpoints.
+- [ ] All phase tests pass.
+- [ ] No regressions in previous phase tests.
+
+**Manual Tasks:** none — adoption uses the user's already-installed Claude Code; the first read may produce a one-time macOS keychain ACL prompt, which is expected UX, not a manual prerequisite.
+
+**Parallelization:** serial
+
+**Coordination Notes:** Touches `Sources/PitwallCore/` (new files + diagnostics redactor), `Sources/PitwallApp/Views/ClaudeCredentialSetupView.swift`, `Sources/PitwallApp/Views/Onboarding/ClaudeCredentialStepView.swift`, `Sources/PitwallApp/Views/OnboardingWizardView.swift`, `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift`, and corresponding tests. Conflict risk medium because the credential branch reaches both the model layer and the onboarding UI. Independent of Phase 6b release work — can interleave.
+
+> Test strategy: tests-with
+
+### Execution Profile
+**Parallel mode:** serial
+**Integration owner:** main agent
+**Conflict risk:** medium
+**Review gates:** correctness, tests, security, UX
+
+**Subagent lanes:** none
+
+### Implementation
+
+- Step 7.1: Add `ClaudeCodeCredentialSource` in `Sources/PitwallCore/`
+  - Files: create `Sources/PitwallCore/ClaudeCodeCredentialSource.swift` with a protocol + concrete macOS implementation that wraps `SecItemCopyMatching` against `kSecAttrService = "Claude Code-credentials"`, decodes the `claudeAiOauth` JSON, and returns a `ClaudeCodeCredentialSnapshot` value type. Provide an `InMemoryClaudeCodeCredentialSource` for tests.
+  - Tests: `Tests/PitwallCoreTests/ClaudeCodeCredentialSourceTests.swift` covering present / absent / malformed JSON / expired token cases through the in-memory source.
+  - No new privileged imports outside `PitwallCore`.
+
+- Step 7.2: Add `ClaudeOAuthUsageClient` in `Sources/PitwallCore/`
+  - Files: create `Sources/PitwallCore/ClaudeOAuthUsageClient.swift` (request builder for `/api/oauth/profile` and `/api/oauth/usage`; response decoder mapping `five_hour` / `seven_day` / `seven_day_opus` / `seven_day_sonnet` / `extra_usage` into the existing Claude usage / pacing models).
+  - Tests: `Tests/PitwallCoreTests/ClaudeOAuthUsageClientTests.swift` with stubbed `URLSession` fixtures for happy-path, 401, malformed JSON, and partial-section payloads.
+  - Confirm output domain shape feeds `PacingCalculator` identically to the legacy `ClaudeUsageClient` path.
+
+- Step 7.3: Token refresh + keychain write-back
+  - Extend `ClaudeOAuthUsageClient` (or add `ClaudeOAuthTokenRefresher`) to POST `https://console.anthropic.com/v1/oauth/token` with the stored refresh token on 401. Persist new tokens back into the `Claude Code-credentials` keychain item via `ClaudeCodeCredentialSource`.
+  - Tests: refresh-on-401-then-retry success path; refresh failure surfaces a typed error that the coordinator can map to a re-auth prompt.
+
+- Step 7.4: Wire the adoption credential variant into `ProviderRefreshCoordinator`
+  - Files: modify `Sources/PitwallAppSupport/ProviderRefreshCoordinator.swift` so the Claude branch accepts either the legacy sessionKey credential or a Claude Code adoption credential. Pacing pipeline, history snapshots, and diagnostics emit unchanged.
+  - Tests: extend `Tests/PitwallAppSupportTests/ProviderRefreshCoordinatorTests.swift` with a Claude-Code-adoption fixture path alongside the existing sessionKey path.
+
+- Step 7.5: Onboarding + Settings UI for adoption
+  - Files: modify `Sources/PitwallApp/Views/ClaudeCredentialSetupView.swift`, `Sources/PitwallApp/Views/Onboarding/ClaudeCredentialStepView.swift`, `Sources/PitwallApp/Views/OnboardingWizardView.swift`. When `ClaudeCodeCredentialSource` reports a credential is present, primary CTA is "Use Claude Code login" → single confirm tap → adoption complete; sessionKey form collapses under a disclosure. After adoption, show org id + subscription tier read-only with a "Sign out / switch to manual" affordance.
+  - Update copy in `WelcomeBannerView.swift` to reflect the new default path.
+
+- Step 7.6: Diagnostics redactor + clean-room note
+  - Files: modify `Sources/PitwallCore/DiagnosticsRedactor.swift` to scrub `sk-ant-oat01-…`, `sk-ant-ort01-…`, OAuth profile UUIDs, and emails. Modify `Tests/PitwallCoreTests/DiagnosticsRedactorTests.swift` to prove no token material leaks. Append a discovery-provenance note to `CLEAN_ROOM.md` for the `/api/oauth/profile` + `/api/oauth/usage` endpoints.
+
+### Green
+
+- Step 7.7: End-to-end validation + green refactor slot
+  - Run `swift build` + `swift test` and confirm baseline +N green with zero regressions.
+  - Manual smoke: launch the local-installed Pitwall, run onboarding from a clean state on a Mac with Claude Code logged in, confirm zero-paste path; remove Claude Code keychain item and confirm fallback to manual sessionKey works.
+  - Refactor only Phase 7 surface if the implementation reveals tightening opportunities; do not touch Phase 1-6 code unless a contract gap surfaces (record as post-7 follow-up if so).
+
+### Milestone: Phase 7 Claude Code Credential Adoption
+**Acceptance Criteria:**
+- [ ] With Claude Code installed and logged in, finishing the Claude onboarding step requires zero manual paste.
+- [ ] Manual sessionKey path remains fully functional and tested.
+- [ ] Token refresh-on-401 + retry verified by tests; failure path surfaces a re-auth prompt.
+- [ ] Forbidden-import contract unchanged.
+- [ ] Diagnostics redactor scrubs all OAuth token + profile fields; tests prove it.
+- [ ] `swift build` + `swift test` green on macOS with zero regressions.
+- [ ] `CLEAN_ROOM.md` updated with the OAuth endpoint discovery-provenance note.
+- [ ] All phase tests pass.
+- [ ] No regressions in previous phase tests.
+
+**On Completion** (fill in when phase is done):
+- Deviations from plan: [none, or describe]
+- Tech debt / follow-ups: [none, or list]
+- Ready for next phase: yes/no
