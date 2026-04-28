@@ -331,52 +331,47 @@ final class MenuBarController: NSObject {
                 phase4Settings: loadedPhase4Settings,
                 claudeAccounts: accounts,
                 codexSetupState: codexSetupState,
-                onSaveConfiguration: { [weak self] snapshot in
-                    await self?.saveConfiguration(snapshot) ?? "Settings controller is unavailable."
+                onSaveConfiguration: { snapshot in
+                    await self.saveConfiguration(snapshot)
                 },
-                onSavePhase4Settings: { [weak self] settings in
-                    await self?.savePhase4Settings(settings) ?? "Settings controller is unavailable."
+                onSavePhase4Settings: { settings in
+                    await self.savePhase4Settings(settings)
                 },
-                onSaveGitHubToken: { [weak self] username, token in
-                    await self?.saveGitHubHeatmapToken(username: username, token: token)
+                onSaveGitHubToken: { username, token in
+                    await self.saveGitHubHeatmapToken(username: username, token: token)
                 },
-                onExportDiagnostics: { [weak self] in
-                    await self?.exportDiagnosticsText() ?? "Diagnostics exporter is unavailable."
+                onExportDiagnostics: {
+                    await self.exportDiagnosticsText()
                 },
-                onSaveClaudeCredentials: { [weak self] input in
-                    await self?.saveClaudeCredentials(input) ?? "Settings controller is unavailable."
+                onSaveClaudeCredentials: { input in
+                    await self.saveClaudeCredentials(input)
                 },
-                onDeleteClaudeCredentials: { [weak self] accountId in
-                    await self?.deleteClaudeCredentials(accountId: accountId) ?? "Settings controller is unavailable."
+                onDeleteClaudeCredentials: { accountId in
+                    await self.deleteClaudeCredentials(accountId: accountId)
                 },
-                onTestClaudeConnection: { [weak self] accountId in
-                    await self?.testClaudeConnection(accountId: accountId)
-                        ?? .unavailable("Settings controller is unavailable.")
+                onTestClaudeConnection: { accountId in
+                    await self.testClaudeConnection(accountId: accountId)
                 },
-                onStartCodexChatGPTLogin: { [weak self] in
-                    await self?.startCodexChatGPTLogin() ?? .idle
+                onStartCodexChatGPTLogin: {
+                    await self.startCodexChatGPTLogin()
                 },
-                onCurrentCodexChatGPTLoginState: { [weak self] in
-                    await self?.currentCodexChatGPTLoginState() ?? .idle
+                onCurrentCodexChatGPTLoginState: {
+                    await self.currentCodexChatGPTLoginState()
                 },
-                onRetryCodexChatGPTLoginBrowser: { [weak self] in
-                    await self?.retryCodexChatGPTLoginBrowser() ?? .idle
+                onRetryCodexChatGPTLoginBrowser: {
+                    await self.retryCodexChatGPTLoginBrowser()
                 },
-                onCancelCodexChatGPTLogin: { [weak self] in
-                    await self?.cancelCodexChatGPTLogin() ?? .idle
+                onCancelCodexChatGPTLogin: {
+                    await self.cancelCodexChatGPTLogin()
                 },
-                onConnectCodexAPIKey: { [weak self] apiKey in
-                    await self?.connectCodexAPIKey(apiKey) ?? .unavailable("Settings controller is unavailable.")
+                onConnectCodexAPIKey: { apiKey in
+                    await self.connectCodexAPIKey(apiKey)
                 },
-                onDisconnectCodex: { [weak self] in
-                    await self?.disconnectCodex() ?? .unavailable("Settings controller is unavailable.")
+                onDisconnectCodex: {
+                    await self.disconnectCodex()
                 },
-                onRefreshCodexStatus: { [weak self] in
-                    await self?.refreshCodexStatus() ?? CodexSetupState(
-                        status: .unavailable,
-                        headline: "Settings controller is unavailable.",
-                        detail: "Codex status could not be refreshed."
-                    )
+                onRefreshCodexStatus: {
+                    await self.refreshCodexStatus()
                 },
                 onRefresh: { [weak self] in
                     self?.refreshNow()

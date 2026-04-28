@@ -173,11 +173,21 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         guard
             let window = notification.object as? NSWindow,
-            window === onboardingWindowController?.window
-        else { return }
-        onboardingHasUnsavedSensitiveInput = false
-        onboardingForceClose = false
-        onboardingWindowController = nil
+            window === onboardingWindowController?.window || window === settingsWindowController?.window
+        else {
+            return
+        }
+
+        if window === onboardingWindowController?.window {
+            onboardingHasUnsavedSensitiveInput = false
+            onboardingForceClose = false
+            onboardingWindowController = nil
+        }
+
+        if window === settingsWindowController?.window {
+            window.contentViewController = nil
+            settingsWindowController = nil
+        }
     }
 
     private func positionOnboardingPanel(_ panel: NSPanel, under statusButton: NSStatusBarButton) {
@@ -281,6 +291,7 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             defer: false
         )
         window.title = title
+        window.delegate = self
         window.contentViewController = NSHostingController(rootView: rootView)
         window.center()
 

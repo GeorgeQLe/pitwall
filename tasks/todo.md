@@ -6,6 +6,16 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Settings controller lifetime
+  - [x] Keep Settings callbacks backed by a live menu bar controller while the Settings window is open.
+  - [x] Clear Settings SwiftUI content and callbacks when the Settings window closes.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Settings Controller Lifetime Hotfix
+
+- Result: Settings save/test callbacks now retain the menu bar controller for the visible Settings window lifetime, and the Settings window clears its hosted SwiftUI content on close so the retain path is released.
+- Verification: `swift build` passed; `swift test --filter PitwallAppSupportTests` passed 92 tests with 0 failures.
+
 - [x] Hotfix: Settings provider enablement cleanup
   - [x] Simplify the generic provider list to visible/skipped control only.
   - [x] Keep Codex auth mode and plan/profile in the dedicated Codex Connection section.

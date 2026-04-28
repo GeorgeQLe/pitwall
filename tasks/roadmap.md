@@ -2,7 +2,21 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Settings Provider Enablement Cleanup
+## Current Hotfix: Settings Controller Lifetime
+
+**Goal:** Prevent the Settings window from losing its save/test callbacks while the window is still visible.
+
+**Scope:**
+- Retain the menu bar controller through Settings callbacks for the lifetime of the Settings window.
+- Clear the Settings hosting controller when its window closes so the retain path is released.
+- Avoid changing provider settings persistence or credential behavior.
+
+**Acceptance Criteria:**
+- Saving Settings no longer reports "Settings controller is unavailable" from a visible Settings window.
+- Closing Settings releases its SwiftUI content and callbacks.
+- Focused Swift build/tests pass.
+
+## Previous Hotfix: Settings Provider Enablement Cleanup
 
 **Goal:** Remove redundant provider setup controls from Settings so the generic provider list only controls whether Claude, Codex, and Gemini are tracked, while provider-specific sections own real setup fields.
 
