@@ -2,7 +2,23 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Settings Controller Lifetime
+## Current Hotfix: Gemini CLI Quota Telemetry
+
+**Goal:** Add opt-in Gemini provider-supplied quota telemetry by reusing the existing Gemini CLI Google login cache, while preserving passive Gemini local detection as the fallback.
+
+**Scope:**
+- Read Gemini CLI auth metadata from `GEMINI_HOME`/`~/.gemini` only after telemetry is enabled.
+- Support Google-login Gemini CLI credentials for Code Assist quota refresh.
+- Display provider-supplied Gemini quota buckets and persist sanitized usage snapshots.
+- Fall back to passive Gemini local evidence on unsupported auth modes, missing credentials, or API failure.
+
+**Acceptance Criteria:**
+- Gemini telemetry can upgrade Gemini from local evidence to provider-supplied usage when quota refresh succeeds.
+- Raw Google OAuth tokens and prompt/session content are never persisted or rendered.
+- Unsupported Gemini auth modes remain usable for passive tracking.
+- Focused Swift tests pass.
+
+## Previous Hotfix: Settings Controller Lifetime
 
 **Goal:** Prevent the Settings window from losing its save/test callbacks while the window is still visible.
 

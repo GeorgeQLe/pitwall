@@ -354,6 +354,96 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertEqual(outcome.appState.provider(for: .gemini)?.payloads.first?.values["tokenCountObserved"], "12")
     }
 
+    func testGeminiTelemetrySuccessUsesProviderSuppliedQuotaAndStoresHistory() async throws {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let defaults = isolatedDefaults()
+        let store = ProviderConfigurationStore(userDefaults: defaults)
+        try await store.save(ProviderConfigurationSnapshot(
+            providerProfiles: [
+                ProviderProfileConfiguration(providerId: .claude),
+                ProviderProfileConfiguration(providerId: .codex),
+                ProviderProfileConfiguration(providerId: .gemini, telemetryEnabled: true)
+            ]
+        ))
+        let historyStore = ProviderHistoryStore(userDefaults: defaults)
+        let coordinator = ProviderRefreshCoordinator(
+            configurationStore: store,
+            secretStore: InMemorySecretStore(),
+            claudeClient: FakeClaudeUsageClient(),
+            snapshotLoader: FakeSnapshotLoader(
+                geminiSnapshot: LocalProviderFileSnapshot(
+                    homePath: "/gemini",
+                    files: [
+                        "settings.json": #"{"selectedAuthType":"oauth-personal"}"#,
+                        "oauth_creds.json": ""
+                    ]
+                )
+            ),
+            geminiUsageClient: FakeGeminiUsageClient(result: .success(GeminiUsageClientResult(
+                projectId: "cloud-ai-project",
+                tier: "pro",
+                buckets: [
+                    GeminiQuotaBucket(
+                        modelId: "gemini-2.5-pro",
+                        tokenType: "requests",
+                        remainingAmount: 800,
+                        remainingFraction: 0.8,
+                        resetsAt: now.addingTimeInterval(24 * 60 * 60)
+                    )
+                ],
+                fetchedAt: now
+            ))),
+            historyStore: historyStore,
+            now: { now }
+        )
+
+        let outcome = await coordinator.refreshProviders(trigger: .manual)
+        let gemini = outcome.appState.provider(for: .gemini)
+        let history = await historyStore.load()
+
+        XCTAssertEqual(gemini?.confidence, .providerSupplied)
+        XCTAssertEqual(gemini?.headline, "Gemini quota refreshed")
+        XCTAssertEqual(gemini?.primaryValue, "20% used")
+        XCTAssertEqual(
+            gemini?.payloads.first(where: { $0.source == "gemini-quota" })?.values["bucket0.modelId"],
+            "gemini-2.5-pro"
+        )
+        XCTAssertEqual(history.first?.providerId, .gemini)
+        XCTAssertEqual(history.first?.weeklyUtilizationPercent ?? 0, 20, accuracy: 0.0001)
+    }
+
+    func testGeminiTelemetryFailureFallsBackToPassiveState() async throws {
+        let defaults = isolatedDefaults()
+        let store = ProviderConfigurationStore(userDefaults: defaults)
+        try await store.save(ProviderConfigurationSnapshot(
+            providerProfiles: [
+                ProviderProfileConfiguration(providerId: .claude),
+                ProviderProfileConfiguration(providerId: .codex),
+                ProviderProfileConfiguration(providerId: .gemini, telemetryEnabled: true)
+            ]
+        ))
+        let coordinator = ProviderRefreshCoordinator(
+            configurationStore: store,
+            secretStore: InMemorySecretStore(),
+            claudeClient: FakeClaudeUsageClient(),
+            snapshotLoader: FakeSnapshotLoader(
+                geminiSnapshot: LocalProviderFileSnapshot(
+                    homePath: "/gemini",
+                    files: ["settings.json": #"{"selectedAuthType":"oauth-personal"}"#]
+                )
+            ),
+            geminiUsageClient: FakeGeminiUsageClient(result: .failure(.quotaUnavailable)),
+            now: { Date(timeIntervalSince1970: 1_700_000_000) }
+        )
+
+        let outcome = await coordinator.refreshProviders(trigger: .manual)
+        let gemini = outcome.appState.provider(for: .gemini)
+
+        XCTAssertEqual(gemini?.confidence, .estimated)
+        XCTAssertEqual(gemini?.headline, "Gemini local evidence detected")
+        XCTAssertTrue(outcome.diagnostics.contains("Gemini telemetry unavailable."))
+    }
+
     func testReplacementClaudeSessionKeyRotatesThroughSecretStoreOnly() async throws {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let store = ProviderConfigurationStore(userDefaults: isolatedDefaults())
@@ -579,6 +669,18 @@ private actor FakeCodexUsageClient: CodexUsageClienting {
     }
 
     func fetchUsage(now: Date) async throws -> CodexUsageClientResult {
+        try result.get()
+    }
+}
+
+private actor FakeGeminiUsageClient: GeminiUsageClienting {
+    private let result: Result<GeminiUsageClientResult, GeminiUsageClientError>
+
+    init(result: Result<GeminiUsageClientResult, GeminiUsageClientError>) {
+        self.result = result
+    }
+
+    func fetchUsage(now: Date) async throws -> GeminiUsageClientResult {
         try result.get()
     }
 }

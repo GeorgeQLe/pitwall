@@ -207,7 +207,7 @@ public struct LocalProviderSnapshotLoader: LocalProviderSnapshotLoading {
         }
 
         var sanitized: [String: Any] = [:]
-        if let selectedAuthType = object["selectedAuthType"] as? String {
+        if let selectedAuthType = selectedGeminiAuthType(from: object) {
             sanitized["selectedAuthType"] = selectedAuthType
         }
         if let profile = object["profile"] as? String {
@@ -215,6 +215,14 @@ public struct LocalProviderSnapshotLoader: LocalProviderSnapshotLoading {
         }
 
         return jsonString(from: sanitized)
+    }
+
+    private static func selectedGeminiAuthType(from object: [String: Any]) -> String? {
+        if let selectedAuthType = object["selectedAuthType"] as? String {
+            return selectedAuthType
+        }
+
+        return ((object["security"] as? [String: Any])?["auth"] as? [String: Any])?["selectedType"] as? String
     }
 
     private static func sanitizedGeminiChatJSON(from content: String) -> String {

@@ -117,6 +117,8 @@ struct SettingsView: View {
                         onRefreshStatus: onRefreshCodexStatus
                     )
                     Divider()
+                    GeminiCredentialSetupView(profile: geminiProfileBinding)
+                    Divider()
                     DisplayPreferencesView(preferences: $preferences)
                     Divider()
                     launchAtLoginSection
@@ -221,6 +223,10 @@ struct SettingsView: View {
 
     private var codexProfileBinding: Binding<ProviderProfileConfiguration> {
         binding(for: .codex)
+    }
+
+    private var geminiProfileBinding: Binding<ProviderProfileConfiguration> {
+        binding(for: .gemini)
     }
 
     private func binding(for providerId: ProviderID) -> Binding<ProviderProfileConfiguration> {

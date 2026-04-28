@@ -6,6 +6,18 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Gemini CLI quota telemetry
+  - [x] Add an opt-in Gemini CLI quota client for Google-login credentials.
+  - [x] Integrate provider-supplied Gemini quota into refresh state and history.
+  - [x] Add Settings UI for Gemini telemetry enablement and status.
+  - [x] Add focused parsing/coordinator/UI coverage.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Gemini CLI Quota Telemetry
+
+- Result: Gemini can now opt in to provider-supplied quota telemetry using the existing Gemini CLI Google-login cache. Successful quota refreshes upgrade Gemini to provider-supplied state, write sanitized history snapshots, and keep passive local evidence as the fallback on unsupported modes or API failure.
+- Verification: `swift test --filter PitwallAppSupportTests` passed 97 tests with 0 failures; `swift test` passed 257 tests with 0 failures.
+
 - [x] Hotfix: Settings controller lifetime
   - [x] Keep Settings callbacks backed by a live menu bar controller while the Settings window is open.
   - [x] Clear Settings SwiftUI content and callbacks when the Settings window closes.

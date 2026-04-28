@@ -120,13 +120,21 @@ public struct GeminiLocalDetector: Sendable {
         }
 
         var values: [String: String] = [:]
-        if let selectedAuthType = object["selectedAuthType"] as? String {
+        if let selectedAuthType = Self.selectedAuthType(from: object) {
             values["authMode"] = selectedAuthType
         }
         if let profile = object["profile"] as? String {
             values["profile"] = profile
         }
         return values
+    }
+
+    private static func selectedAuthType(from object: [String: Any]) -> String? {
+        if let selectedAuthType = object["selectedAuthType"] as? String {
+            return selectedAuthType
+        }
+
+        return ((object["security"] as? [String: Any])?["auth"] as? [String: Any])?["selectedType"] as? String
     }
 
     private static func tokenCountObserved(from content: String) -> Int? {

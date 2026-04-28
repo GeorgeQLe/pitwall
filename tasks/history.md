@@ -1,5 +1,10 @@
 # History
 
+## 2026-04-28
+
+- Gemini CLI quota telemetry shipped: added an opt-in `GeminiUsageClient` that uses the existing Gemini CLI Google-login cache under `GEMINI_HOME`/`~/.gemini`, supports the current nested `security.auth.selectedType` settings shape, refreshes expired OAuth access tokens from installed CLI metadata when needed, and calls Code Assist `loadCodeAssist` + `retrieveUserQuota`. `ProviderRefreshCoordinator` now upgrades Gemini to provider-supplied quota state on success, writes sanitized history snapshots, and falls back to passive local evidence with diagnostics when telemetry is unavailable. Settings now has a dedicated Gemini Connection section with a telemetry opt-in toggle and CLI-login guidance.
+- Validation: `swift test --filter PitwallAppSupportTests` passes **97 / 97** with 0 failures; `swift test` passes **257 / 257** with 0 failures.
+
 ## 2026-04-27
 
 - Codex usage telemetry shipped: researched the current Codex OAuth usage path and verified that the supported boundary is the local Codex CLI app-server, not direct token scraping. Added `CodexAppServerUsageClient`, which launches `codex app-server --listen stdio://`, initializes JSON-RPC, calls `account/rateLimits/read`, and parses provider-supplied rate-limit windows, reset timestamps, credits, plan type, and model-specific buckets without reading `auth.json` token values. `MenuBarController` now supplies the telemetry client to `ProviderRefreshCoordinator`; successful ChatGPT-auth telemetry upgrades Codex to `.providerSupplied`, while CLI/network/schema failures fall back to passive local evidence with redacted diagnostics. Added research notes and updated the clean-room Codex telemetry spec to document the app-server integration boundary.

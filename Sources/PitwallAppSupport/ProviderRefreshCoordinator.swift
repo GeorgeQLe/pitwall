@@ -42,6 +42,7 @@ private extension ISO8601DateFormatter {
 
 public actor ProviderRefreshCoordinator {
     private static let codexAccountId = "codex-default"
+    private static let geminiAccountId = "gemini-default"
 
     private let configurationStore: ProviderConfigurationStore
     private let secretStore: any ProviderSecretStore
@@ -49,6 +50,7 @@ public actor ProviderRefreshCoordinator {
     private let snapshotLoader: any LocalProviderSnapshotLoading
     private let codexAuthStatusProvider: (any CodexAuthStatusProviding)?
     private let codexUsageClient: (any CodexUsageClienting)?
+    private let geminiUsageClient: (any GeminiUsageClienting)?
     private let historyStore: ProviderHistoryStore
     private let diagnosticEventStore: DiagnosticEventStore
     private let diagnosticsRedactor: DiagnosticsRedactor
@@ -66,6 +68,7 @@ public actor ProviderRefreshCoordinator {
         snapshotLoader: any LocalProviderSnapshotLoading = LocalProviderSnapshotLoader(),
         codexAuthStatusProvider: (any CodexAuthStatusProviding)? = nil,
         codexUsageClient: (any CodexUsageClienting)? = nil,
+        geminiUsageClient: (any GeminiUsageClienting)? = nil,
         historyStore: ProviderHistoryStore = ProviderHistoryStore(),
         diagnosticEventStore: DiagnosticEventStore = DiagnosticEventStore(),
         diagnosticsRedactor: DiagnosticsRedactor = DiagnosticsRedactor(),
@@ -78,6 +81,7 @@ public actor ProviderRefreshCoordinator {
         self.snapshotLoader = snapshotLoader
         self.codexAuthStatusProvider = codexAuthStatusProvider
         self.codexUsageClient = codexUsageClient
+        self.geminiUsageClient = geminiUsageClient
         self.historyStore = historyStore
         self.diagnosticEventStore = diagnosticEventStore
         self.diagnosticsRedactor = diagnosticsRedactor
@@ -105,7 +109,8 @@ public actor ProviderRefreshCoordinator {
             diagnosticEvents: &diagnosticEvents,
             now: refreshDate
         )
-        let geminiState = refreshGemini(
+        let geminiState = await refreshGemini(
+            configuration: configuration,
             diagnostics: &diagnostics,
             diagnosticEvents: &diagnosticEvents,
             now: refreshDate
@@ -563,13 +568,28 @@ public actor ProviderRefreshCoordinator {
     }
 
     private func refreshGemini(
+        configuration: ProviderConfigurationSnapshot,
         diagnostics: inout [String],
         diagnosticEvents: inout [DiagnosticEvent],
         now refreshDate: Date
-    ) -> ProviderState {
+    ) async -> ProviderState {
         do {
             let snapshot = try snapshotLoader.loadGeminiSnapshot()
-            return try GeminiLocalDetector().detect(from: snapshot)
+            let passiveState = try GeminiLocalDetector().detect(from: snapshot)
+            let telemetryEnabled = configuration.providerProfiles.first {
+                $0.providerId == .gemini
+            }?.telemetryEnabled == true
+
+            guard telemetryEnabled else {
+                return passiveState
+            }
+
+            return await geminiTelemetryState(
+                baseState: passiveState,
+                diagnostics: &diagnostics,
+                diagnosticEvents: &diagnosticEvents,
+                now: refreshDate
+            )
         } catch {
             diagnostics.append("Gemini passive scan failed.")
             diagnosticEvents.append(DiagnosticEvent(
@@ -584,6 +604,140 @@ public actor ProviderRefreshCoordinator {
                 headline: "Gemini local scan unavailable"
             )
         }
+    }
+
+    private func geminiTelemetryState(
+        baseState: ProviderState,
+        diagnostics: inout [String],
+        diagnosticEvents: inout [DiagnosticEvent],
+        now refreshDate: Date
+    ) async -> ProviderState {
+        guard let geminiUsageClient else {
+            return baseState
+        }
+
+        do {
+            let result = try await geminiUsageClient.fetchUsage(now: refreshDate)
+            let retainedSnapshots = await usageSnapshots(
+                providerId: .gemini,
+                accountId: Self.geminiAccountId,
+                now: refreshDate
+            )
+            let providerState = geminiUsageProviderState(
+                baseState: baseState,
+                result: result,
+                retainedSnapshots: retainedSnapshots,
+                now: refreshDate
+            )
+            try? await historyStore.append(
+                geminiHistorySnapshot(
+                    from: result,
+                    providerState: providerState,
+                    recordedAt: refreshDate
+                ),
+                now: refreshDate
+            )
+            return providerState
+        } catch {
+            diagnostics.append("Gemini telemetry unavailable.")
+            diagnosticEvents.append(DiagnosticEvent(
+                providerId: .gemini,
+                occurredAt: refreshDate,
+                summary: "Gemini telemetry unavailable.",
+                details: ["reason": "usageRefreshUnavailable"]
+            ))
+
+            var fallback = baseState
+            fallback.confidenceExplanation = "\(baseState.confidenceExplanation) Gemini quota telemetry failed, so Pitwall is showing local evidence only."
+            return fallback
+        }
+    }
+
+    private func geminiUsageProviderState(
+        baseState: ProviderState,
+        result: GeminiUsageClientResult,
+        retainedSnapshots: [UsageSnapshot],
+        now refreshDate: Date
+    ) -> ProviderState {
+        let primaryBucket = result.primaryBucket
+        let resetAt = primaryBucket?.resetsAt
+        let weeklyPercent = primaryBucket?.usedPercent
+        let weeklyPace = weeklyPercent.flatMap { percent -> PaceEvaluation? in
+            guard let resetAt else { return nil }
+            return PacingCalculator().evaluateWeeklyPace(
+                utilizationPercent: percent,
+                windowStart: resetAt.addingTimeInterval(-24 * 60 * 60),
+                resetAt: resetAt,
+                now: refreshDate
+            )
+        }
+        let dailyBudget = weeklyPercent.flatMap { percent -> DailyBudget? in
+            guard let resetAt else { return nil }
+            return PacingCalculator().dailyBudget(
+                weeklyUtilizationPercent: percent,
+                resetAt: resetAt,
+                now: refreshDate,
+                retainedSnapshots: retainedSnapshots
+            )
+        }
+
+        return ProviderState(
+            providerId: .gemini,
+            displayName: "Gemini",
+            status: .configured,
+            confidence: .providerSupplied,
+            headline: "Gemini quota refreshed",
+            primaryValue: weeklyPercent.map { "\(Self.formatPercent($0)) used" },
+            secondaryValue: result.tier ?? baseState.secondaryValue,
+            resetWindow: resetAt.map { ResetWindow(resetsAt: $0) },
+            lastUpdatedAt: refreshDate,
+            pacingState: PacingState(
+                weeklyUtilizationPercent: weeklyPercent,
+                remainingWindowDuration: resetAt.map { max(0, $0.timeIntervalSince(refreshDate)) },
+                dailyBudget: dailyBudget,
+                todayUsage: dailyBudget?.todayUsage,
+                weeklyPace: weeklyPace
+            ),
+            confidenceExplanation: "Gemini returned provider-supplied quota data through the existing Gemini CLI Google login.",
+            actions: [
+                ProviderAction(kind: .refresh, title: "Refresh now"),
+                ProviderAction(kind: .openSettings, title: "Open settings")
+            ],
+            payloads: baseState.payloads + [
+                geminiQuotaPayload(from: result)
+            ]
+        )
+    }
+
+    private func geminiQuotaPayload(from result: GeminiUsageClientResult) -> ProviderSpecificPayload {
+        var values: [String: String] = [
+            "projectId": result.projectId
+        ]
+        if let tier = result.tier {
+            values["tier"] = tier
+        }
+        for (index, bucket) in result.buckets.enumerated() {
+            let prefix = "bucket\(index)"
+            if let modelId = bucket.modelId {
+                values["\(prefix).modelId"] = modelId
+            }
+            if let tokenType = bucket.tokenType {
+                values["\(prefix).tokenType"] = tokenType
+            }
+            if let remainingAmount = bucket.remainingAmount {
+                values["\(prefix).remainingAmount"] = Self.formatDecimal(remainingAmount)
+            }
+            if let remainingFraction = bucket.remainingFraction {
+                values["\(prefix).remainingFraction"] = Self.formatDecimal(remainingFraction)
+            }
+            if let usedPercent = bucket.usedPercent {
+                values["\(prefix).usedPercent"] = Self.formatDecimal(usedPercent)
+            }
+            if let resetsAt = bucket.resetsAt {
+                values["\(prefix).resetsAt"] = ISO8601DateFormatter.pitwallAppSupport.string(from: resetsAt)
+            }
+        }
+        return ProviderSpecificPayload(source: "gemini-quota", values: values)
     }
 
     private func selectedClaudeAccount(
@@ -661,6 +815,23 @@ public actor ProviderRefreshCoordinator {
             weeklyUtilizationPercent: weeklyWindow?.usedPercent,
             sessionResetAt: snapshot.primary?.resetsAt,
             weeklyResetAt: weeklyWindow?.resetsAt,
+            headline: providerState.headline
+        )
+    }
+
+    private func geminiHistorySnapshot(
+        from result: GeminiUsageClientResult,
+        providerState: ProviderState,
+        recordedAt: Date
+    ) -> ProviderHistorySnapshot {
+        let primaryBucket = result.primaryBucket
+        return ProviderHistorySnapshot(
+            accountId: Self.geminiAccountId,
+            recordedAt: recordedAt,
+            providerId: .gemini,
+            confidence: providerState.confidence,
+            weeklyUtilizationPercent: primaryBucket?.usedPercent,
+            weeklyResetAt: primaryBucket?.resetsAt,
             headline: providerState.headline
         )
     }
@@ -762,6 +933,15 @@ public actor ProviderRefreshCoordinator {
         }
 
         return String(format: "%.1f%%", value)
+    }
+
+    private static func formatDecimal(_ value: Double) -> String {
+        let rounded = value.rounded()
+        if abs(value - rounded) < 0.000_001 {
+            return String(Int(rounded))
+        }
+
+        return String(format: "%.4f", value)
     }
 
     private static func formatCodexWindow(_ window: CodexRateLimitWindow) -> String {

@@ -75,6 +75,7 @@ final class MenuBarController: NSObject {
             secretStore: secretStore,
             codexAuthStatusProvider: codexAuthController,
             codexUsageClient: CodexAppServerUsageClient(),
+            geminiUsageClient: GeminiUsageClient(),
             historyStore: providerHistoryStore,
             diagnosticEventStore: diagnosticEventStore
         )
