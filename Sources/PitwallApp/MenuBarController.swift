@@ -239,10 +239,10 @@ final class MenuBarController: NSObject {
     }
 
     private func updateStatusTitle() {
-        let detail = formatter.format(appState: appState, preferences: preferences)
         let title = formatter.menuBarTitle(appState: appState, preferences: preferences)
+        let toolTip = formatter.toolTip(appState: appState, preferences: preferences)
         statusItem?.button?.title = title
-        statusItem?.button?.toolTip = detail
+        statusItem?.button?.toolTip = toolTip
         reserveStatusItemLength(currentTitle: title)
     }
 

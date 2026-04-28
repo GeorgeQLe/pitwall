@@ -152,6 +152,72 @@ public struct MenuBarStatusFormatter: Sendable {
             .joined(separator: " - ")
     }
 
+    public func toolTip(
+        appState: AppProviderState,
+        preferences: UserPreferences = UserPreferences(),
+        now: Date = Date()
+    ) -> String {
+        guard let provider = appState.selectedProvider(trackedOnly: true) else {
+            return "Pitwall\nConfigure a provider to show live pacing."
+        }
+
+        return toolTip(provider: provider, preferences: preferences, now: now)
+    }
+
+    public func toolTip(
+        provider: ProviderState,
+        preferences: UserPreferences = UserPreferences(),
+        now: Date = Date()
+    ) -> String {
+        if provider.status == .missingConfiguration {
+            return "\(provider.displayName)\nConfigure credentials to show live usage."
+        }
+
+        var lines = [provider.displayName]
+
+        if !provider.headline.isEmpty {
+            lines.append(provider.headline)
+        }
+
+        if let sessionPercent = sessionUtilizationPercent(in: provider) {
+            lines.append("Session: \(Self.formatPercent(sessionPercent))")
+        }
+
+        if let todayPercent = provider.pacingState?.todayUsage?.utilizationDeltaPercent,
+           let dailyBudgetPercent = provider.pacingState?.dailyBudget?.dailyBudgetPercent {
+            lines.append("Today: \(Self.formatPercent(todayPercent)) used / \(Self.formatPercent(dailyBudgetPercent)) target")
+        } else if let todayPercent = provider.pacingState?.todayUsage?.utilizationDeltaPercent {
+            lines.append("Today: \(Self.formatPercent(todayPercent)) used")
+        } else if let dailyBudgetPercent = provider.pacingState?.dailyBudget?.dailyBudgetPercent {
+            lines.append("Daily target: \(Self.formatPercent(dailyBudgetPercent))")
+        }
+
+        if let weeklyPercent = provider.pacingState?.weeklyUtilizationPercent {
+            lines.append("Weekly: \(Self.formatPercent(weeklyPercent))")
+        } else if let metric = compactMetric(for: provider) {
+            lines.append("Usage: \(metric)")
+        }
+
+        if let weeklyPace = provider.pacingState?.weeklyPace {
+            lines.append("Recommendation: \(ProviderDisplayText.action(weeklyPace.action))")
+        }
+
+        if let reset = Self.resetText(
+            resetWindow: menuBarResetWindow(for: provider),
+            preference: preferences.resetDisplayPreference,
+            now: now,
+            includesSeconds: true
+        ) {
+            lines.append("Reset: \(reset.replacingOccurrences(of: "resets ", with: ""))")
+        }
+
+        if !provider.confidenceExplanation.isEmpty {
+            lines.append(provider.confidenceExplanation)
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
     public static func resetText(
         resetWindow: ResetWindow?,
         preference: ResetDisplayPreference,

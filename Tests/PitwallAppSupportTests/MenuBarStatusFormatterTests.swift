@@ -147,6 +147,56 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         XCTAssertEqual(text, "Claude 🚶 26% 🎯 12%/18%/day 🚶 42.4%/w 2h 30m 0s")
     }
 
+    func testToolTipUsesClaudeRichBreakdownWhenAvailable() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let provider = ProviderState(
+            providerId: .claude,
+            displayName: "Claude",
+            status: .configured,
+            confidence: .exact,
+            headline: "Claude usage refreshed",
+            resetWindow: ResetWindow(resetsAt: now.addingTimeInterval(2 * 60 * 60 + 30 * 60)),
+            pacingState: PacingState(
+                weeklyUtilizationPercent: 42.4,
+                dailyBudget: DailyBudget(
+                    remainingUtilizationPercent: 57.6,
+                    daysRemaining: 2.5,
+                    dailyBudgetPercent: 18,
+                    todayUsage: TodayUsage(status: .exact, utilizationDeltaPercent: 12)
+                ),
+                todayUsage: TodayUsage(status: .exact, utilizationDeltaPercent: 12),
+                weeklyPace: PaceEvaluation(label: .warning, action: .conserve)
+            ),
+            confidenceExplanation: "Claude returned fresh usage data for the selected account.",
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "usageRows",
+                    values: ["Session": "26|2h 30m|exact"]
+                )
+            ]
+        )
+
+        let text = MenuBarStatusFormatter().toolTip(
+            provider: provider,
+            preferences: UserPreferences(resetDisplayPreference: .countdown),
+            now: now
+        )
+
+        XCTAssertEqual(
+            text,
+            """
+            Claude
+            Claude usage refreshed
+            Session: 26%
+            Today: 12% used / 18% target
+            Weekly: 42.4%
+            Recommendation: conserve
+            Reset: 2h 30m 0s
+            Claude returned fresh usage data for the selected account.
+            """
+        )
+    }
+
     func testMenuBarTitleUsesRichBreakdownForCodexProviderSuppliedQuota() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let provider = ProviderState(
@@ -334,6 +384,12 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         let text = MenuBarStatusFormatter().menuBarTitle(appState: AppProviderState())
 
         XCTAssertEqual(text, "Configure")
+    }
+
+    func testToolTipFallsBackToConfigureWhenNothingSelected() {
+        let text = MenuBarStatusFormatter().toolTip(appState: AppProviderState())
+
+        XCTAssertEqual(text, "Pitwall\nConfigure a provider to show live pacing.")
     }
 
     private func provider(
