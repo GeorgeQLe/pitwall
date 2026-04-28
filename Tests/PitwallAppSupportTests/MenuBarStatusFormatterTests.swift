@@ -392,6 +392,25 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         XCTAssertEqual(text, "Pitwall\nConfigure a provider to show live pacing.")
     }
 
+    func testToolTipDescribesSelectedUntrackedProviderBeforeGenericConfigure() {
+        let appState = AppProviderState(
+            providers: [
+                ProviderState(
+                    providerId: .claude,
+                    displayName: "Claude",
+                    status: .missingConfiguration,
+                    confidence: .observedOnly,
+                    headline: "Claude credentials missing"
+                )
+            ],
+            selectedProviderId: .claude
+        )
+
+        let text = MenuBarStatusFormatter().toolTip(appState: appState)
+
+        XCTAssertEqual(text, "Claude\nConfigure credentials to show live usage.")
+    }
+
     private func provider(
         id: ProviderID,
         displayName: String,

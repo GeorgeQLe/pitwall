@@ -157,7 +157,10 @@ public struct MenuBarStatusFormatter: Sendable {
         preferences: UserPreferences = UserPreferences(),
         now: Date = Date()
     ) -> String {
-        guard let provider = appState.selectedProvider(trackedOnly: true) else {
+        let provider = appState.selectedProvider(trackedOnly: true)
+            ?? appState.selectedProvider(trackedOnly: false)
+
+        guard let provider else {
             return "Pitwall\nConfigure a provider to show live pacing."
         }
 
