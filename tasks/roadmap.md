@@ -2,7 +2,22 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Gemini CLI Quota Telemetry
+## Current Hotfix: Codex Slash Status/Menu Bar Alignment
+
+**Goal:** Make Codex top menu bar data line up with the data available from slash status.
+
+**Scope:**
+- Compare Codex provider-supplied status payload fields against the compact menu bar formatter inputs.
+- Prefer the same primary/session and weekly buckets that slash status exposes.
+- Keep Claude and Gemini formatting behavior unchanged.
+- Add focused regression coverage for the corrected Codex menu bar summary.
+
+**Acceptance Criteria:**
+- Codex menu bar summary derives from the same current provider-supplied status data exposed by slash status.
+- Primary/session, weekly, and reset values no longer disagree because of stale or differently selected payload fields.
+- Focused Swift tests pass.
+
+## Previous Hotfix: Gemini CLI Quota Telemetry
 
 **Goal:** Add opt-in Gemini provider-supplied quota telemetry by reusing the existing Gemini CLI Google login cache, while preserving passive Gemini local detection as the fallback.
 

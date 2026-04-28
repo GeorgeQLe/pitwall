@@ -6,6 +6,17 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Codex slash status/menu bar alignment
+  - [x] Trace slash status data fields and menu bar formatter fields.
+  - [x] Patch the narrowest data-selection mismatch.
+  - [x] Add regression coverage for Codex menu bar alignment.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Codex Slash Status/Menu Bar Alignment Hotfix
+
+- Result: Codex provider refresh now treats the top-level app-server `rateLimits` payload as canonical, matching the slash-status-style response, instead of preferring a possibly divergent nested `rateLimitsByLimitId["codex"]` bucket. The menu bar continues to derive session, weekly, and reset text from that selected provider state.
+- Verification: `swift test --filter CodexUsageClientTests` passed 2 tests; `swift test --filter ProviderRefreshCoordinatorTests` passed 13 tests; `swift test --filter MenuBarStatusFormatterTests` passed 12 tests.
+
 - [x] Hotfix: Gemini CLI quota telemetry
   - [x] Add an opt-in Gemini CLI quota client for Google-login credentials.
   - [x] Integrate provider-supplied Gemini quota into refresh state and history.

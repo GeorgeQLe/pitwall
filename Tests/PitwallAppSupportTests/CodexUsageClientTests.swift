@@ -86,4 +86,45 @@ final class CodexUsageClientTests: XCTestCase {
         XCTAssertEqual(result.preferredRateLimit.credits?.balance, "0")
         XCTAssertEqual(result.rateLimitsByLimitId?["codex_bengalfox"]?.limitName, "GPT-5.3-Codex-Spark")
     }
+
+    func testPreferredRateLimitUsesTopLevelSlashStatusPayloadWhenBucketMapDiffers() {
+        let fetchedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let result = CodexUsageClientResult(
+            rateLimits: CodexRateLimitSnapshot(
+                limitId: "codex",
+                primary: CodexRateLimitWindow(
+                    usedPercent: 61,
+                    windowDurationMinutes: 300,
+                    resetsAt: fetchedAt.addingTimeInterval(60 * 60)
+                ),
+                secondary: CodexRateLimitWindow(
+                    usedPercent: 44,
+                    windowDurationMinutes: 10_080,
+                    resetsAt: fetchedAt.addingTimeInterval(4 * 24 * 60 * 60)
+                ),
+                planType: "pro"
+            ),
+            rateLimitsByLimitId: [
+                "codex": CodexRateLimitSnapshot(
+                    limitId: "codex",
+                    primary: CodexRateLimitWindow(
+                        usedPercent: 12,
+                        windowDurationMinutes: 300,
+                        resetsAt: fetchedAt.addingTimeInterval(5 * 60 * 60)
+                    ),
+                    secondary: CodexRateLimitWindow(
+                        usedPercent: 8,
+                        windowDurationMinutes: 10_080,
+                        resetsAt: fetchedAt.addingTimeInterval(6 * 24 * 60 * 60)
+                    ),
+                    planType: "pro"
+                )
+            ],
+            fetchedAt: fetchedAt
+        )
+
+        XCTAssertEqual(result.preferredRateLimit.primary?.usedPercent, 61)
+        XCTAssertEqual(result.preferredRateLimit.secondary?.usedPercent, 44)
+        XCTAssertEqual(result.preferredRateLimit.primary?.resetsAt, fetchedAt.addingTimeInterval(60 * 60))
+    }
 }

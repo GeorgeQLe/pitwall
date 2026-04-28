@@ -171,6 +171,80 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertTrue(bucketsPayload?.values["codex_bengalfox"]?.contains("GPT-5.3-Codex-Spark") == true)
     }
 
+    func testCodexTelemetryUsesTopLevelSlashStatusPayloadWhenBucketMapDiffers() async {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let coordinator = ProviderRefreshCoordinator(
+            configurationStore: ProviderConfigurationStore(userDefaults: isolatedDefaults()),
+            secretStore: InMemorySecretStore(),
+            claudeClient: FakeClaudeUsageClient(),
+            snapshotLoader: FakeSnapshotLoader(
+                codexSnapshot: LocalProviderFileSnapshot(
+                    homePath: "/codex",
+                    files: ["config.toml": "", "auth.json": "", "history.jsonl": ""]
+                )
+            ),
+            codexAuthStatusProvider: FakeCodexStatusProvider(
+                state: CodexSetupState(
+                    status: .configured,
+                    authMode: .chatgpt,
+                    headline: "Connected with ChatGPT",
+                    detail: "Logged in using ChatGPT"
+                )
+            ),
+            codexUsageClient: FakeCodexUsageClient(result: .success(CodexUsageClientResult(
+                rateLimits: CodexRateLimitSnapshot(
+                    limitId: "codex",
+                    primary: CodexRateLimitWindow(
+                        usedPercent: 61,
+                        windowDurationMinutes: 300,
+                        resetsAt: now.addingTimeInterval(60 * 60)
+                    ),
+                    secondary: CodexRateLimitWindow(
+                        usedPercent: 44,
+                        windowDurationMinutes: 10_080,
+                        resetsAt: now.addingTimeInterval(4 * 24 * 60 * 60)
+                    ),
+                    planType: "pro"
+                ),
+                rateLimitsByLimitId: [
+                    "codex": CodexRateLimitSnapshot(
+                        limitId: "codex",
+                        primary: CodexRateLimitWindow(
+                            usedPercent: 12,
+                            windowDurationMinutes: 300,
+                            resetsAt: now.addingTimeInterval(5 * 60 * 60)
+                        ),
+                        secondary: CodexRateLimitWindow(
+                            usedPercent: 8,
+                            windowDurationMinutes: 10_080,
+                            resetsAt: now.addingTimeInterval(6 * 24 * 60 * 60)
+                        ),
+                        planType: "pro"
+                    )
+                ],
+                fetchedAt: now
+            ))),
+            now: { now }
+        )
+
+        let outcome = await coordinator.refreshProviders(trigger: .manual)
+        let codex = outcome.appState.provider(for: .codex)
+        let text = codex.map {
+            MenuBarStatusFormatter().menuBarTitle(
+                provider: $0,
+                preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+                now: now
+            )
+        }
+
+        XCTAssertEqual(codex?.primaryValue, "44% used")
+        XCTAssertEqual(codex?.pacingState?.weeklyUtilizationPercent, 44)
+        XCTAssertEqual(codex?.pacingState?.sessionPace?.remainingWindowDuration, 60 * 60)
+        XCTAssertTrue(text?.contains("61%") == true)
+        XCTAssertTrue(text?.contains("44%/w") == true)
+        XCTAssertTrue(text?.contains("1h 0m 0s") == true)
+    }
+
     func testCodexTelemetryUsesHistoryForTodayUsageVsDailyTarget() async throws {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let defaults = isolatedDefaults()

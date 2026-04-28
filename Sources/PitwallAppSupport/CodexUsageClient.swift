@@ -116,7 +116,7 @@ public struct CodexUsageClientResult: Equatable, Sendable {
     }
 
     public var preferredRateLimit: CodexRateLimitSnapshot {
-        rateLimitsByLimitId?["codex"] ?? rateLimits
+        rateLimits
     }
 }
 
