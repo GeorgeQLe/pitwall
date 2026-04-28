@@ -6,6 +6,17 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Top menu bar provider parity
+  - [x] Refactor menu bar title derivation so configured Claude and Codex can use the same rich quota formatter.
+  - [x] Preserve Claude session-row parsing while deriving Codex session data from provider-supplied pacing/rate-limit state.
+  - [x] Add regression coverage for Codex themed menu bar parity and unchanged Claude output.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Top Menu Bar Provider Parity Hotfix
+
+- Result: configured providers now share the same rich menu bar title derivation when they expose structured quota data. Claude continues to use its usage-row session percent, while Codex derives session percent from provider-supplied `codex-rate-limits` primary window payloads and uses the same theme/status mapping.
+- Verification: `swift test --filter MenuBarStatusFormatterTests` passed 10 tests with 0 failures; `swift test --filter PitwallAppSupportTests` passed 89 tests with 0 failures.
+
 - [x] Hotfix: Hide unconfigured providers from tracked rotation and popover
   - [x] Add a shared configured-provider projection for status/menu/popover surfaces.
   - [x] Ensure automatic rotation, selected-provider fallback, popover cards, and provider switching use only properly configured providers.

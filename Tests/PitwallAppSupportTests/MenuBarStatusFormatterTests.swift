@@ -127,7 +127,53 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         XCTAssertEqual(text, "Claude 🚶 26% 🎯 12%/18%/day 🚶 42.4%/w 2h 30m")
     }
 
-    func testMenuBarTitleFallsBackToGenericSummaryForNonClaudeProviders() {
+    func testMenuBarTitleUsesRichBreakdownForCodexProviderSuppliedQuota() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let provider = ProviderState(
+            providerId: .codex,
+            displayName: "Codex",
+            status: .configured,
+            confidence: .providerSupplied,
+            headline: "Codex ready",
+            resetWindow: ResetWindow(resetsAt: now.addingTimeInterval(2 * 60 * 60 + 30 * 60)),
+            pacingState: PacingState(
+                weeklyUtilizationPercent: 42.4,
+                dailyBudget: DailyBudget(
+                    remainingUtilizationPercent: 57.6,
+                    daysRemaining: 2.5,
+                    dailyBudgetPercent: 18,
+                    todayUsage: TodayUsage(status: .estimatedFromSameDayBaseline, utilizationDeltaPercent: 12)
+                ),
+                todayUsage: TodayUsage(status: .estimatedFromSameDayBaseline, utilizationDeltaPercent: 12),
+                weeklyPace: PaceEvaluation(
+                    label: .warning,
+                    action: .conserve,
+                    expectedUtilizationPercent: 30
+                ),
+                sessionPace: PaceEvaluation(
+                    label: .warning,
+                    action: .conserve,
+                    expectedUtilizationPercent: 20
+                )
+            ),
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "codex-rate-limits",
+                    values: ["primary": "26|300|2023-11-14T23:43:20Z"]
+                )
+            ]
+        )
+
+        let text = MenuBarStatusFormatter().menuBarTitle(
+            provider: provider,
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+            now: now
+        )
+
+        XCTAssertEqual(text, "Codex 🏃 26% 🎯 12%/18%/day 🔥 42.4%/w 2h 30m")
+    }
+
+    func testMenuBarTitleUsesThemeForCodexWeeklyQuotaWithoutSessionPayload() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let provider = ProviderState(
             providerId: .codex,
@@ -148,7 +194,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Codex 42.4% 2h 30m conserve")
+        XCTAssertEqual(text, "Codex 🚶 42.4%/w 2h 30m")
     }
 
     func testMenuBarTitleUsesSelectedClaudeTheme() {

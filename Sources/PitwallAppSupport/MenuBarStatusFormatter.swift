@@ -22,12 +22,12 @@ public struct MenuBarStatusFormatter: Sendable {
         preferences: UserPreferences = UserPreferences(),
         now: Date = Date()
     ) -> String {
-        if let claudeTitle = claudeMenuBarTitle(
+        if let richTitle = richMenuBarTitle(
             provider: provider,
             preferences: preferences,
             now: now
         ) {
-            return claudeTitle
+            return richTitle
         }
 
         if provider.status == .missingConfiguration {
@@ -53,16 +53,16 @@ public struct MenuBarStatusFormatter: Sendable {
             .joined(separator: " ")
     }
 
-    private func claudeMenuBarTitle(
+    private func richMenuBarTitle(
         provider: ProviderState,
         preferences: UserPreferences,
         now: Date
     ) -> String? {
-        guard provider.providerId == .claude, provider.status == .configured else {
+        guard provider.status == .configured else {
             return nil
         }
 
-        let sessionPercent = usageRowPercent(named: "Session", in: provider)
+        let sessionPercent = sessionUtilizationPercent(in: provider)
         let weeklyPercent = provider.pacingState?.weeklyUtilizationPercent
         let todayPercent = provider.pacingState?.todayUsage?.utilizationDeltaPercent
         let dailyBudgetPercent = provider.pacingState?.dailyBudget?.dailyBudgetPercent
@@ -252,8 +252,27 @@ public struct MenuBarStatusFormatter: Sendable {
         return percent
     }
 
+    private func sessionUtilizationPercent(in provider: ProviderState) -> Double? {
+        if let claudeSessionPercent = usageRowPercent(named: "Session", in: provider) {
+            return claudeSessionPercent
+        }
+
+        guard provider.providerId == .codex,
+              let payload = provider.payloads.first(where: { $0.source == "codex-rate-limits" }),
+              let encodedValue = payload.values["primary"] else {
+            return nil
+        }
+
+        let parts = encodedValue.split(separator: "|", omittingEmptySubsequences: false)
+        guard let percentPart = parts.first else {
+            return nil
+        }
+
+        return Double(percentPart)
+    }
+
     private func sessionStatus(for provider: ProviderState) -> MenuBarPaceStatus {
-        guard let sessionPercent = usageRowPercent(named: "Session", in: provider) else {
+        guard let sessionPercent = sessionUtilizationPercent(in: provider) else {
             return .unknown
         }
 

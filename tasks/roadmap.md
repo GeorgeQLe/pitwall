@@ -2,7 +2,23 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Configured Provider Tracking
+## Current Hotfix: Top Menu Bar Provider Parity
+
+**Goal:** Build information parity across Claude and Codex in the top menu bar so both providers derive compact quota information through the same formatter path and respect the same menu bar theme.
+
+**Scope:**
+- Refactor `MenuBarStatusFormatter` so rich configured-provider titles are provider-agnostic where the underlying state has session, daily, weekly, reset, and pacing data.
+- Preserve Claude's existing `usageRows` session percent source while allowing Codex to use provider-supplied session pace/rate-limit data.
+- Keep generic fallback formatting for providers without enough structured quota data.
+- Add focused regression coverage for Codex themed title parity and existing Claude behavior.
+
+**Acceptance Criteria:**
+- Claude rich menu bar output remains unchanged.
+- Codex provider-supplied rate-limit state can display themed session, daily budget, weekly, and reset information in the same order/style as Claude.
+- Codex respects the selected `MenuBarTheme` for status icons.
+- Focused Swift formatter tests pass.
+
+## Previous Hotfix: Configured Provider Tracking
 
 **Goal:** Keep the tracked menu-bar rotation and popover focused on providers that are actually configured, so placeholder "configure" or estimated setup states are not displayed as live provider data.
 
