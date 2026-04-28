@@ -213,8 +213,8 @@ final class MenuBarController: NSObject {
         applyRotationIfNeeded()
         if priorProviderId != appState.selectedProviderId {
             updatePopover()
-            updateStatusTitle()
         }
+        updateStatusTitle()
     }
 
     private func applyRotationIfNeeded(force: Bool = false) {

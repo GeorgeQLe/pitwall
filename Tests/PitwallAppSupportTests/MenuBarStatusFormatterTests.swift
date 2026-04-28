@@ -124,7 +124,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Claude 🚶 26% 🎯 12%/18%/day 🚶 42.4%/w 2h 30m")
+        XCTAssertEqual(text, "Claude 🚶 26% 🎯 12%/18%/day 🚶 42.4%/w 2h 30m 0s")
     }
 
     func testMenuBarTitleUsesRichBreakdownForCodexProviderSuppliedQuota() {
@@ -170,7 +170,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Codex 🏃 26% 🎯 12%/18%/day 🔥 42.4%/w 1h 30m")
+        XCTAssertEqual(text, "Codex 🏃 26% 🎯 12%/18%/day 🔥 42.4%/w 1h 30m 0s")
     }
 
     func testCodexMenuBarTitleUsesPrimaryFiveHourResetCountdown() {
@@ -216,7 +216,28 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Codex 🏃 24% 🎯 6%/24.7%/day 🚶 26%/w 1h")
+        XCTAssertEqual(text, "Codex 🏃 24% 🎯 6%/24.7%/day 🚶 26%/w 1h 0m 0s")
+    }
+
+    func testGeminiMenuBarTitleUsesSecondsCountdown() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let provider = ProviderState(
+            providerId: .gemini,
+            displayName: "Gemini",
+            status: .configured,
+            confidence: .estimated,
+            headline: "Gemini ready",
+            primaryValue: "observed",
+            resetWindow: ResetWindow(resetsAt: now.addingTimeInterval(62))
+        )
+
+        let text = MenuBarStatusFormatter().menuBarTitle(
+            provider: provider,
+            preferences: UserPreferences(resetDisplayPreference: .countdown),
+            now: now
+        )
+
+        XCTAssertEqual(text, "Gemini 1m 2s")
     }
 
     func testMenuBarTitleUsesThemeForCodexWeeklyQuotaWithoutSessionPayload() {
@@ -240,7 +261,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Codex 🚶 42.4%/w 2h 30m")
+        XCTAssertEqual(text, "Codex 🚶 42.4%/w 2h 30m 0s")
     }
 
     func testMenuBarTitleUsesSelectedClaudeTheme() {
@@ -286,7 +307,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Claude 🚨 70% 🏁 40%/20%/day 🚨 80%/w 2h 30m")
+        XCTAssertEqual(text, "Claude 🚨 70% 🏁 40%/20%/day 🚨 80%/w 2h 30m 0s")
     }
 
     func testMenuBarTitleFallsBackToConfigureWhenNothingSelected() {

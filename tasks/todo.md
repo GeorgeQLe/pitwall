@@ -6,6 +6,17 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Ticking menu bar countdowns for all providers
+  - [x] Add seconds-capable countdown formatting for menu bar titles.
+  - [x] Apply seconds countdowns consistently to Claude, Codex, and Gemini menu bar titles.
+  - [x] Refresh the status item title every second.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Ticking Menu Bar Countdown Hotfix
+
+- Result: Claude, Codex, and Gemini menu bar title countdowns now include seconds. The existing one-second timer now recomputes the status item title on every tick, so the countdown visibly updates.
+- Verification: `swift test --filter MenuBarStatusFormatterTests` passed 12 tests with 0 failures; `swift test --filter PitwallAppSupportTests` passed 92 tests with 0 failures.
+
 - [x] Hotfix: Codex menu bar 5-hour countdown
   - [x] Keep Codex weekly reset available for weekly budget/card context.
   - [x] Make rich menu bar formatting prefer Codex primary/session reset for compact countdown.

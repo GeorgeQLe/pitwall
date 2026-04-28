@@ -2,7 +2,24 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Codex Menu Bar 5-Hour Countdown
+## Current Hotfix: Ticking Menu Bar Countdown
+
+**Goal:** Show Claude, Codex, and Gemini menu bar countdowns down to seconds and refresh the title every second so the countdown visibly ticks.
+
+**Scope:**
+- Add seconds-capable countdown formatting for menu bar titles.
+- Use seconds in rich Claude/Codex menu bar countdowns and generic Gemini/fallback menu bar countdowns.
+- Keep detail/tool-tip countdowns less noisy unless explicitly using menu title formatting.
+- Ensure the existing one-second timer updates the status item title every tick, not only when rotation changes.
+
+**Acceptance Criteria:**
+- Claude rich menu bar countdown includes seconds.
+- Codex rich menu bar countdown includes seconds and still uses the primary/session reset.
+- Gemini/fallback menu bar countdown includes seconds.
+- The status item title is recomputed every second.
+- Focused Swift tests pass.
+
+## Previous Hotfix: Codex Menu Bar 5-Hour Countdown
 
 **Goal:** Make the Codex top menu bar countdown track the 5-hour primary/session limit reset instead of the weekly/secondary limit reset.
 

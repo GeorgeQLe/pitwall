@@ -44,7 +44,8 @@ public struct MenuBarStatusFormatter: Sendable {
         let reset = Self.resetText(
             resetWindow: provider.resetWindow,
             preference: preferences.resetDisplayPreference,
-            now: now
+            now: now,
+            includesSeconds: true
         )?.replacingOccurrences(of: "resets ", with: "")
         let action = ProviderDisplayText.action(recommendedAction(for: provider))
 
@@ -78,7 +79,8 @@ public struct MenuBarStatusFormatter: Sendable {
         let reset = Self.resetText(
             resetWindow: menuBarResetWindow(for: provider),
             preference: preferences.resetDisplayPreference,
-            now: now
+            now: now,
+            includesSeconds: true
         )?.replacingOccurrences(of: "resets ", with: "")
 
         var parts: [String] = []
@@ -153,7 +155,8 @@ public struct MenuBarStatusFormatter: Sendable {
     public static func resetText(
         resetWindow: ResetWindow?,
         preference: ResetDisplayPreference,
-        now: Date = Date()
+        now: Date = Date(),
+        includesSeconds: Bool = false
     ) -> String? {
         guard let resetsAt = resetWindow?.resetsAt else {
             return nil
@@ -161,7 +164,7 @@ public struct MenuBarStatusFormatter: Sendable {
 
         switch preference {
         case .countdown:
-            return countdownText(to: resetsAt, now: now)
+            return countdownText(to: resetsAt, now: now, includesSeconds: includesSeconds)
         case .resetTime:
             return "resets \(timeText(resetsAt))"
         }
@@ -206,8 +209,12 @@ public struct MenuBarStatusFormatter: Sendable {
         return .configure
     }
 
-    private static func countdownText(to date: Date, now: Date) -> String {
+    private static func countdownText(to date: Date, now: Date, includesSeconds: Bool) -> String {
         let seconds = max(0, date.timeIntervalSince(now))
+        if includesSeconds {
+            return countdownTextWithSeconds(seconds)
+        }
+
         if seconds < 60 {
             return "<1m"
         }
@@ -225,6 +232,30 @@ public struct MenuBarStatusFormatter: Sendable {
         let days = Int(seconds / (24 * 60 * 60))
         let hours = Int((seconds.truncatingRemainder(dividingBy: 24 * 60 * 60)) / (60 * 60))
         return hours > 0 ? "\(days)d \(hours)h" : "\(days)d"
+    }
+
+    private static func countdownTextWithSeconds(_ interval: TimeInterval) -> String {
+        let totalSeconds = Int(interval.rounded(.down))
+        if totalSeconds < 60 {
+            return "\(totalSeconds)s"
+        }
+
+        let seconds = totalSeconds % 60
+        let totalMinutes = totalSeconds / 60
+        let minutes = totalMinutes % 60
+        let totalHours = totalMinutes / 60
+        let hours = totalHours % 24
+        let days = totalHours / 24
+
+        if days > 0 {
+            return "\(days)d \(hours)h \(minutes)m \(seconds)s"
+        }
+
+        if hours > 0 {
+            return "\(hours)h \(minutes)m \(seconds)s"
+        }
+
+        return "\(minutes)m \(seconds)s"
     }
 
     private static func timeText(_ date: Date) -> String {
