@@ -2,6 +2,22 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
+## Current Hotfix: Configured Provider Tracking
+
+**Goal:** Keep the tracked menu-bar rotation and popover focused on providers that are actually configured, so placeholder "configure" or estimated setup states are not displayed as live provider data.
+
+**Scope:**
+- Add a shared configured-provider projection on app provider state.
+- Use that projection for menu-bar rotation, selected-provider fallback, popover cards, and switch-provider actions.
+- Keep settings/onboarding configuration flows available; only tracked/live status surfaces are filtered.
+- Add focused regression tests around a single configured provider plus missing/expired placeholders.
+
+**Acceptance Criteria:**
+- If only one provider is configured, it is the only provider considered by automatic rotation.
+- Popover cards render only configured providers.
+- Missing or expired providers do not contribute placeholder menu-bar text or selected summary data.
+- Focused Swift tests pass.
+
 ## Phase 1: Foundation And Pacing Core
 
 **Goal:** Establish the clean-room Swift project foundation and a tested provider-agnostic pacing core before implementing provider credentials, networking, or UI.

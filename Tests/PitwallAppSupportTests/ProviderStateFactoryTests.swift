@@ -116,8 +116,42 @@ final class ProviderStateFactoryTests: XCTestCase {
 
         XCTAssertEqual(state.selectedProviderId, .claude)
         XCTAssertEqual(state.orderedProviders.map(\.providerId), [.claude, .codex, .gemini])
+        XCTAssertEqual(state.trackedProviders.map(\.providerId), [.claude, .codex])
         XCTAssertEqual(state.provider(for: .claude)?.confidence, .exact)
         XCTAssertTrue(state.provider(for: .codex)?.confidenceExplanation.contains("Prompt text") == true)
         XCTAssertEqual(state.provider(for: .gemini)?.status, .missingConfiguration)
+    }
+
+    func testTrackedProvidersExcludeSetupPlaceholders() {
+        let state = AppProviderState(
+            providers: [
+                ProviderState(
+                    providerId: .claude,
+                    displayName: "Claude",
+                    status: .missingConfiguration,
+                    confidence: .observedOnly,
+                    headline: "Claude credentials missing"
+                ),
+                ProviderState(
+                    providerId: .codex,
+                    displayName: "Codex",
+                    status: .configured,
+                    confidence: .highConfidence,
+                    headline: "Codex ready"
+                ),
+                ProviderState(
+                    providerId: .gemini,
+                    displayName: "Gemini",
+                    status: .expired,
+                    confidence: .observedOnly,
+                    headline: "Gemini auth expired"
+                )
+            ],
+            selectedProviderId: .claude
+        )
+
+        XCTAssertEqual(state.trackedProviders.map(\.providerId), [.codex])
+        XCTAssertEqual(state.selectedProvider(trackedOnly: true)?.providerId, .codex)
+        XCTAssertNil(state.selectedProvider(fallbackToFirst: false, trackedOnly: true))
     }
 }

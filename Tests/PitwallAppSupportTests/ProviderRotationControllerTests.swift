@@ -80,13 +80,13 @@ final class ProviderRotationControllerTests: XCTestCase {
         XCTAssertEqual(afterInterval.reason, .rotated)
     }
 
-    func testSkipsDegradedProvidersWhenHealthierProviderExists() {
+    func testOnlyConfiguredProvidersParticipateInRotation() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let appState = AppProviderState(
             providers: [
-                provider(.claude, status: .degraded),
+                provider(.claude, status: .missingConfiguration),
                 provider(.codex, status: .configured),
-                provider(.gemini, status: .configured)
+                provider(.gemini, status: .expired)
             ],
             selectedProviderId: .codex,
             lastRotationAt: now.addingTimeInterval(-20)
@@ -97,8 +97,29 @@ final class ProviderRotationControllerTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(decision.selectedProviderId, .gemini)
+        XCTAssertEqual(decision.selectedProviderId, .codex)
         XCTAssertEqual(decision.reason, .rotated)
+    }
+
+    func testNoRotationCandidatesWhenNothingIsConfigured() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let appState = AppProviderState(
+            providers: [
+                provider(.claude, status: .missingConfiguration),
+                provider(.codex, status: .expired)
+            ],
+            selectedProviderId: .claude,
+            lastRotationAt: now
+        )
+
+        let decision = ProviderRotationController().nextSelection(
+            appState: appState,
+            now: now.addingTimeInterval(20)
+        )
+
+        XCTAssertNil(decision.selectedProviderId)
+        XCTAssertEqual(decision.lastRotationAt, now)
+        XCTAssertEqual(decision.reason, .noProviders)
     }
 
     func testFallsBackToFirstCandidateWhenSelectedProviderCannotRotate() {

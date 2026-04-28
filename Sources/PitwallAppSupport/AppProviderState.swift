@@ -36,6 +36,10 @@ public struct AppProviderState: Equatable, Sendable {
         }
     }
 
+    public var trackedProviders: [ProviderState] {
+        orderedProviders.filter { $0.status == .configured }
+    }
+
     public func provider(for providerId: ProviderID?) -> ProviderState? {
         guard let providerId else {
             return nil
@@ -44,8 +48,11 @@ public struct AppProviderState: Equatable, Sendable {
         return providers.first { $0.providerId == providerId }
     }
 
-    public func selectedProvider(fallbackToFirst: Bool = true) -> ProviderState? {
-        if let selected = provider(for: selectedProviderId) {
+    public func selectedProvider(fallbackToFirst: Bool = true, trackedOnly: Bool = false) -> ProviderState? {
+        let candidates = trackedOnly ? trackedProviders : orderedProviders
+
+        if let selectedProviderId,
+           let selected = candidates.first(where: { $0.providerId == selectedProviderId }) {
             return selected
         }
 
@@ -53,6 +60,6 @@ public struct AppProviderState: Equatable, Sendable {
             return nil
         }
 
-        return orderedProviders.first
+        return candidates.first
     }
 }

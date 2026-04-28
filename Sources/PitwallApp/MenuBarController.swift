@@ -251,7 +251,7 @@ final class MenuBarController: NSObject {
         }
 
         let font = button.font ?? NSFont.menuBarFont(ofSize: 0)
-        let providerTitles = appState.orderedProviders.map {
+        let providerTitles = appState.trackedProviders.map {
             formatter.menuBarTitle(provider: $0, preferences: preferences)
         }
         let candidateTitles = providerTitles + [currentTitle, "Configure"]
@@ -897,7 +897,7 @@ final class MenuBarController: NSObject {
         menu.addItem(targetedMenuItem(title: "Clear Provider Selection", action: #selector(clearManualProviderSelection), keyEquivalent: "", target: self))
         menu.addItem(.separator())
 
-        for provider in appState.orderedProviders {
+        for provider in appState.trackedProviders {
             let item = NSMenuItem(title: "Show \(provider.displayName)", action: #selector(selectProvider(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = provider.providerId

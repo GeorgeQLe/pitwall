@@ -17,7 +17,11 @@ struct PopoverContentView: View {
     @AppStorage("pitwall.welcome.v1.dismissed") private var welcomeDismissed: Bool = false
 
     private var selectedProvider: ProviderState? {
-        appState.selectedProvider()
+        appState.selectedProvider(trackedOnly: true)
+    }
+
+    private var trackedProviders: [ProviderState] {
+        appState.trackedProviders
     }
 
     private var selectedCard: ProviderCardViewModel? {
@@ -150,7 +154,7 @@ struct PopoverContentView: View {
     private var providerList: some View {
         ScrollView {
             VStack(spacing: 10) {
-                ForEach(appState.orderedProviders, id: \.providerId) { provider in
+                ForEach(trackedProviders, id: \.providerId) { provider in
                     ProviderCardView(
                         viewModel: ProviderCardViewModel(provider: provider, preferences: preferences),
                         isSelected: provider.providerId == appState.selectedProviderId,
@@ -191,7 +195,7 @@ struct PopoverContentView: View {
         case .configure, .openSettings:
             onOpenSettings()
         case .switchProvider:
-            if let providerId = appState.orderedProviders.first(where: { $0.providerId != appState.selectedProviderId })?.providerId {
+            if let providerId = trackedProviders.first(where: { $0.providerId != appState.selectedProviderId })?.providerId {
                 onSelectProvider(providerId)
             }
         case .wait:

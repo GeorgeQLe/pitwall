@@ -69,6 +69,27 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         XCTAssertTrue(text.hasPrefix("Codex - observed"))
     }
 
+    func testAppStateFormattingSkipsUnconfiguredSelectedProvider() {
+        let appState = AppProviderState(
+            providers: [
+                ProviderState(
+                    providerId: .claude,
+                    displayName: "Claude",
+                    status: .missingConfiguration,
+                    confidence: .observedOnly,
+                    headline: "Claude credentials missing"
+                ),
+                provider(id: .codex, displayName: "Codex", primaryValue: "observed")
+            ],
+            selectedProviderId: .claude
+        )
+
+        let formatter = MenuBarStatusFormatter()
+
+        XCTAssertTrue(formatter.format(appState: appState).hasPrefix("Codex - observed"))
+        XCTAssertTrue(formatter.menuBarTitle(appState: appState).hasPrefix("Codex observed"))
+    }
+
     func testMenuBarTitleUsesClaudeRichBreakdownWhenAvailable() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let provider = ProviderState(

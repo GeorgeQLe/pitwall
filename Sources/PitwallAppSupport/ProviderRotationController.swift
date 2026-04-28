@@ -32,7 +32,7 @@ public struct ProviderRotationController: Sendable {
         preferences: UserPreferences = UserPreferences(),
         now: Date = Date()
     ) -> ProviderRotationDecision {
-        let candidates = rotationCandidates(from: appState.orderedProviders)
+        let candidates = appState.trackedProviders
         guard !candidates.isEmpty else {
             return ProviderRotationDecision(selectedProviderId: nil, lastRotationAt: appState.lastRotationAt, reason: .noProviders)
         }
@@ -77,18 +77,6 @@ public struct ProviderRotationController: Sendable {
             lastRotationAt: now,
             reason: .rotated
         )
-    }
-
-    private func rotationCandidates(from providers: [ProviderState]) -> [ProviderState] {
-        let activeProviders = providers.filter { $0.status != .missingConfiguration && $0.status != .expired }
-        let pool = activeProviders.isEmpty ? providers : activeProviders
-        let healthierProviders = pool.filter { $0.status != .degraded }
-
-        if !healthierProviders.isEmpty {
-            return healthierProviders
-        }
-
-        return pool
     }
 
     private func pausedDecision(appState: AppProviderState, candidates: [ProviderState]) -> ProviderRotationDecision {

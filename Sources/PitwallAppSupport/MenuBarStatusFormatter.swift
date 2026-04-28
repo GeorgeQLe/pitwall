@@ -10,7 +10,7 @@ public struct MenuBarStatusFormatter: Sendable {
         preferences: UserPreferences = UserPreferences(),
         now: Date = Date()
     ) -> String {
-        guard let provider = appState.selectedProvider() else {
+        guard let provider = appState.selectedProvider(trackedOnly: true) else {
             return "Configure"
         }
 
@@ -109,7 +109,7 @@ public struct MenuBarStatusFormatter: Sendable {
         preferences: UserPreferences = UserPreferences(),
         now: Date = Date()
     ) -> String {
-        guard let provider = appState.selectedProvider() else {
+        guard let provider = appState.selectedProvider(trackedOnly: true) else {
             return "Pitwall configure"
         }
 

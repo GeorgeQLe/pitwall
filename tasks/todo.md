@@ -6,6 +6,16 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Hide unconfigured providers from tracked rotation and popover
+  - [x] Add a shared configured-provider projection for status/menu/popover surfaces.
+  - [x] Ensure automatic rotation, selected-provider fallback, popover cards, and provider switching use only properly configured providers.
+  - [x] Add regression coverage for single-configured-provider rotation and hidden placeholder cards.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Configured Provider Tracking Hotfix
+
+- Result: tracked menu-bar rotation and popover cards now use only providers with `status == .configured`; missing/expired setup placeholders remain available through settings/onboarding but no longer show as live retrieved data.
+- Verification: `swift test --filter PitwallAppSupportTests` passed 88 tests with 0 failures.
 - [x] `/run` — execute Phase 6b Step 6b.1 (Sparkle 2.x dependency, entitlements, Info.plist keys, build script updates).
 - [x] `/run` — execute Phase 6b Step 6b.2 (wire Sparkle updater into AppDelegate and Settings UI).
 - [x] `/run` — execute Phase 6b Step 6b.3 (create release automation script).
