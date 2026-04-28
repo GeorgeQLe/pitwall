@@ -104,6 +104,27 @@ final class ProviderDetectionTests: XCTestCase {
         XCTAssertTrue(state.actions.contains { $0.kind == .configure })
     }
 
+    func testGeminiPassiveDetectionRequiresOAuthCacheToBeConfigured() throws {
+        let state = try GeminiLocalDetector().detect(from: LocalProviderFileSnapshot(
+            homePath: "/Users/example/.gemini",
+            files: [
+                "settings.json": "{\"selectedAuthType\":\"oauth-personal\",\"profile\":\"work\"}",
+                "tmp/project/chats/session-123.json": "{\"tokenCount\":1234}"
+            ]
+        ))
+
+        XCTAssertEqual(state.providerId, .gemini)
+        XCTAssertEqual(state.status, .missingConfiguration)
+        XCTAssertEqual(state.confidence, .observedOnly)
+        XCTAssertEqual(state.headline, "Gemini login not detected")
+        XCTAssertEqual(state.secondaryValue, "CLI auth not detected")
+        XCTAssertEqual(state.payloads.first?.values["installDetected"], "true")
+        XCTAssertEqual(state.payloads.first?.values["authDetected"], "false")
+        XCTAssertEqual(state.payloads.first?.values["activityDetected"], "true")
+        XCTAssertEqual(state.payloads.first?.values["tokenCountObserved"], "1234")
+        XCTAssertEqual(state.payloads.first?.values["authMode"], "oauth-personal")
+    }
+
     private func assertNoSensitiveValues(
         in state: ProviderState,
         forbiddenFragments: [String],

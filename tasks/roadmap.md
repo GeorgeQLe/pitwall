@@ -2,7 +2,23 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Codex Slash Status/Menu Bar Alignment
+## Current Hotfix: Gemini Passive Configuration Detection
+
+**Goal:** Stop treating a partial Gemini CLI local footprint as a configured provider when OAuth credentials are missing.
+
+**Scope:**
+- Trace Gemini passive detection from local snapshot loading through provider refresh and tracked-provider filtering.
+- Require Gemini CLI auth evidence for `.configured` passive state instead of accepting `settings.json` alone.
+- Preserve sanitized settings/activity evidence for diagnostics without promoting it to live provider data.
+- Add focused regression coverage for settings-only Gemini snapshots.
+
+**Acceptance Criteria:**
+- A Gemini snapshot with `settings.json` but no `oauth_creds.json` reports `.missingConfiguration`.
+- A Gemini snapshot with both settings and OAuth cache evidence remains `.configured`.
+- Provider refresh no longer places settings-only Gemini into configured-provider rotation.
+- Focused Swift tests pass.
+
+## Previous Hotfix: Codex Slash Status/Menu Bar Alignment
 
 **Goal:** Make Codex top menu bar data line up with the data available from slash status.
 

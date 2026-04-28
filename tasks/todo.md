@@ -6,6 +6,17 @@
 
 ## Priority Task Queue
 
+- [ ] Hotfix: Gemini passive configuration detection
+  - [x] Trace Gemini passive detection and provider refresh behavior.
+  - [x] Require OAuth cache evidence before reporting Gemini as configured.
+  - [x] Add regression coverage for settings-only Gemini snapshots.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Gemini Passive Configuration Detection Hotfix
+
+- Result: Gemini passive detection now requires both settings and `oauth_creds.json` evidence before reporting `.configured`. Settings-only Gemini snapshots still preserve sanitized auth/profile/activity evidence, but now report "Gemini login not detected" and stay out of tracked menu-bar rotation.
+- Verification: `swift test --filter ProviderDetectionTests` passed 6 tests; `swift test --filter ProviderRefreshCoordinatorTests` passed 14 tests; `swift test --filter PitwallAppSupportTests` passed 100 tests; `swift test` passed 261 tests.
+
 - [x] Hotfix: Codex slash status/menu bar alignment
   - [x] Trace slash status data fields and menu bar formatter fields.
   - [x] Patch the narrowest data-selection mismatch.

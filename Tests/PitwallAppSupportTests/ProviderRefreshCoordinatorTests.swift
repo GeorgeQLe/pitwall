@@ -3,7 +3,7 @@ import XCTest
 import PitwallCore
 
 final class ProviderRefreshCoordinatorTests: XCTestCase {
-    func testMissingClaudeCredentialsDoNotCallClientAndKeepPassiveProvidersVisible() async {
+    func testMissingClaudeCredentialsDoNotCallClientAndKeepAuthBackedPassiveProvidersVisible() async {
         let client = FakeClaudeUsageClient()
         let coordinator = ProviderRefreshCoordinator(
             configurationStore: ProviderConfigurationStore(userDefaults: isolatedDefaults()),
@@ -16,7 +16,10 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
                 ),
                 geminiSnapshot: LocalProviderFileSnapshot(
                     homePath: "/gemini",
-                    files: ["settings.json": #"{"selectedAuthType":"oauth-personal"}"#]
+                    files: [
+                        "settings.json": #"{"selectedAuthType":"oauth-personal"}"#,
+                        "oauth_creds.json": ""
+                    ]
                 )
             ),
             now: { Date(timeIntervalSince1970: 1_700_000_000) }
@@ -29,6 +32,29 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertEqual(outcome.appState.provider(for: .claude)?.status, .missingConfiguration)
         XCTAssertEqual(outcome.appState.provider(for: .codex)?.status, .configured)
         XCTAssertEqual(outcome.appState.provider(for: .gemini)?.status, .configured)
+    }
+
+    func testGeminiSettingsWithoutOAuthRemainUnconfigured() async {
+        let coordinator = ProviderRefreshCoordinator(
+            configurationStore: ProviderConfigurationStore(userDefaults: isolatedDefaults()),
+            secretStore: InMemorySecretStore(),
+            claudeClient: FakeClaudeUsageClient(),
+            snapshotLoader: FakeSnapshotLoader(
+                geminiSnapshot: LocalProviderFileSnapshot(
+                    homePath: "/gemini",
+                    files: ["settings.json": #"{"selectedAuthType":"oauth-personal"}"#]
+                )
+            ),
+            now: { Date(timeIntervalSince1970: 1_700_000_000) }
+        )
+
+        let outcome = await coordinator.refreshProviders(trigger: .manual)
+        let gemini = outcome.appState.provider(for: .gemini)
+
+        XCTAssertEqual(gemini?.status, .missingConfiguration)
+        XCTAssertEqual(gemini?.headline, "Gemini login not detected")
+        XCTAssertEqual(gemini?.secondaryValue, "CLI auth not detected")
+        XCTAssertFalse(outcome.appState.trackedProviders.contains { $0.providerId == .gemini })
     }
 
     func testCodexWithoutAuthRemainsUnconfigured() async {
@@ -503,7 +529,10 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
             snapshotLoader: FakeSnapshotLoader(
                 geminiSnapshot: LocalProviderFileSnapshot(
                     homePath: "/gemini",
-                    files: ["settings.json": #"{"selectedAuthType":"oauth-personal"}"#]
+                    files: [
+                        "settings.json": #"{"selectedAuthType":"oauth-personal"}"#,
+                        "oauth_creds.json": ""
+                    ]
                 )
             ),
             geminiUsageClient: FakeGeminiUsageClient(result: .failure(.quotaUnavailable)),

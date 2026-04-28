@@ -13,8 +13,9 @@ public struct GeminiLocalDetector: Sendable {
         let settingsMetadata = sanitizedSettingsMetadata(from: settingsContent)
         let tokenCountObserved = activityContent.flatMap(Self.tokenCountObserved)
 
-        guard configDetected else {
+        guard configDetected, authDetected else {
             return missingConfigurationState(
+                configDetected: configDetected,
                 installDetected: installDetected,
                 authDetected: authDetected,
                 activityDetected: activityDetected,
@@ -48,6 +49,7 @@ public struct GeminiLocalDetector: Sendable {
     }
 
     private func missingConfigurationState(
+        configDetected: Bool,
         installDetected: Bool,
         authDetected: Bool,
         activityDetected: Bool,
@@ -59,8 +61,11 @@ public struct GeminiLocalDetector: Sendable {
             displayName: "Gemini",
             status: .missingConfiguration,
             confidence: .observedOnly,
-            headline: "Gemini configuration missing",
-            confidenceExplanation: "Gemini settings were not found in the injected local evidence snapshot.",
+            headline: "Gemini login not detected",
+            secondaryValue: authDetected ? "CLI auth present" : "CLI auth not detected",
+            confidenceExplanation: configDetected
+                ? "Gemini settings were found, but CLI OAuth credentials were not detected."
+                : "Gemini settings were not found in the injected local evidence snapshot.",
             actions: [
                 ProviderAction(kind: .configure, title: "Configure Gemini")
             ],
