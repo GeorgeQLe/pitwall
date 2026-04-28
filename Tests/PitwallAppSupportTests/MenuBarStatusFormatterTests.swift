@@ -170,7 +170,53 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Codex 🏃 26% 🎯 12%/18%/day 🔥 42.4%/w 2h 30m")
+        XCTAssertEqual(text, "Codex 🏃 26% 🎯 12%/18%/day 🔥 42.4%/w 1h 30m")
+    }
+
+    func testCodexMenuBarTitleUsesPrimaryFiveHourResetCountdown() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let provider = ProviderState(
+            providerId: .codex,
+            displayName: "Codex",
+            status: .configured,
+            confidence: .providerSupplied,
+            headline: "Codex ready",
+            resetWindow: ResetWindow(resetsAt: now.addingTimeInterval(3 * 24 * 60 * 60)),
+            pacingState: PacingState(
+                weeklyUtilizationPercent: 26,
+                dailyBudget: DailyBudget(
+                    remainingUtilizationPercent: 74,
+                    daysRemaining: 3,
+                    dailyBudgetPercent: 24.7,
+                    todayUsage: TodayUsage(status: .estimatedFromSameDayBaseline, utilizationDeltaPercent: 6)
+                ),
+                todayUsage: TodayUsage(status: .estimatedFromSameDayBaseline, utilizationDeltaPercent: 6),
+                weeklyPace: PaceEvaluation(
+                    label: .onPace,
+                    action: .push,
+                    expectedUtilizationPercent: 24
+                ),
+                sessionPace: PaceEvaluation(
+                    label: .onPace,
+                    action: .push,
+                    expectedUtilizationPercent: 20
+                )
+            ),
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "codex-rate-limits",
+                    values: ["primary": "24|300|2023-11-14T23:13:20.000Z"]
+                )
+            ]
+        )
+
+        let text = MenuBarStatusFormatter().menuBarTitle(
+            provider: provider,
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+            now: now
+        )
+
+        XCTAssertEqual(text, "Codex 🏃 24% 🎯 6%/24.7%/day 🚶 26%/w 1h")
     }
 
     func testMenuBarTitleUsesThemeForCodexWeeklyQuotaWithoutSessionPayload() {

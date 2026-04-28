@@ -2,7 +2,23 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Codex Today Target Baseline
+## Current Hotfix: Codex Menu Bar 5-Hour Countdown
+
+**Goal:** Make the Codex top menu bar countdown track the 5-hour primary/session limit reset instead of the weekly/secondary limit reset.
+
+**Scope:**
+- Keep Codex weekly reset available on provider state for weekly budget and card context.
+- Update rich menu bar formatting to prefer Codex primary rate-limit reset when rendering the compact countdown.
+- Preserve Claude behavior and generic provider fallback behavior.
+- Add focused regression coverage for Codex primary/session countdown.
+
+**Acceptance Criteria:**
+- Codex menu bar title uses the primary 5-hour reset countdown when `codex-rate-limits.primary` includes a reset time.
+- Codex weekly utilization and daily target remain based on the secondary/weekly window.
+- Claude menu bar countdown behavior remains unchanged.
+- Focused Swift tests pass.
+
+## Previous Hotfix: Codex Today Target Baseline
 
 **Goal:** Show Codex "used today vs target today" in the top menu bar once Pitwall has enough local history, matching the Claude daily budget behavior.
 

@@ -3,6 +3,12 @@ import PitwallCore
 import PitwallShared
 
 public struct MenuBarStatusFormatter: Sendable {
+    private static let codexResetFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
     public init() {}
 
     public func menuBarTitle(
@@ -70,7 +76,7 @@ public struct MenuBarStatusFormatter: Sendable {
         let weeklyEmoji = preferences.menuBarTheme.emoji(for: weeklyStatus(for: provider))
         let targetEmoji = preferences.menuBarTheme.targetEmoji
         let reset = Self.resetText(
-            resetWindow: provider.resetWindow,
+            resetWindow: menuBarResetWindow(for: provider),
             preference: preferences.resetDisplayPreference,
             now: now
         )?.replacingOccurrences(of: "resets ", with: "")
@@ -269,6 +275,31 @@ public struct MenuBarStatusFormatter: Sendable {
         }
 
         return Double(percentPart)
+    }
+
+    private func menuBarResetWindow(for provider: ProviderState) -> ResetWindow? {
+        guard provider.providerId == .codex,
+              let payload = provider.payloads.first(where: { $0.source == "codex-rate-limits" }),
+              let encodedValue = payload.values["primary"],
+              let resetAt = codexWindowResetDate(encodedValue) else {
+            return provider.resetWindow
+        }
+
+        return ResetWindow(resetsAt: resetAt)
+    }
+
+    private func codexWindowResetDate(_ encodedValue: String) -> Date? {
+        let parts = encodedValue.split(separator: "|", omittingEmptySubsequences: false)
+        guard parts.count >= 3 else {
+            return nil
+        }
+
+        let rawReset = String(parts[2])
+        guard rawReset != "unknown" else {
+            return nil
+        }
+
+        return Self.codexResetFormatter.date(from: rawReset) ?? ISO8601DateFormatter().date(from: rawReset)
     }
 
     private func sessionStatus(for provider: ProviderState) -> MenuBarPaceStatus {

@@ -6,6 +6,17 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Codex menu bar 5-hour countdown
+  - [x] Keep Codex weekly reset available for weekly budget/card context.
+  - [x] Make rich menu bar formatting prefer Codex primary/session reset for compact countdown.
+  - [x] Add regression coverage for Codex primary/session countdown.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Codex Menu Bar 5-Hour Countdown Hotfix
+
+- Result: Codex rich menu bar titles now prefer the primary/session rate-limit reset from `codex-rate-limits.primary` for the compact countdown, while the provider-level reset remains weekly-first for weekly budget and card context.
+- Verification: `swift test --filter MenuBarStatusFormatterTests` passed 11 tests with 0 failures; `swift test --filter PitwallAppSupportTests` passed 91 tests with 0 failures.
+
 - [x] Hotfix: Codex today target baseline
   - [x] Persist provider-supplied Codex telemetry snapshots to provider history.
   - [x] Use retained Codex snapshots when computing daily usage and target.
