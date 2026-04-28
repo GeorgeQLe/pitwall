@@ -2,7 +2,23 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Ticking Menu Bar Countdown
+## Current Hotfix: Settings Provider Enablement Cleanup
+
+**Goal:** Remove redundant provider setup controls from Settings so the generic provider list only controls whether Claude, Codex, and Gemini are tracked, while provider-specific sections own real setup fields.
+
+**Scope:**
+- Simplify `ProviderEnablementView` to visible/skipped controls.
+- Keep Codex auth mode and plan/profile editing in `CodexCredentialSetupView`.
+- Preserve existing `ProviderProfileConfiguration` storage fields for compatibility and future provider-specific setup.
+- Avoid changing Claude credential storage or Codex connection behavior.
+
+**Acceptance Criteria:**
+- The generic Providers section no longer repeats plan/profile or auth-mode controls.
+- Codex Connection remains the only settings surface for Codex auth mode and plan/profile.
+- Saved configuration compatibility is unchanged.
+- Focused Swift tests pass.
+
+## Previous Hotfix: Ticking Menu Bar Countdown
 
 **Goal:** Show Claude, Codex, and Gemini menu bar countdowns down to seconds and refresh the title every second so the countdown visibly ticks.
 

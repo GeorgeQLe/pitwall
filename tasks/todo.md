@@ -6,6 +6,17 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Settings provider enablement cleanup
+  - [x] Simplify the generic provider list to visible/skipped control only.
+  - [x] Keep Codex auth mode and plan/profile in the dedicated Codex Connection section.
+  - [x] Preserve stored provider profile fields for compatibility.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Settings Provider Enablement Cleanup
+
+- Result: The generic Providers settings section now only controls whether Claude, Codex, and Gemini are visible/skipped. Codex auth mode and plan/profile remain in the dedicated Codex Connection section, and stored provider profile fields are unchanged for compatibility.
+- Verification: `swift test --filter ProviderConfigurationStoreTests` passed 10 tests with 0 failures; `swift test --filter ProviderStateFactoryTests` passed 6 tests with 0 failures; `swift test --filter PitwallAppSupportTests` passed 92 tests with 0 failures.
+
 - [x] Hotfix: Ticking menu bar countdowns for all providers
   - [x] Add seconds-capable countdown formatting for menu bar titles.
   - [x] Apply seconds countdowns consistently to Claude, Codex, and Gemini menu bar titles.

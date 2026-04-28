@@ -135,6 +135,10 @@
 
 ## 2026-04-21
 
+- Hotfix completed: simplified the Settings Providers section so it only controls visible/skipped provider tracking and removed duplicated plan/profile/auth controls from the generic provider list.
+- Codex plan/profile and auth-mode editing remain in the dedicated Codex Connection section; stored provider profile fields remain compatible for existing settings.
+- Validation: `swift test --filter ProviderConfigurationStoreTests` passes 10 tests, `swift test --filter ProviderStateFactoryTests` passes 6 tests, and `swift test --filter PitwallAppSupportTests` passes 92 tests with 0 failures.
+
 - Phase 4 completed: all milestone acceptance criteria are satisfied, the completed phase was archived to `tasks/phases/phase-4.md`, and Phase 5 Cross-Platform V1 Parity was planned just-in-time in `tasks/todo.md` and `tasks/roadmap.md`.
 - Phase 4 Step 4.8 completed: reviewed v1 hardening boundaries after the green pass and kept the existing architecture intact because pure retention/redaction/GitHub request logic is already in `PitwallCore`, app persistence/coordination is in `PitwallAppSupport`, and SwiftUI/AppKit presentation is in `PitwallApp`.
 - Removed the obsolete `Sources/PitwallCore/RedPhaseStub.swift` red-phase placeholder now that the core target has real implementation files. Review-only lane completed locally due subagent policy.
