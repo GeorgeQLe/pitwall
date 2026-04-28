@@ -2,7 +2,23 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Gemini Passive Configuration Detection
+## Current Hotfix: Claude Menu Bar Pace Theme Indicators
+
+**Goal:** Make Claude rich menu bar indicators reflect actual pace state instead of showing on-track theme icons when usage is behind the expected pace.
+
+**Scope:**
+- Trace the rich menu bar formatter's session, daily, and weekly icon selection.
+- Use pace-aware status for daily `today/target/day` displays when both actual usage and target are known.
+- Keep budget-only daily displays as a target marker because they do not contain enough actual usage data to grade pace.
+- Add focused formatter regression coverage for behind/way-behind daily and session indicators.
+
+**Acceptance Criteria:**
+- A far-behind Claude daily pace does not render as the F1 on-track purple icon.
+- A far-behind Claude current-session pace does not render as the F1 on-track purple icon when expected session pace is available.
+- Existing running/racecar formatter behavior remains coherent.
+- Focused Swift formatter tests pass.
+
+## Previous Hotfix: Gemini Passive Configuration Detection
 
 **Goal:** Stop treating a partial Gemini CLI local footprint as a configured provider when OAuth credentials are missing.
 

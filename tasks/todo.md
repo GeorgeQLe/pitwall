@@ -4,7 +4,24 @@
 > Source roadmap: `tasks/roadmap.md`
 > Project: Pitwall — clean-room macOS menu bar app for Claude/Codex/Gemini usage pacing.
 
+## Priority Documentation Todo
+
+- [ ] `/pack` - decide and record the project pack in `.agents/project.json` because no `.agents/project.json` exists and no project-pack research skills (e.g. `/icp`, `/devtool-user-map`, `/game-audience`) are installed under `~/.claude/skills/`; the research-roadmap skill defaulted to `business-app` inference for a desktop utility, which the user should confirm or override before any pack-scoped research is queued.
+- [ ] `/spec-drift fix all` - reconcile `specs/pitwall-macos-clean-room.md` (last modified 2026-04-27 17:45) and `specs/pitwall-macos-packaging.md` (last modified 2026-04-22 13:13) with implementation because there are 14 commits under `Sources/**` since the clean-room spec timestamp and the packaging spec predates Sparkle integration, Info.plist updates, and the Makefile/`build-app-bundle.sh` flow now in tree.
+- [ ] `/reconcile-dev-docs` - sweep `tasks/roadmap.md`, `tasks/todo.md`, `tasks/history.md`, and `tasks/phases/` for drift after `/spec-drift` reports; current phase 6b is mid-flight with multiple completed hotfixes that should be confirmed against `tasks/roadmap.md` acceptance criteria before public release.
+
 ## Priority Task Queue
+
+- [x] Hotfix: Claude menu bar pace theme indicators
+  - [x] Trace rich formatter icon selection for Claude session, daily, and weekly pace.
+  - [x] Use pace-aware status for daily `today/target/day` indicators.
+  - [x] Add focused regression coverage for behind/way-behind F1 theme output.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Claude Menu Bar Pace Theme Indicators
+
+- Result: Rich menu bar daily `today/target/day` indicators now use the same pace status mapping as session and weekly indicators when both actual usage and target are known. The F1 theme now renders far-behind pace as a black circle instead of a neutral/on-track purple circle, while high burn still uses alert colors.
+- Verification: `swift test --filter MenuBarStatusFormatterTests` passed 17 tests; `swift test --filter ProviderRefreshCoordinatorTests` passed 15 tests; `swift test` passed 268 tests.
 
 - [ ] Hotfix: Gemini passive configuration detection
   - [x] Trace Gemini passive detection and provider refresh behavior.

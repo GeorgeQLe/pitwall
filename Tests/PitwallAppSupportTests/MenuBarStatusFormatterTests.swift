@@ -144,7 +144,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Claude 🚶 26% 🎯 12%/18%/day 🚶 42.4%/w 2h 30m 0s")
+        XCTAssertEqual(text, "Claude 🚶 26% 🦥 12%/18%/day 🚶 42.4%/w 2h 30m 0s")
     }
 
     func testToolTipUsesClaudeRichBreakdownWhenAvailable() {
@@ -240,7 +240,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Codex 🏃 26% 🎯 12%/18%/day 🔥 42.4%/w 1h 30m 0s")
+        XCTAssertEqual(text, "Codex 🏃 26% 🦥 12%/18%/day 🔥 42.4%/w 1h 30m 0s")
     }
 
     func testCodexMenuBarTitleUsesPrimaryFiveHourResetCountdown() {
@@ -286,7 +286,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Codex 🏃 24% 🎯 6%/24.7%/day 🚶 26%/w 1h 0m 0s")
+        XCTAssertEqual(text, "Codex 🏃 24% 🛌 6%/24.7%/day 🚶 26%/w 1h 0m 0s")
     }
 
     func testGeminiMenuBarTitleUsesSecondsCountdown() {
@@ -377,7 +377,53 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Claude 🚨 70% 🏁 40%/20%/day 🚨 80%/w 2h 30m 0s")
+        XCTAssertEqual(text, "Claude 🚨 70% 🚨 40%/20%/day 🚨 80%/w 2h 30m 0s")
+    }
+
+    func testF1ThemeUsesBlackForFarBehindDailyPace() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let provider = ProviderState(
+            providerId: .claude,
+            displayName: "Claude",
+            status: .configured,
+            confidence: .exact,
+            headline: "Claude usage refreshed",
+            resetWindow: ResetWindow(resetsAt: now.addingTimeInterval(2 * 60 * 60 + 30 * 60)),
+            pacingState: PacingState(
+                weeklyUtilizationPercent: 30,
+                dailyBudget: DailyBudget(
+                    remainingUtilizationPercent: 70,
+                    daysRemaining: 2,
+                    dailyBudgetPercent: 40,
+                    todayUsage: TodayUsage(status: .exact, utilizationDeltaPercent: 10)
+                ),
+                todayUsage: TodayUsage(status: .exact, utilizationDeltaPercent: 10),
+                weeklyPace: PaceEvaluation(
+                    label: .onPace,
+                    action: .push,
+                    expectedUtilizationPercent: 30
+                ),
+                sessionPace: PaceEvaluation(
+                    label: .onPace,
+                    action: .push,
+                    expectedUtilizationPercent: 30
+                )
+            ),
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "usageRows",
+                    values: ["Session": "10|2h 30m|exact"]
+                )
+            ]
+        )
+
+        let text = MenuBarStatusFormatter().menuBarTitle(
+            provider: provider,
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .f1Quali),
+            now: now
+        )
+
+        XCTAssertEqual(text, "Claude ⚫ 10% ⚫ 10%/40%/day 🟣 30%/w 2h 30m 0s")
     }
 
     func testMenuBarTitleFallsBackToConfigureWhenNothingSelected() {

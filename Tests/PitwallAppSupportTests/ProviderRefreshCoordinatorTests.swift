@@ -367,7 +367,7 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertEqual(codex.pacingState?.todayUsage?.status, .estimatedFromSameDayBaseline)
         XCTAssertEqual(codex.pacingState?.todayUsage?.utilizationDeltaPercent ?? 0, 6, accuracy: 0.001)
         XCTAssertEqual(codex.pacingState?.dailyBudget?.dailyBudgetPercent ?? 0, 18.5, accuracy: 0.001)
-        XCTAssertTrue(title.contains("🎯 6%/18.5%/day"))
+        XCTAssertTrue(title.contains("🛌 6%/18.5%/day"))
         XCTAssertEqual(snapshots.last?.weeklyUtilizationPercent, 26)
     }
 

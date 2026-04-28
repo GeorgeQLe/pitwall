@@ -90,7 +90,10 @@ public struct MenuBarStatusFormatter: Sendable {
         }
 
         if let todayPercent, let dailyBudgetPercent {
-            parts.append("\(targetEmoji) \(Self.formatPercent(todayPercent))/\(Self.formatPercent(dailyBudgetPercent))/day")
+            let dailyEmoji = preferences.menuBarTheme.emoji(
+                for: paceStatus(actual: todayPercent, expected: dailyBudgetPercent)
+            )
+            parts.append("\(dailyEmoji) \(Self.formatPercent(todayPercent))/\(Self.formatPercent(dailyBudgetPercent))/day")
         } else if let todayPercent {
             parts.append("\(targetEmoji) \(Self.formatPercent(todayPercent))/day")
         } else if let dailyBudgetPercent {
@@ -518,7 +521,7 @@ private extension MenuBarTheme {
             case .behindPace:
                 return "🔵"
             case .wayBehind:
-                return "⚪"
+                return "⚫"
             case .warning:
                 return "🟢"
             case .critical:
