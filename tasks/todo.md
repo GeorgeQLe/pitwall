@@ -6,6 +6,17 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Codex today target baseline
+  - [x] Persist provider-supplied Codex telemetry snapshots to provider history.
+  - [x] Use retained Codex snapshots when computing daily usage and target.
+  - [x] Add regression coverage for Codex `today/target/day` display after a baseline exists.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Codex Today Target Baseline Hotfix
+
+- Result: Codex provider-supplied telemetry now writes sanitized history snapshots and uses retained Codex weekly usage snapshots when calculating daily budget. After Pitwall has a same-day or prior-day Codex baseline, the menu bar can show `today/target/day` for Codex just like Claude.
+- Verification: `swift test --filter ProviderRefreshCoordinatorTests` passed 10 tests with 0 failures; `swift test --filter PitwallAppSupportTests` passed 90 tests with 0 failures.
+
 - [x] Hotfix: Top menu bar provider parity
   - [x] Refactor menu bar title derivation so configured Claude and Codex can use the same rich quota formatter.
   - [x] Preserve Claude session-row parsing while deriving Codex session data from provider-supplied pacing/rate-limit state.

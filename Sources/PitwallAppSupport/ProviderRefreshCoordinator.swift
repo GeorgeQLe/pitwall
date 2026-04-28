@@ -41,6 +41,8 @@ private extension ISO8601DateFormatter {
 }
 
 public actor ProviderRefreshCoordinator {
+    private static let codexAccountId = "codex-default"
+
     private let configurationStore: ProviderConfigurationStore
     private let secretStore: any ProviderSecretStore
     private let claudeClient: any ClaudeUsageClienting
@@ -205,7 +207,11 @@ public actor ProviderRefreshCoordinator {
         lastClaudeRefreshAttemptAt = refreshDate
 
         do {
-            let retainedSnapshots = await usageSnapshots(for: account.id, now: refreshDate)
+            let retainedSnapshots = await usageSnapshots(
+                providerId: .claude,
+                accountId: account.id,
+                now: refreshDate
+            )
             let result = try await claudeClient.fetchUsage(
                 account: account.metadata,
                 sessionKey: sessionKey,
@@ -349,11 +355,26 @@ public actor ProviderRefreshCoordinator {
 
         do {
             let result = try await codexUsageClient.fetchUsage(now: refreshDate)
-            return codexUsageProviderState(
-                baseState: baseState,
-                result: result,
+            let retainedSnapshots = await usageSnapshots(
+                providerId: .codex,
+                accountId: Self.codexAccountId,
                 now: refreshDate
             )
+            let providerState = codexUsageProviderState(
+                baseState: baseState,
+                result: result,
+                retainedSnapshots: retainedSnapshots,
+                now: refreshDate
+            )
+            try? await historyStore.append(
+                codexHistorySnapshot(
+                    from: result.preferredRateLimit,
+                    providerState: providerState,
+                    recordedAt: refreshDate
+                ),
+                now: refreshDate
+            )
+            return providerState
         } catch {
             diagnostics.append("Codex telemetry unavailable.")
             diagnosticEvents.append(DiagnosticEvent(
@@ -372,6 +393,7 @@ public actor ProviderRefreshCoordinator {
     private func codexUsageProviderState(
         baseState: ProviderState,
         result: CodexUsageClientResult,
+        retainedSnapshots: [UsageSnapshot],
         now refreshDate: Date
     ) -> ProviderState {
         let snapshot = result.preferredRateLimit
@@ -391,7 +413,7 @@ public actor ProviderRefreshCoordinator {
                 weeklyUtilizationPercent: window.usedPercent,
                 resetAt: resetAt,
                 now: refreshDate,
-                retainedSnapshots: []
+                retainedSnapshots: retainedSnapshots
             )
         }
 
@@ -576,17 +598,22 @@ public actor ProviderRefreshCoordinator {
     }
 
     private func usageSnapshots(
-        for accountId: String,
+        providerId: ProviderID,
+        accountId: String,
         now refreshDate: Date
     ) async -> [UsageSnapshot] {
         let retainedSnapshots = await historyStore.retainedUsageSnapshots(
-            providerId: .claude,
+            providerId: providerId,
             accountId: accountId,
             now: refreshDate
         )
 
         if !retainedSnapshots.isEmpty {
             return retainedSnapshots
+        }
+
+        guard providerId == .claude else {
+            return []
         }
 
         guard let snapshot = lastClaudeSnapshotByAccountId[accountId] else {
@@ -615,6 +642,25 @@ public actor ProviderRefreshCoordinator {
             weeklyUtilizationPercent: snapshot.weeklyUtilizationPercent,
             sessionResetAt: usageRowValue(named: "Session", in: providerState)?.resetAt,
             weeklyResetAt: snapshot.weeklyResetAt,
+            headline: providerState.headline
+        )
+    }
+
+    private func codexHistorySnapshot(
+        from snapshot: CodexRateLimitSnapshot,
+        providerState: ProviderState,
+        recordedAt: Date
+    ) -> ProviderHistorySnapshot {
+        let weeklyWindow = snapshot.secondary ?? snapshot.primary
+        return ProviderHistorySnapshot(
+            accountId: Self.codexAccountId,
+            recordedAt: recordedAt,
+            providerId: .codex,
+            confidence: providerState.confidence,
+            sessionUtilizationPercent: snapshot.primary?.usedPercent,
+            weeklyUtilizationPercent: weeklyWindow?.usedPercent,
+            sessionResetAt: snapshot.primary?.resetsAt,
+            weeklyResetAt: weeklyWindow?.resetsAt,
             headline: providerState.headline
         )
     }

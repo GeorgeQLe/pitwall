@@ -2,7 +2,23 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Top Menu Bar Provider Parity
+## Current Hotfix: Codex Today Target Baseline
+
+**Goal:** Show Codex "used today vs target today" in the top menu bar once Pitwall has enough local history, matching the Claude daily budget behavior.
+
+**Scope:**
+- Persist provider-supplied Codex telemetry snapshots to the shared provider history store.
+- Read retained Codex usage snapshots when computing Codex daily budget.
+- Keep the first Codex refresh honest: show only the daily target until a baseline exists.
+- Add focused regression coverage for Codex daily usage derived from history.
+
+**Acceptance Criteria:**
+- Codex daily budget calculation receives retained Codex snapshots instead of an empty history.
+- Codex history snapshots are stored after provider-supplied telemetry refreshes.
+- A Codex refresh with a prior baseline exposes `todayUsage.utilizationDeltaPercent` and the formatter displays `today/target/day`.
+- Focused Swift tests pass.
+
+## Previous Hotfix: Top Menu Bar Provider Parity
 
 **Goal:** Build information parity across Claude and Codex in the top menu bar so both providers derive compact quota information through the same formatter path and respect the same menu bar theme.
 

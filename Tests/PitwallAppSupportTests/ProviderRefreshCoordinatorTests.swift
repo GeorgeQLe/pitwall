@@ -171,6 +171,80 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertTrue(bucketsPayload?.values["codex_bengalfox"]?.contains("GPT-5.3-Codex-Spark") == true)
     }
 
+    func testCodexTelemetryUsesHistoryForTodayUsageVsDailyTarget() async throws {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let defaults = isolatedDefaults()
+        let historyStore = ProviderHistoryStore(userDefaults: defaults)
+        try await historyStore.save([
+            ProviderHistorySnapshot(
+                accountId: "codex-default",
+                recordedAt: now.addingTimeInterval(-60 * 60),
+                providerId: .codex,
+                confidence: .providerSupplied,
+                weeklyUtilizationPercent: 20,
+                weeklyResetAt: now.addingTimeInterval(4 * 24 * 60 * 60),
+                headline: "Codex usage refreshed"
+            )
+        ])
+        let coordinator = ProviderRefreshCoordinator(
+            configurationStore: ProviderConfigurationStore(userDefaults: defaults),
+            secretStore: InMemorySecretStore(),
+            claudeClient: FakeClaudeUsageClient(),
+            snapshotLoader: FakeSnapshotLoader(
+                codexSnapshot: LocalProviderFileSnapshot(
+                    homePath: "/codex",
+                    files: ["config.toml": "", "auth.json": "", "history.jsonl": ""]
+                )
+            ),
+            codexAuthStatusProvider: FakeCodexStatusProvider(
+                state: CodexSetupState(
+                    status: .configured,
+                    authMode: .chatgpt,
+                    headline: "Connected with ChatGPT",
+                    detail: "Logged in using ChatGPT"
+                )
+            ),
+            codexUsageClient: FakeCodexUsageClient(result: .success(CodexUsageClientResult(
+                rateLimits: CodexRateLimitSnapshot(
+                    limitId: "codex",
+                    primary: CodexRateLimitWindow(
+                        usedPercent: 24,
+                        windowDurationMinutes: 300,
+                        resetsAt: now.addingTimeInterval(3 * 60 * 60)
+                    ),
+                    secondary: CodexRateLimitWindow(
+                        usedPercent: 26,
+                        windowDurationMinutes: 10_080,
+                        resetsAt: now.addingTimeInterval(4 * 24 * 60 * 60)
+                    ),
+                    planType: "pro"
+                ),
+                fetchedAt: now
+            ))),
+            historyStore: historyStore,
+            now: { now }
+        )
+
+        let outcome = await coordinator.refreshProviders(trigger: .manual)
+        let codex = try XCTUnwrap(outcome.appState.provider(for: .codex))
+        let title = MenuBarStatusFormatter().menuBarTitle(
+            provider: codex,
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+            now: now
+        )
+        let snapshots = await historyStore.retainedSnapshots(
+            providerId: .codex,
+            accountId: "codex-default",
+            now: now
+        )
+
+        XCTAssertEqual(codex.pacingState?.todayUsage?.status, .estimatedFromSameDayBaseline)
+        XCTAssertEqual(codex.pacingState?.todayUsage?.utilizationDeltaPercent ?? 0, 6, accuracy: 0.001)
+        XCTAssertEqual(codex.pacingState?.dailyBudget?.dailyBudgetPercent ?? 0, 18.5, accuracy: 0.001)
+        XCTAssertTrue(title.contains("🎯 6%/18.5%/day"))
+        XCTAssertEqual(snapshots.last?.weeklyUtilizationPercent, 26)
+    }
+
     func testCodexTelemetryFailureFallsBackToPassiveState() async {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let coordinator = ProviderRefreshCoordinator(
