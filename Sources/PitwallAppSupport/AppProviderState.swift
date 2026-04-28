@@ -37,7 +37,7 @@ public struct AppProviderState: Equatable, Sendable {
     }
 
     public var trackedProviders: [ProviderState] {
-        orderedProviders.filter { $0.status == .configured }
+        orderedProviders.filter(Self.isTrackableProvider)
     }
 
     public func provider(for providerId: ProviderID?) -> ProviderState? {
@@ -61,5 +61,31 @@ public struct AppProviderState: Equatable, Sendable {
         }
 
         return candidates.first
+    }
+
+    private static func isTrackableProvider(_ provider: ProviderState) -> Bool {
+        guard provider.status == .configured else {
+            return false
+        }
+
+        if provider.pacingState?.weeklyUtilizationPercent != nil
+            || provider.pacingState?.dailyBudget?.dailyBudgetPercent != nil
+            || provider.pacingState?.todayUsage?.utilizationDeltaPercent != nil {
+            return true
+        }
+
+        if provider.resetWindow?.resetsAt != nil {
+            return true
+        }
+
+        if provider.primaryValue?.isEmpty == false {
+            return true
+        }
+
+        return provider.payloads.contains { payload in
+            payload.source == "usageRows"
+                || payload.source == "codex-rate-limits"
+                || payload.source == "gemini-quota"
+        }
     }
 }

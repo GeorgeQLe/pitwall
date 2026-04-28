@@ -170,7 +170,8 @@ final class ProviderRotationControllerTests: XCTestCase {
             displayName: id.rawValue.capitalized,
             status: status,
             confidence: status == .configured ? .estimated : .observedOnly,
-            headline: "\(id.rawValue) state"
+            headline: "\(id.rawValue) state",
+            primaryValue: status == .configured ? "ready" : nil
         )
     }
 }

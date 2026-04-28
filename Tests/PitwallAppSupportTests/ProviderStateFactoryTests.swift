@@ -122,7 +122,7 @@ final class ProviderStateFactoryTests: XCTestCase {
         XCTAssertEqual(state.provider(for: .gemini)?.status, .missingConfiguration)
     }
 
-    func testTrackedProvidersExcludeSetupPlaceholders() {
+    func testTrackedProvidersExcludeSetupPlaceholdersAndEmptyConfiguredProviders() {
         let state = AppProviderState(
             providers: [
                 ProviderState(
@@ -137,11 +137,19 @@ final class ProviderStateFactoryTests: XCTestCase {
                     displayName: "Codex",
                     status: .configured,
                     confidence: .highConfidence,
-                    headline: "Codex ready"
+                    headline: "Codex ready",
+                    primaryValue: "42% used"
                 ),
                 ProviderState(
                     providerId: .gemini,
                     displayName: "Gemini",
+                    status: .configured,
+                    confidence: .estimated,
+                    headline: "Gemini local evidence detected"
+                ),
+                ProviderState(
+                    providerId: .gemini,
+                    displayName: "Gemini Expired",
                     status: .expired,
                     confidence: .observedOnly,
                     headline: "Gemini auth expired"
@@ -153,5 +161,27 @@ final class ProviderStateFactoryTests: XCTestCase {
         XCTAssertEqual(state.trackedProviders.map(\.providerId), [.codex])
         XCTAssertEqual(state.selectedProvider(trackedOnly: true)?.providerId, .codex)
         XCTAssertNil(state.selectedProvider(fallbackToFirst: false, trackedOnly: true))
+    }
+
+    func testTrackedProvidersIncludeConfiguredGeminiWithQuotaSignal() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let state = AppProviderState(
+            providers: [
+                ProviderState(
+                    providerId: .gemini,
+                    displayName: "Gemini",
+                    status: .configured,
+                    confidence: .providerSupplied,
+                    headline: "Gemini quota refreshed",
+                    primaryValue: "20% used",
+                    resetWindow: ResetWindow(resetsAt: now.addingTimeInterval(60 * 60)),
+                    payloads: [
+                        ProviderSpecificPayload(source: "gemini-quota", values: ["bucket0.modelId": "gemini-2.5-pro"])
+                    ]
+                )
+            ]
+        )
+
+        XCTAssertEqual(state.trackedProviders.map(\.providerId), [.gemini])
     }
 }

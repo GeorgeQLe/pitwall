@@ -17,6 +17,9 @@
 - Result: Gemini passive detection now requires both settings and `oauth_creds.json` evidence before reporting `.configured`. Settings-only Gemini snapshots still preserve sanitized auth/profile/activity evidence, but now report "Gemini login not detected" and stay out of tracked menu-bar rotation.
 - Verification: `swift test --filter ProviderDetectionTests` passed 6 tests; `swift test --filter ProviderRefreshCoordinatorTests` passed 14 tests; `swift test --filter PitwallAppSupportTests` passed 100 tests; `swift test` passed 261 tests.
 
+- Follow-up result: Auth-backed but quota-empty Gemini states are no longer considered live menu-bar rotation candidates. `trackedProviders` now requires configured providers to have displayable quota/pacing/reset/primary data, preventing "Gemini estimated configure" from appearing in the top menu bar when Gemini has no usable usage information.
+- Follow-up verification: `swift test --filter ProviderStateFactoryTests` passed 7 tests; `swift test --filter MenuBarStatusFormatterTests` passed 13 tests; `swift test --filter ProviderRefreshCoordinatorTests` passed 15 tests; `swift test --filter ProviderRotationControllerTests` passed 7 tests; `swift test --filter PitwallAppSupportTests` passed 103 tests; `swift test` passed 264 tests.
+
 - [x] Hotfix: Codex slash status/menu bar alignment
   - [x] Trace slash status data fields and menu bar formatter fields.
   - [x] Patch the narrowest data-selection mismatch.

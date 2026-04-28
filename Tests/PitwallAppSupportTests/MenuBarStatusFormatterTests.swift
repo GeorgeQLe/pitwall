@@ -90,6 +90,26 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         XCTAssertTrue(formatter.menuBarTitle(appState: appState).hasPrefix("Codex observed"))
     }
 
+    func testMenuBarTitleSkipsConfiguredProviderWithoutDisplayableSignal() {
+        let appState = AppProviderState(
+            providers: [
+                ProviderState(
+                    providerId: .gemini,
+                    displayName: "Gemini",
+                    status: .configured,
+                    confidence: .estimated,
+                    headline: "Gemini local evidence detected"
+                )
+            ],
+            selectedProviderId: .gemini
+        )
+
+        let formatter = MenuBarStatusFormatter()
+
+        XCTAssertEqual(formatter.menuBarTitle(appState: appState), "Configure")
+        XCTAssertEqual(formatter.format(appState: appState), "Pitwall configure")
+    }
+
     func testMenuBarTitleUsesClaudeRichBreakdownWhenAvailable() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let provider = ProviderState(

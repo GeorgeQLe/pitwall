@@ -57,6 +57,32 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertFalse(outcome.appState.trackedProviders.contains { $0.providerId == .gemini })
     }
 
+    func testGeminiLocalAuthWithoutQuotaSignalStaysOutOfTrackedRotation() async {
+        let coordinator = ProviderRefreshCoordinator(
+            configurationStore: ProviderConfigurationStore(userDefaults: isolatedDefaults()),
+            secretStore: InMemorySecretStore(),
+            claudeClient: FakeClaudeUsageClient(),
+            snapshotLoader: FakeSnapshotLoader(
+                geminiSnapshot: LocalProviderFileSnapshot(
+                    homePath: "/gemini",
+                    files: [
+                        "settings.json": #"{"selectedAuthType":"oauth-personal","profile":"work"}"#,
+                        "oauth_creds.json": ""
+                    ]
+                )
+            ),
+            now: { Date(timeIntervalSince1970: 1_700_000_000) }
+        )
+
+        let outcome = await coordinator.refreshProviders(trigger: .manual)
+        let gemini = outcome.appState.provider(for: .gemini)
+
+        XCTAssertEqual(gemini?.status, .configured)
+        XCTAssertEqual(gemini?.confidence, .estimated)
+        XCTAssertFalse(outcome.appState.trackedProviders.contains { $0.providerId == .gemini })
+        XCTAssertEqual(MenuBarStatusFormatter().menuBarTitle(appState: outcome.appState), "Configure")
+    }
+
     func testCodexWithoutAuthRemainsUnconfigured() async {
         let coordinator = ProviderRefreshCoordinator(
             configurationStore: ProviderConfigurationStore(userDefaults: isolatedDefaults()),
