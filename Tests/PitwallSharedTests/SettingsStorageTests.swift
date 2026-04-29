@@ -10,6 +10,7 @@ final class SettingsStorageTests: XCTestCase {
         XCTAssertEqual(preferences.resetDisplayPreference, .countdown)
         XCTAssertEqual(preferences.providerRotationMode, .automatic)
         XCTAssertNil(preferences.pinnedProviderId)
+        XCTAssertEqual(preferences.menuBarTitleMode, .compact)
     }
 
     func testRoundTripPersistsPreferences() async throws {
@@ -19,6 +20,8 @@ final class SettingsStorageTests: XCTestCase {
             providerRotationMode: .pinned,
             pinnedProviderId: .codex,
             rotationInterval: 9,
+            menuBarTheme: .f1Quali,
+            menuBarTitleMode: .rich,
             notificationPreferences: NotificationPreferences(
                 pacingThresholdNotificationsEnabled: true,
                 pacingThreshold: .critical

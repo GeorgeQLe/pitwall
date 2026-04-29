@@ -2,7 +2,24 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Shared Menu Bar Usage Scheme
+## Current Hotfix: Compact Menu Bar Title Mode
+
+**Goal:** Keep Pitwall visible when macOS menu bar space is crowded by making the default status title compact while preserving the rich multi-segment title as an explicit user preference.
+
+**Scope:**
+- Add a persisted menu bar title mode preference with compact and rich choices.
+- Default new users and missing legacy values to compact mode.
+- Keep the existing rich multi-segment formatter available when selected.
+- Expose the title mode in Display settings.
+- Add focused regression coverage for compact default, rich mode, and preference persistence.
+
+**Acceptance Criteria:**
+- Default menu bar title is short enough to survive crowded menu bars better, e.g. provider plus primary live metric.
+- Settings lets the user choose compact or rich title mode.
+- Existing rich multi-segment status remains available and tested.
+- Focused and full Swift tests pass.
+
+## Previous Hotfix: Shared Menu Bar Usage Scheme
 
 **Goal:** Make Claude, Codex, and Gemini menu bar quota percentages and emoji colors use one consistent usage-consumed scheme.
 

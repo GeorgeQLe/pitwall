@@ -167,6 +167,7 @@ private struct StoredUserPreferences: Codable {
     var pinnedProviderId: String?
     var rotationInterval: TimeInterval
     var menuBarTheme: String?
+    var menuBarTitleMode: String?
     var notificationPreferences: StoredNotificationPreferences?
 
     init(_ preferences: UserPreferences) {
@@ -175,6 +176,7 @@ private struct StoredUserPreferences: Codable {
         pinnedProviderId = preferences.pinnedProviderId?.rawValue
         rotationInterval = preferences.rotationInterval
         menuBarTheme = preferences.menuBarTheme.rawValue
+        menuBarTitleMode = preferences.menuBarTitleMode.rawValue
         notificationPreferences = StoredNotificationPreferences(preferences.notificationPreferences)
     }
 
@@ -185,6 +187,7 @@ private struct StoredUserPreferences: Codable {
             pinnedProviderId: pinnedProviderId.map(ProviderID.init(rawValue:)),
             rotationInterval: rotationInterval,
             menuBarTheme: MenuBarTheme(rawValue: menuBarTheme ?? "") ?? .running,
+            menuBarTitleMode: MenuBarTitleMode(rawValue: menuBarTitleMode ?? "") ?? .compact,
             notificationPreferences: notificationPreferences?.preferences ?? NotificationPreferences()
         )
     }

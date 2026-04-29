@@ -140,7 +140,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
 
         let text = MenuBarStatusFormatter().menuBarTitle(
             provider: provider,
-            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running, menuBarTitleMode: .rich),
             now: now
         )
 
@@ -236,7 +236,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
 
         let text = MenuBarStatusFormatter().menuBarTitle(
             provider: provider,
-            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running, menuBarTitleMode: .rich),
             now: now
         )
 
@@ -282,7 +282,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
 
         let text = MenuBarStatusFormatter().menuBarTitle(
             provider: provider,
-            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running, menuBarTitleMode: .rich),
             now: now
         )
 
@@ -322,7 +322,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         let formatter = MenuBarStatusFormatter()
         let title = formatter.menuBarTitle(
             provider: provider,
-            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running, menuBarTitleMode: .rich),
             now: now
         )
         let tooltip = formatter.toolTip(
@@ -336,7 +336,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         XCTAssertTrue(tooltip.contains("Weekly: 8%"))
     }
 
-    func testGeminiMenuBarTitleUsesSecondsCountdown() {
+    func testCompactMenuBarTitleUsesShortProviderMetricByDefault() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let provider = ProviderState(
             providerId: .gemini,
@@ -354,7 +354,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Gemini 1m 2s")
+        XCTAssertEqual(text, "Gemini observed")
     }
 
     func testMenuBarTitleUsesThemeForCodexWeeklyQuotaWithoutSessionPayload() {
@@ -374,7 +374,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
 
         let text = MenuBarStatusFormatter().menuBarTitle(
             provider: provider,
-            preferences: UserPreferences(resetDisplayPreference: .countdown),
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTitleMode: .rich),
             now: now
         )
 
@@ -420,7 +420,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
 
         let text = MenuBarStatusFormatter().menuBarTitle(
             provider: provider,
-            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .racecar),
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .racecar, menuBarTitleMode: .rich),
             now: now
         )
 
@@ -466,7 +466,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
 
         let text = MenuBarStatusFormatter().menuBarTitle(
             provider: provider,
-            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .f1Quali),
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .f1Quali, menuBarTitleMode: .rich),
             now: now
         )
 

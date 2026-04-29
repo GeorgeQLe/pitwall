@@ -28,12 +28,19 @@ public struct MenuBarStatusFormatter: Sendable {
         preferences: UserPreferences = UserPreferences(),
         now: Date = Date()
     ) -> String {
-        if let richTitle = richMenuBarTitle(
-            provider: provider,
-            preferences: preferences,
-            now: now
-        ) {
-            return richTitle
+        switch preferences.menuBarTitleMode {
+        case .compact:
+            if let compactTitle = compactMenuBarTitle(provider: provider) {
+                return compactTitle
+            }
+        case .rich:
+            if let richTitle = richMenuBarTitle(
+                provider: provider,
+                preferences: preferences,
+                now: now
+            ) {
+                return richTitle
+            }
         }
 
         if provider.status == .missingConfiguration {
@@ -58,6 +65,26 @@ public struct MenuBarStatusFormatter: Sendable {
                 return value
             }
             .joined(separator: " ")
+    }
+
+    private func compactMenuBarTitle(provider: ProviderState) -> String? {
+        guard provider.status == .configured else {
+            return nil
+        }
+
+        if let sessionPercent = sessionUtilizationPercent(in: provider) {
+            return "\(provider.displayName) \(Self.formatPercent(sessionPercent))"
+        }
+
+        if let weeklyPercent = provider.pacingState?.weeklyUtilizationPercent {
+            return "\(provider.displayName) \(Self.formatPercent(weeklyPercent))"
+        }
+
+        if let primaryValue = provider.primaryValue, !primaryValue.isEmpty {
+            return "\(provider.displayName) \(primaryValue)"
+        }
+
+        return nil
     }
 
     private func richMenuBarTitle(

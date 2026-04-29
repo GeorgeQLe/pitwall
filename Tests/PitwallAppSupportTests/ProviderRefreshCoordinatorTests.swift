@@ -284,7 +284,7 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         let text = codex.map {
             MenuBarStatusFormatter().menuBarTitle(
                 provider: $0,
-                preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+                preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running, menuBarTitleMode: .rich),
                 now: now
             )
         }
@@ -355,7 +355,7 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         let codex = try XCTUnwrap(outcome.appState.provider(for: .codex))
         let title = MenuBarStatusFormatter().menuBarTitle(
             provider: codex,
-            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running, menuBarTitleMode: .rich),
             now: now
         )
         let snapshots = await historyStore.retainedSnapshots(

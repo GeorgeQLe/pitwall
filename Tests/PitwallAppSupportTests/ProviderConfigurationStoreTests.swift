@@ -38,7 +38,8 @@ final class ProviderConfigurationStoreTests: XCTestCase {
                 resetDisplayPreference: .resetTime,
                 providerRotationMode: .pinned,
                 pinnedProviderId: .gemini,
-                rotationInterval: 9
+                rotationInterval: 9,
+                menuBarTitleMode: .rich
             )
         )
 

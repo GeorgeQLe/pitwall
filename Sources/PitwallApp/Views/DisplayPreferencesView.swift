@@ -16,7 +16,14 @@ struct DisplayPreferencesView: View {
             }
             .pickerStyle(.segmented)
 
-            Picker("Claude tray theme", selection: menuBarTheme) {
+            Picker("Menu bar title", selection: menuBarTitleMode) {
+                ForEach(MenuBarTitleMode.allCases, id: \.self) { mode in
+                    Text(mode.displayName).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Picker("Menu bar theme", selection: menuBarTheme) {
                 ForEach(MenuBarTheme.allCases, id: \.self) { theme in
                     Text(themeLabel(for: theme)).tag(theme)
                 }
@@ -86,6 +93,13 @@ struct DisplayPreferencesView: View {
         Binding(
             get: { preferences.menuBarTheme },
             set: { preferences.menuBarTheme = $0 }
+        )
+    }
+
+    private var menuBarTitleMode: Binding<MenuBarTitleMode> {
+        Binding(
+            get: { preferences.menuBarTitleMode },
+            set: { preferences.menuBarTitleMode = $0 }
         )
     }
 

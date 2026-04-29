@@ -12,6 +12,18 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Compact menu bar title mode
+  - [x] Add persisted compact/rich menu bar title preference.
+  - [x] Default menu bar titles to compact provider + metric text.
+  - [x] Preserve the existing rich multi-segment status when selected.
+  - [x] Expose compact/rich selector in Display settings.
+  - [x] Verify focused and full Swift tests pass.
+
+### Review: Compact Menu Bar Title Mode
+
+- Result: Pitwall now defaults to compact menu bar titles such as provider plus primary live metric, reducing the chance that macOS hides the item when the menu bar is crowded. Users can switch back to the rich multi-segment title from Display settings. The preference persists through the shared configuration model, onboarding draft storage, and macOS/Windows/Linux Codable settings wrappers.
+- Verification: focused formatter/configuration/settings tests passed 31 tests; `swift test` passed 269 tests.
+
 - [x] Hotfix: Shared menu bar usage scheme
   - [x] Trace provider-specific rich menu bar percentage and emoji selection.
   - [x] Use used-percent semantics for rich session quota display across providers.

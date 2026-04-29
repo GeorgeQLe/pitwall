@@ -29,12 +29,27 @@ public enum MenuBarTheme: String, Equatable, Sendable, CaseIterable {
     }
 }
 
+public enum MenuBarTitleMode: String, Equatable, Sendable, CaseIterable {
+    case compact
+    case rich
+
+    public var displayName: String {
+        switch self {
+        case .compact:
+            return "Compact"
+        case .rich:
+            return "Rich"
+        }
+    }
+}
+
 public struct UserPreferences: Equatable, Sendable {
     public var resetDisplayPreference: ResetDisplayPreference
     public var providerRotationMode: ProviderRotationMode
     public var pinnedProviderId: ProviderID?
     public var rotationInterval: TimeInterval
     public var menuBarTheme: MenuBarTheme
+    public var menuBarTitleMode: MenuBarTitleMode
     public var notificationPreferences: NotificationPreferences
 
     public init(
@@ -43,6 +58,7 @@ public struct UserPreferences: Equatable, Sendable {
         pinnedProviderId: ProviderID? = nil,
         rotationInterval: TimeInterval = 7,
         menuBarTheme: MenuBarTheme = .running,
+        menuBarTitleMode: MenuBarTitleMode = .compact,
         notificationPreferences: NotificationPreferences = NotificationPreferences()
     ) {
         self.resetDisplayPreference = resetDisplayPreference
@@ -50,6 +66,7 @@ public struct UserPreferences: Equatable, Sendable {
         self.pinnedProviderId = pinnedProviderId
         self.rotationInterval = max(5, min(10, rotationInterval))
         self.menuBarTheme = menuBarTheme
+        self.menuBarTitleMode = menuBarTitleMode
         self.notificationPreferences = notificationPreferences
     }
 }

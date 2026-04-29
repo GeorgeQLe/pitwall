@@ -2,6 +2,9 @@
 
 ## 2026-04-29
 
+- Compact menu bar title mode shipped: added a persisted `MenuBarTitleMode` preference with compact/rich choices, defaulting to compact so Pitwall uses short menu bar text under crowded macOS menu bars. Display settings now expose the compact/rich selector, while rich mode preserves the existing multi-segment provider breakdown. The new preference round-trips through shared settings, macOS provider configuration storage, onboarding drafts, and Windows/Linux Codable wrappers with legacy values defaulting to compact.
+- Validation: focused formatter/configuration/settings tests pass **31 / 31**; `swift test` passes **269 / 269** with 0 failures.
+
 - Shared menu bar usage scheme fixed: rich menu titles and tooltips now use the same usage-consumed percentage semantics for session quota across Claude, Codex, and Gemini. Codex no longer renders a five-hour session remaining percentage beside an emoji calculated from five-hour session usage; a `60%` used five-hour bucket now displays as `60% used` in the rich menu path. Codex provider-card primary metrics still keep the separate `session left` summary from provider state.
 - Validation: `swift test --filter MenuBarStatusFormatterTests` passes **18 / 18**; `swift test --filter ProviderRefreshCoordinatorTests` passes **15 / 15**; `swift test` passes **269 / 269** with 0 failures.
 
