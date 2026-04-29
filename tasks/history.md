@@ -2,6 +2,9 @@
 
 ## 2026-04-29
 
+- Rich menu bar session countdown fix: Claude rich menu bar countdown now shows the session reset window instead of always showing the weekly reset. Added a Claude-specific branch in `menuBarResetWindow(for:)` that extracts the session reset date from `usageRows` payload (via `SessionResetAt` key for history path, or ISO8601 parsing from `Session` value for live path). History path now stores raw ISO8601 session reset date in a separate `SessionResetAt` key.
+- Validation: `swift test` passes **275 / 275** with 0 failures; `make build` succeeds.
+
 - F1 Quali theme emoji mapping fixed: replaced semantically broken emoji assignments with a proper F1 timing-screen color gradient (🟣→🟢→🟡→🟠→🔴→🏁). Green no longer means "warning", black circle removed for wayBehind, and limitHit now uses 🏁 checkered flag instead of 🔴 to distinguish "session over" from "danger". Target emoji changed from 🎯 to 🏎️ for thematic consistency.
 - Validation: `swift test` passes **272 / 272** with 0 failures.
 

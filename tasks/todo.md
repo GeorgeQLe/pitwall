@@ -73,6 +73,17 @@
 - Result: Codex provider state now exposes the primary five-hour bucket as `session left` for the primary visible metric, and rich menu titles/tooltips display five-hour session remaining instead of weekly used percentage. Weekly/secondary usage remains in the weekly segment and continues to drive daily-budget math.
 - Verification: `swift test --filter CodexUsageClientTests` passed 2 tests; `swift test --filter MenuBarStatusFormatterTests` passed 18 tests; `swift test --filter ProviderRefreshCoordinatorTests` passed 15 tests; `swift test` passed 269 tests.
 
+- [x] Hotfix: Rich menu bar shows weekly countdown instead of session for Claude
+  - [x] Add Claude-specific session reset extraction to `menuBarResetWindow(for:)`.
+  - [x] Store ISO8601 session reset date in history path via `SessionResetAt` key.
+  - [x] Add regression tests for Claude session countdown in rich menu bar.
+  - [x] Verify all tests pass.
+
+### Review: Rich Menu Bar Session Countdown for Claude
+
+- Result: Rich menu bar countdown for Claude now shows the session reset window instead of the weekly reset. `menuBarResetWindow(for:)` gained a Claude-specific branch that extracts the session reset date from the `usageRows` payload — checking `SessionResetAt` key first (history path), then parsing ISO8601 from `Session` encoded value index 1 (live path). The history path now stores `SessionResetAt` as a raw ISO8601 date alongside the pre-formatted Session value.
+- Verification: `swift test` passed 275 tests with 0 failures; `make build` succeeded.
+
 - [x] Hotfix: Claude menu bar pace theme indicators
   - [x] Trace rich formatter icon selection for Claude session, daily, and weekly pace.
   - [x] Use pace-aware status for daily `today/target/day` indicators.
