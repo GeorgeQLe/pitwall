@@ -517,15 +517,15 @@ private extension MenuBarTheme {
             case .unknown, .onTrack:
                 return "🟣"
             case .behindPace:
-                return "🔵"
-            case .wayBehind:
-                return "⚫"
-            case .warning:
                 return "🟢"
-            case .critical:
+            case .wayBehind:
                 return "🟡"
-            case .limitHit:
+            case .warning:
+                return "🟠"
+            case .critical:
                 return "🔴"
+            case .limitHit:
+                return "🏁"
             }
         }
     }
@@ -537,7 +537,7 @@ private extension MenuBarTheme {
         case .racecar:
             return "🏁"
         case .f1Quali:
-            return "🎯"
+            return "🏎️"
         }
     }
 }

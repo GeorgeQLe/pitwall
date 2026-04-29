@@ -471,7 +471,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         XCTAssertEqual(text, "Claude 🚨 70% 🚨 40%/20%/day 🚨 80%/w 2h 30m 0s")
     }
 
-    func testF1ThemeUsesBlackForFarBehindDailyPace() {
+    func testF1ThemeUsesYellowForFarBehindDailyPace() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let provider = ProviderState(
             providerId: .claude,
@@ -514,7 +514,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Claude ⚫ 10% ⚫ 10%/40%/day 🟣 30%/w 2h 30m 0s")
+        XCTAssertEqual(text, "Claude 🟡 10% 🟡 10%/40%/day 🟣 30%/w 2h 30m 0s")
     }
 
     func testMenuBarTitleFallsBackToConfigureWhenNothingSelected() {
