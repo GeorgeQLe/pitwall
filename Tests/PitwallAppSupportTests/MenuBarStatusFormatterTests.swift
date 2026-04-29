@@ -376,7 +376,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
 
         let text = MenuBarStatusFormatter().menuBarTitle(provider: provider)
 
-        XCTAssertEqual(text, "Codex 39% session left")
+        XCTAssertEqual(text, "Codex 39% left")
     }
 
     func testCompactMenuBarTitleUsesClaudePrimaryMetricBeforeSessionRows() {
@@ -398,7 +398,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
 
         let text = MenuBarStatusFormatter().menuBarTitle(provider: provider)
 
-        XCTAssertEqual(text, "Claude 44% used")
+        XCTAssertEqual(text, "Claude 39% left")
     }
 
     func testMenuBarTitleUsesThemeForCodexWeeklyQuotaWithoutSessionPayload() {

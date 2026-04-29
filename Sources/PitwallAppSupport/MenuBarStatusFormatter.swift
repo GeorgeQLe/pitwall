@@ -72,16 +72,16 @@ public struct MenuBarStatusFormatter: Sendable {
             return nil
         }
 
+        if let sessionPercent = provider.sessionUtilizationPercent {
+            return "\(provider.displayName) \(Self.formatPercent(100 - sessionPercent)) left"
+        }
+
         if let primaryValue = provider.primaryValue, !primaryValue.isEmpty {
             return "\(provider.displayName) \(primaryValue)"
         }
 
         if let weeklyPercent = provider.pacingState?.weeklyUtilizationPercent {
-            return "\(provider.displayName) \(Self.formatPercent(weeklyPercent))"
-        }
-
-        if let sessionPercent = sessionUtilizationPercent(in: provider) {
-            return "\(provider.displayName) \(Self.formatPercent(sessionPercent))"
+            return "\(provider.displayName) \(Self.formatPercent(100 - weeklyPercent)) left"
         }
 
         return nil
@@ -374,37 +374,8 @@ public struct MenuBarStatusFormatter: Sendable {
         return String(format: "%.1f%%", value)
     }
 
-    private func usageRowPercent(named label: String, in provider: ProviderState) -> Double? {
-        guard let payload = provider.payloads.first(where: { $0.source == "usageRows" }),
-              let encodedValue = payload.values[label] else {
-            return nil
-        }
-
-        let parts = encodedValue.split(separator: "|", omittingEmptySubsequences: false)
-        guard let percentPart = parts.first, let percent = Double(percentPart) else {
-            return nil
-        }
-
-        return percent
-    }
-
     private func sessionUtilizationPercent(in provider: ProviderState) -> Double? {
-        if let claudeSessionPercent = usageRowPercent(named: "Session", in: provider) {
-            return claudeSessionPercent
-        }
-
-        guard provider.providerId == .codex,
-              let payload = provider.payloads.first(where: { $0.source == "codex-rate-limits" }),
-              let encodedValue = payload.values["primary"] else {
-            return nil
-        }
-
-        let parts = encodedValue.split(separator: "|", omittingEmptySubsequences: false)
-        guard let percentPart = parts.first else {
-            return nil
-        }
-
-        return Double(percentPart)
+        provider.sessionUtilizationPercent
     }
 
     private func menuBarResetWindow(for provider: ProviderState) -> ResetWindow? {
