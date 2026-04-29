@@ -31,6 +31,7 @@ final class MenuBarController: NSObject {
     private let updater: SPUUpdater?
     private var statusItem: NSStatusItem?
     private var rotationTimer: Timer?
+    private var refreshTimer: Timer?
     private var reservedStatusItemLength: CGFloat = 0
     private var appState: AppProviderState
     private var preferences: UserPreferences
@@ -125,6 +126,8 @@ final class MenuBarController: NSObject {
     func stop() {
         rotationTimer?.invalidate()
         rotationTimer = nil
+        refreshTimer?.invalidate()
+        refreshTimer = nil
 
         if let statusItem {
             NSStatusBar.system.removeStatusItem(statusItem)
@@ -195,6 +198,23 @@ final class MenuBarController: NSObject {
         appState.lastRotationAt = Date()
         updatePopover()
         updateStatusTitle()
+    }
+
+    private func scheduleRefreshTimer(at fireDate: Date?) {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+        guard let fireDate else { return }
+        let interval = max(fireDate.timeIntervalSinceNow, 0)
+        refreshTimer = Timer.scheduledTimer(
+            withTimeInterval: interval,
+            repeats: false
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                let outcome = await self.refreshCoordinator.refreshProviders(trigger: .automatic)
+                self.applyRefreshOutcome(outcome)
+            }
+        }
     }
 
     private func startRotationTimer() {
@@ -628,6 +648,7 @@ final class MenuBarController: NSObject {
         applyRotationIfNeeded(force: true)
         updatePopover()
         updateStatusTitle()
+        scheduleRefreshTimer(at: outcome.nextClaudeRefreshAt)
         Task {
             await reloadProviderHistory()
         }
