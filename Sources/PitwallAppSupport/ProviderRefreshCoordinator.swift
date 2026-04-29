@@ -430,7 +430,8 @@ public actor ProviderRefreshCoordinator {
             headline: snapshot.rateLimitReachedType == nil
                 ? "Codex usage refreshed"
                 : "Codex usage limit reached",
-            primaryValue: weeklyWindow.map { "\(Self.formatPercent($0.usedPercent)) used" },
+            primaryValue: sessionWindow.map { "\(Self.formatPercent($0.remainingPercent)) session left" }
+                ?? weeklyWindow.map { "\(Self.formatPercent($0.usedPercent)) used" },
             secondaryValue: snapshot.limitName ?? Self.displayPlanType(snapshot.planType) ?? baseState.secondaryValue,
             resetWindow: ResetWindow(resetsAt: weeklyResetAt ?? sessionResetAt),
             lastUpdatedAt: refreshDate,

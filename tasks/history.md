@@ -2,6 +2,9 @@
 
 ## 2026-04-28
 
+- Codex five-hour display fixed: Codex provider state now uses the primary five-hour rate-limit bucket for the visible primary metric as session remaining, while retaining the secondary/weekly bucket for weekly pace and daily-budget calculations. Rich Codex menu titles and tooltips now show session remaining, so a `60%` used five-hour bucket renders as `40% left` instead of surfacing an unrelated `8%` weekly usage value.
+- Validation: `swift test --filter CodexUsageClientTests` passes **2 / 2**; `swift test --filter MenuBarStatusFormatterTests` passes **18 / 18**; `swift test --filter ProviderRefreshCoordinatorTests` passes **15 / 15**; `swift test` passes **269 / 269** with 0 failures.
+
 - Claude menu bar pace indicators fixed: rich menu bar daily `today/target/day` now uses pace-aware status when both actual usage and target are known, so low usage no longer renders with the neutral/on-track theme marker. The F1 Quali theme now shows far-behind pace as `⚫`; high burn remains alert-colored.
 - Validation: `swift test --filter MenuBarStatusFormatterTests` passes **17 / 17**; `swift test --filter ProviderRefreshCoordinatorTests` passes **15 / 15**; `swift test` passes **268 / 268** with 0 failures.
 

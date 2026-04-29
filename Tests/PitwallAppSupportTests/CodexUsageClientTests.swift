@@ -77,6 +77,7 @@ final class CodexUsageClientTests: XCTestCase {
         XCTAssertEqual(result.fetchedAt, fetchedAt)
         XCTAssertEqual(result.preferredRateLimit.limitId, "codex")
         XCTAssertEqual(result.preferredRateLimit.primary?.usedPercent, 30)
+        XCTAssertEqual(result.preferredRateLimit.primary?.remainingPercent, 70)
         XCTAssertEqual(result.preferredRateLimit.primary?.windowDurationMinutes, 300)
         XCTAssertEqual(
             result.preferredRateLimit.primary?.resetsAt,

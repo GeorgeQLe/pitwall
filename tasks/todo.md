@@ -12,6 +12,18 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Codex five-hour session remaining display
+  - [x] Trace Codex primary/secondary rate-limit bucket flow into provider state and menu formatter.
+  - [x] Make Codex primary visible metric use primary five-hour session remaining.
+  - [x] Keep weekly/secondary usage for weekly segment and daily-budget math.
+  - [x] Add focused regression coverage for 40% five-hour session remaining with 8% weekly usage.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Codex Five-Hour Session Remaining Display
+
+- Result: Codex provider state now exposes the primary five-hour bucket as `session left` for the primary visible metric, and rich menu titles/tooltips display five-hour session remaining instead of weekly used percentage. Weekly/secondary usage remains in the weekly segment and continues to drive daily-budget math.
+- Verification: `swift test --filter CodexUsageClientTests` passed 2 tests; `swift test --filter MenuBarStatusFormatterTests` passed 18 tests; `swift test --filter ProviderRefreshCoordinatorTests` passed 15 tests; `swift test` passed 269 tests.
+
 - [x] Hotfix: Claude menu bar pace theme indicators
   - [x] Trace rich formatter icon selection for Claude session, daily, and weekly pace.
   - [x] Use pace-aware status for daily `today/target/day` indicators.

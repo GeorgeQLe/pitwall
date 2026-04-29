@@ -69,7 +69,7 @@ public struct MenuBarStatusFormatter: Sendable {
             return nil
         }
 
-        let sessionPercent = sessionUtilizationPercent(in: provider)
+        let sessionPercent = sessionDisplayPercent(in: provider)
         let weeklyPercent = provider.pacingState?.weeklyUtilizationPercent
         let todayPercent = provider.pacingState?.todayUsage?.utilizationDeltaPercent
         let dailyBudgetPercent = provider.pacingState?.dailyBudget?.dailyBudgetPercent
@@ -185,8 +185,9 @@ public struct MenuBarStatusFormatter: Sendable {
             lines.append(provider.headline)
         }
 
-        if let sessionPercent = sessionUtilizationPercent(in: provider) {
-            lines.append("Session: \(Self.formatPercent(sessionPercent))")
+        if let sessionPercent = sessionDisplayPercent(in: provider) {
+            let suffix = provider.providerId == .codex ? " left" : ""
+            lines.append("Session: \(Self.formatPercent(sessionPercent))\(suffix)")
         }
 
         if let todayPercent = provider.pacingState?.todayUsage?.utilizationDeltaPercent,
@@ -378,6 +379,18 @@ public struct MenuBarStatusFormatter: Sendable {
         }
 
         return Double(percentPart)
+    }
+
+    private func sessionDisplayPercent(in provider: ProviderState) -> Double? {
+        guard let sessionPercent = sessionUtilizationPercent(in: provider) else {
+            return nil
+        }
+
+        if provider.providerId == .codex {
+            return max(0, min(100, 100 - sessionPercent))
+        }
+
+        return sessionPercent
     }
 
     private func menuBarResetWindow(for provider: ProviderState) -> ResetWindow? {

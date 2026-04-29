@@ -2,7 +2,23 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Claude Menu Bar Pace Theme Indicators
+## Current Hotfix: Codex Five-Hour Session Remaining Display
+
+**Goal:** Make Codex visible usage match slash status by showing the five-hour session remaining budget instead of the weekly/secondary used percentage as the primary value.
+
+**Scope:**
+- Trace Codex app-server primary/secondary rate-limit bucket flow into provider state and menu title formatting.
+- Keep secondary/weekly usage for weekly pace and daily-budget math.
+- Use the primary five-hour bucket for Codex's primary visible metric and session title display.
+- Add focused regression coverage for a `60% used => 40% left` five-hour session while weekly usage is `8%`.
+
+**Acceptance Criteria:**
+- Codex primary visible metric displays five-hour session remaining.
+- Codex rich menu title's first percentage is derived from the primary five-hour bucket, not weekly/secondary usage.
+- Weekly usage remains visible in the weekly segment and still powers weekly daily-budget calculations.
+- Focused Swift tests pass.
+
+## Previous Hotfix: Claude Menu Bar Pace Theme Indicators
 
 **Goal:** Make Claude rich menu bar indicators reflect actual pace state instead of showing on-track theme icons when usage is behind the expected pace.
 

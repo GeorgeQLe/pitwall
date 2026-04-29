@@ -240,7 +240,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Codex 🏃 26% 🦥 12%/18%/day 🔥 42.4%/w 1h 30m 0s")
+        XCTAssertEqual(text, "Codex 🏃 74% 🦥 12%/18%/day 🔥 42.4%/w 1h 30m 0s")
     }
 
     func testCodexMenuBarTitleUsesPrimaryFiveHourResetCountdown() {
@@ -286,7 +286,54 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Codex 🏃 24% 🛌 6%/24.7%/day 🚶 26%/w 1h 0m 0s")
+        XCTAssertEqual(text, "Codex 🏃 76% 🛌 6%/24.7%/day 🚶 26%/w 1h 0m 0s")
+    }
+
+    func testCodexMenuBarTitleShowsFiveHourSessionRemainingNotWeeklyUsed() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let provider = ProviderState(
+            providerId: .codex,
+            displayName: "Codex",
+            status: .configured,
+            confidence: .providerSupplied,
+            headline: "Codex ready",
+            resetWindow: ResetWindow(resetsAt: now.addingTimeInterval(4 * 24 * 60 * 60)),
+            pacingState: PacingState(
+                weeklyUtilizationPercent: 8,
+                weeklyPace: PaceEvaluation(
+                    label: .behindPace,
+                    action: .push,
+                    expectedUtilizationPercent: 20
+                ),
+                sessionPace: PaceEvaluation(
+                    label: .warning,
+                    action: .conserve,
+                    expectedUtilizationPercent: 50
+                )
+            ),
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "codex-rate-limits",
+                    values: ["primary": "60|300|2023-11-14T23:13:20.000Z"]
+                )
+            ]
+        )
+
+        let formatter = MenuBarStatusFormatter()
+        let title = formatter.menuBarTitle(
+            provider: provider,
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+            now: now
+        )
+        let tooltip = formatter.toolTip(
+            provider: provider,
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running),
+            now: now
+        )
+
+        XCTAssertEqual(title, "Codex 🏃 40% 🛌 8%/w 1h 0m 0s")
+        XCTAssertTrue(tooltip.contains("Session: 40% left"))
+        XCTAssertTrue(tooltip.contains("Weekly: 8%"))
     }
 
     func testGeminiMenuBarTitleUsesSecondsCountdown() {

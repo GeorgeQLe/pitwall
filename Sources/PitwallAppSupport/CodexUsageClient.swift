@@ -25,6 +25,9 @@ public enum CodexUsageClientError: Error, Equatable, LocalizedError, Sendable {
 
 public struct CodexRateLimitWindow: Equatable, Sendable {
     public var usedPercent: Double
+    public var remainingPercent: Double {
+        max(0, min(100, 100 - usedPercent))
+    }
     public var windowDurationMinutes: Int?
     public var resetsAt: Date?
 

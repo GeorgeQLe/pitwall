@@ -213,7 +213,7 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertEqual(codex?.status, .configured)
         XCTAssertEqual(codex?.confidence, .providerSupplied)
         XCTAssertEqual(codex?.headline, "Codex usage refreshed")
-        XCTAssertEqual(codex?.primaryValue, "26% used")
+        XCTAssertEqual(codex?.primaryValue, "70% session left")
         XCTAssertEqual(codex?.secondaryValue, "Pro")
         XCTAssertEqual(codex?.resetWindow?.resetsAt, now.addingTimeInterval(3 * 24 * 60 * 60))
         XCTAssertEqual(codex?.pacingState?.weeklyUtilizationPercent, 26)
@@ -289,10 +289,10 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
             )
         }
 
-        XCTAssertEqual(codex?.primaryValue, "44% used")
+        XCTAssertEqual(codex?.primaryValue, "39% session left")
         XCTAssertEqual(codex?.pacingState?.weeklyUtilizationPercent, 44)
         XCTAssertEqual(codex?.pacingState?.sessionPace?.remainingWindowDuration, 60 * 60)
-        XCTAssertTrue(text?.contains("61%") == true)
+        XCTAssertTrue(text?.contains("39%") == true)
         XCTAssertTrue(text?.contains("44%/w") == true)
         XCTAssertTrue(text?.contains("1h 0m 0s") == true)
     }
