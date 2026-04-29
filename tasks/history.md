@@ -2,6 +2,7 @@
 
 ## 2026-04-29
 
+- Periodic auto-refresh timer: `MenuBarController` now schedules a one-shot refresh timer from `ProviderRefreshOutcome.nextClaudeRefreshAt` after every refresh outcome. The self-sustaining loop keeps usage data fresh (~5 min intervals via `PollingPolicy`) without user interaction. Only `MenuBarController.swift` modified; 275/275 tests pass.
 - Rich menu bar session countdown fix: Claude rich menu bar countdown now shows the session reset window instead of always showing the weekly reset. Added a Claude-specific branch in `menuBarResetWindow(for:)` that extracts the session reset date from `usageRows` payload (via `SessionResetAt` key for history path, or ISO8601 parsing from `Session` value for live path). History path now stores raw ISO8601 session reset date in a separate `SessionResetAt` key.
 - Validation: `swift test` passes **275 / 275** with 0 failures; `make build` succeeds.
 

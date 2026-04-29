@@ -84,6 +84,18 @@
 - Result: Rich menu bar countdown for Claude now shows the session reset window instead of the weekly reset. `menuBarResetWindow(for:)` gained a Claude-specific branch that extracts the session reset date from the `usageRows` payload — checking `SessionResetAt` key first (history path), then parsing ISO8601 from `Session` encoded value index 1 (live path). The history path now stores `SessionResetAt` as a raw ISO8601 date alongside the pre-formatted Session value.
 - Verification: `swift test` passed 275 tests with 0 failures; `make build` succeeded.
 
+- [x] Hotfix: Add periodic auto-refresh timer
+  - [x] Add `refreshTimer` property to `MenuBarController`.
+  - [x] Add `scheduleRefreshTimer(at:)` one-shot timer method.
+  - [x] Wire `applyRefreshOutcome` to schedule next refresh via `outcome.nextClaudeRefreshAt`.
+  - [x] Invalidate refresh timer in `stop()`.
+  - [x] Verify all tests pass.
+
+### Review: Periodic Auto-Refresh Timer
+
+- Result: Usage data now auto-refreshes on the interval computed by `PollingPolicy` (~5 minutes). `MenuBarController` schedules a one-shot timer from `ProviderRefreshOutcome.nextClaudeRefreshAt` after every refresh. The loop is self-sustaining: each `applyRefreshOutcome` schedules the next timer, and manual refreshes replace the pending timer. No changes to `PollingPolicy` or `ProviderRefreshCoordinator`.
+- Verification: `swift test` passed 275 tests with 0 failures.
+
 - [x] Hotfix: Claude menu bar pace theme indicators
   - [x] Trace rich formatter icon selection for Claude session, daily, and weekly pace.
   - [x] Use pace-aware status for daily `today/target/day` indicators.
