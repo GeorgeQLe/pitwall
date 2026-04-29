@@ -187,8 +187,8 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             """
             Claude
             Claude usage refreshed
-            Session: 26% used
-            Today: 12% used / 18% target
+            Session: 74% left
+            Today: 88% left / 18% target
             Weekly: 42.4%
             Recommendation: conserve
             Reset: 2h 30m 0s
@@ -332,7 +332,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         )
 
         XCTAssertEqual(title, "Codex 🏃 60% 🛌 8%/w 1h 0m 0s")
-        XCTAssertTrue(tooltip.contains("Session: 60% used"))
+        XCTAssertTrue(tooltip.contains("Session: 40% left"))
         XCTAssertTrue(tooltip.contains("Weekly: 8%"))
     }
 

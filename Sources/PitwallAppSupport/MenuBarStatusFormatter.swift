@@ -213,14 +213,14 @@ public struct MenuBarStatusFormatter: Sendable {
         }
 
         if let sessionPercent = sessionUtilizationPercent(in: provider) {
-            lines.append("Session: \(Self.formatPercent(sessionPercent)) used")
+            lines.append("Session: \(Self.formatPercent(100 - sessionPercent)) left")
         }
 
         if let todayPercent = provider.pacingState?.todayUsage?.utilizationDeltaPercent,
            let dailyBudgetPercent = provider.pacingState?.dailyBudget?.dailyBudgetPercent {
-            lines.append("Today: \(Self.formatPercent(todayPercent)) used / \(Self.formatPercent(dailyBudgetPercent)) target")
+            lines.append("Today: \(Self.formatPercent(100 - todayPercent)) left / \(Self.formatPercent(dailyBudgetPercent)) target")
         } else if let todayPercent = provider.pacingState?.todayUsage?.utilizationDeltaPercent {
-            lines.append("Today: \(Self.formatPercent(todayPercent)) used")
+            lines.append("Today: \(Self.formatPercent(100 - todayPercent)) left")
         } else if let dailyBudgetPercent = provider.pacingState?.dailyBudget?.dailyBudgetPercent {
             lines.append("Daily target: \(Self.formatPercent(dailyBudgetPercent))")
         }

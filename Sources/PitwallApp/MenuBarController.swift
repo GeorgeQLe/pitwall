@@ -843,7 +843,7 @@ final class MenuBarController: NSObject {
             status: .configured,
             confidence: latest.confidence,
             headline: latest.headline,
-            primaryValue: latest.weeklyUtilizationPercent.map { Self.formatPercent($0) + " used" } ?? currentClaude.primaryValue,
+            primaryValue: latest.weeklyUtilizationPercent.map { Self.formatPercent(100 - $0) + " left" } ?? currentClaude.primaryValue,
             secondaryValue: currentClaude.primaryValue ?? currentClaude.secondaryValue,
             resetWindow: ResetWindow(resetsAt: resetAt),
             lastUpdatedAt: latest.recordedAt,

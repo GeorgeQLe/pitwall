@@ -213,7 +213,7 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertEqual(codex?.status, .configured)
         XCTAssertEqual(codex?.confidence, .providerSupplied)
         XCTAssertEqual(codex?.headline, "Codex usage refreshed")
-        XCTAssertEqual(codex?.primaryValue, "70% session left")
+        XCTAssertEqual(codex?.primaryValue, "70% left")
         XCTAssertEqual(codex?.secondaryValue, "Pro")
         XCTAssertEqual(codex?.resetWindow?.resetsAt, now.addingTimeInterval(3 * 24 * 60 * 60))
         XCTAssertEqual(codex?.pacingState?.weeklyUtilizationPercent, 26)
@@ -289,7 +289,7 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
             )
         }
 
-        XCTAssertEqual(codex?.primaryValue, "39% session left")
+        XCTAssertEqual(codex?.primaryValue, "39% left")
         XCTAssertEqual(codex?.pacingState?.weeklyUtilizationPercent, 44)
         XCTAssertEqual(codex?.pacingState?.sessionPace?.remainingWindowDuration, 60 * 60)
         XCTAssertTrue(text?.contains("61%") == true)
@@ -529,7 +529,7 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(gemini?.confidence, .providerSupplied)
         XCTAssertEqual(gemini?.headline, "Gemini quota refreshed")
-        XCTAssertEqual(gemini?.primaryValue, "20% used")
+        XCTAssertEqual(gemini?.primaryValue, "80% left")
         XCTAssertEqual(
             gemini?.payloads.first(where: { $0.source == "gemini-quota" })?.values["bucket0.modelId"],
             "gemini-2.5-pro"

@@ -52,7 +52,7 @@ public struct ProviderCardViewModel: Equatable, Sendable {
             return nil
         }
 
-        return "\(Self.formatPercent(utilization)) used"
+        return "\(Self.formatPercent(100 - utilization)) left"
     }
 
     private static func secondaryMetric(for provider: ProviderState) -> String? {

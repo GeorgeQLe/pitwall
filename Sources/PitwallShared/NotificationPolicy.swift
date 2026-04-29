@@ -128,7 +128,7 @@ public final class NotificationPolicy {
                 kind: .pacingThreshold,
                 providerId: providerId,
                 title: "\(providerName(providerId)) pacing threshold",
-                body: "\(Int(utilizationPercent.rounded()))% used, now \(label.displayName.lowercased()).",
+                body: "\(Int((100 - utilizationPercent).rounded()))% left, now \(label.displayName.lowercased()).",
                 createdAt: createdAt
             )
         }

@@ -430,8 +430,8 @@ public actor ProviderRefreshCoordinator {
             headline: snapshot.rateLimitReachedType == nil
                 ? "Codex usage refreshed"
                 : "Codex usage limit reached",
-            primaryValue: sessionWindow.map { "\(Self.formatPercent($0.remainingPercent)) session left" }
-                ?? weeklyWindow.map { "\(Self.formatPercent($0.usedPercent)) used" },
+            primaryValue: sessionWindow.map { "\(Self.formatPercent($0.remainingPercent)) left" }
+                ?? weeklyWindow.map { "\(Self.formatPercent(100 - $0.usedPercent)) left" },
             secondaryValue: snapshot.limitName ?? Self.displayPlanType(snapshot.planType) ?? baseState.secondaryValue,
             resetWindow: ResetWindow(resetsAt: weeklyResetAt ?? sessionResetAt),
             lastUpdatedAt: refreshDate,
@@ -688,7 +688,7 @@ public actor ProviderRefreshCoordinator {
             status: .configured,
             confidence: .providerSupplied,
             headline: "Gemini quota refreshed",
-            primaryValue: weeklyPercent.map { "\(Self.formatPercent($0)) used" },
+            primaryValue: weeklyPercent.map { "\(Self.formatPercent(100 - $0)) left" },
             secondaryValue: result.tier ?? baseState.secondaryValue,
             resetWindow: resetAt.map { ResetWindow(resetsAt: $0) },
             lastUpdatedAt: refreshDate,
