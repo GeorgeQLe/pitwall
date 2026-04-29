@@ -379,14 +379,20 @@ public struct MenuBarStatusFormatter: Sendable {
     }
 
     private func menuBarResetWindow(for provider: ProviderState) -> ResetWindow? {
-        guard provider.providerId == .codex,
-              let payload = provider.payloads.first(where: { $0.source == "codex-rate-limits" }),
-              let encodedValue = payload.values["primary"],
-              let resetAt = codexWindowResetDate(encodedValue) else {
-            return provider.resetWindow
+        if provider.providerId == .codex,
+           let payload = provider.payloads.first(where: { $0.source == "codex-rate-limits" }),
+           let encodedValue = payload.values["primary"],
+           let resetAt = codexWindowResetDate(encodedValue) {
+            return ResetWindow(resetsAt: resetAt)
         }
 
-        return ResetWindow(resetsAt: resetAt)
+        if provider.providerId == .claude,
+           let payload = provider.payloads.first(where: { $0.source == "usageRows" }),
+           let resetAt = claudeSessionResetDate(from: payload) {
+            return ResetWindow(resetsAt: resetAt)
+        }
+
+        return provider.resetWindow
     }
 
     private func codexWindowResetDate(_ encodedValue: String) -> Date? {
@@ -401,6 +407,20 @@ public struct MenuBarStatusFormatter: Sendable {
         }
 
         return Self.codexResetFormatter.date(from: rawReset) ?? ISO8601DateFormatter().date(from: rawReset)
+    }
+
+    private func claudeSessionResetDate(from payload: ProviderSpecificPayload) -> Date? {
+        if let raw = payload.values["SessionResetAt"] {
+            return ISO8601DateFormatter().date(from: raw)
+        }
+        guard let encodedValue = payload.values["Session"] else {
+            return nil
+        }
+        let parts = encodedValue.split(separator: "|", omittingEmptySubsequences: false)
+        guard parts.count >= 2 else {
+            return nil
+        }
+        return ISO8601DateFormatter().date(from: String(parts[1]))
     }
 
     private func sessionStatus(for provider: ProviderState) -> MenuBarPaceStatus {

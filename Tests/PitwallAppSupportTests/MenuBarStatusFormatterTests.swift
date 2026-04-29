@@ -548,6 +548,120 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         XCTAssertEqual(text, "Claude\nConfigure credentials to show live usage.")
     }
 
+    func testClaudeRichMenuBarUsesSessionResetCountdown() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let sessionReset = now.addingTimeInterval(3600)
+        let weeklyReset = now.addingTimeInterval(86400)
+
+        let provider = ProviderState(
+            providerId: .claude,
+            displayName: "Claude",
+            status: .configured,
+            confidence: .providerSupplied,
+            headline: "Claude usage refreshed",
+            primaryValue: "58% left",
+            resetWindow: ResetWindow(resetsAt: weeklyReset),
+            pacingState: PacingState(weeklyUtilizationPercent: 65),
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "usageRows",
+                    values: [
+                        "Session": "42|\(ISO8601DateFormatter().string(from: sessionReset))|providerSupplied",
+                        "Weekly": "65|\(ISO8601DateFormatter().string(from: weeklyReset))|providerSupplied"
+                    ]
+                )
+            ]
+        )
+
+        let text = MenuBarStatusFormatter().menuBarTitle(
+            provider: provider,
+            preferences: UserPreferences(
+                resetDisplayPreference: .countdown,
+                menuBarTheme: .running,
+                menuBarTitleMode: .rich
+            ),
+            now: now
+        )
+
+        XCTAssertTrue(text.contains("1h 0m 0s"), "Should show session reset (1h), not weekly reset (24h). Got: \(text)")
+        XCTAssertFalse(text.contains("24h"), "Should not show weekly countdown. Got: \(text)")
+    }
+
+    func testClaudeRichMenuBarUsesSessionResetAtKey() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let sessionReset = now.addingTimeInterval(7200)
+        let weeklyReset = now.addingTimeInterval(86400)
+
+        let provider = ProviderState(
+            providerId: .claude,
+            displayName: "Claude",
+            status: .configured,
+            confidence: .providerSupplied,
+            headline: "Claude usage refreshed",
+            primaryValue: "58% left",
+            resetWindow: ResetWindow(resetsAt: weeklyReset),
+            pacingState: PacingState(weeklyUtilizationPercent: 65),
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "usageRows",
+                    values: [
+                        "Session": "42|resets in 2h 0m|providerSupplied",
+                        "SessionResetAt": ISO8601DateFormatter().string(from: sessionReset),
+                        "Weekly": "65|\(ISO8601DateFormatter().string(from: weeklyReset))|providerSupplied"
+                    ]
+                )
+            ]
+        )
+
+        let text = MenuBarStatusFormatter().menuBarTitle(
+            provider: provider,
+            preferences: UserPreferences(
+                resetDisplayPreference: .countdown,
+                menuBarTheme: .running,
+                menuBarTitleMode: .rich
+            ),
+            now: now
+        )
+
+        XCTAssertTrue(text.contains("2h 0m 0s"), "Should use SessionResetAt key. Got: \(text)")
+    }
+
+    func testClaudeFallsBackToWeeklyResetWhenNoSessionData() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let weeklyReset = now.addingTimeInterval(86400)
+
+        let provider = ProviderState(
+            providerId: .claude,
+            displayName: "Claude",
+            status: .configured,
+            confidence: .providerSupplied,
+            headline: "Claude usage refreshed",
+            primaryValue: "58% left",
+            resetWindow: ResetWindow(resetsAt: weeklyReset),
+            pacingState: PacingState(weeklyUtilizationPercent: 65),
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "usageRows",
+                    values: [
+                        "Weekly": "65|\(ISO8601DateFormatter().string(from: weeklyReset))|providerSupplied"
+                    ]
+                )
+            ]
+        )
+
+        let text = MenuBarStatusFormatter().menuBarTitle(
+            provider: provider,
+            preferences: UserPreferences(
+                resetDisplayPreference: .countdown,
+                menuBarTheme: .running,
+                menuBarTitleMode: .rich
+            ),
+            now: now
+        )
+
+        XCTAssertTrue(text.contains("24h 0m 0s") || text.contains("1d"), "Should fall back to weekly reset. Got: \(text)")
+    }
+
     private func provider(
         id: ProviderID,
         displayName: String,

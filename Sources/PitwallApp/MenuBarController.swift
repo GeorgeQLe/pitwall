@@ -817,6 +817,9 @@ final class MenuBarController: NSObject {
                     ) ?? "Unknown reset" } ?? "Unknown reset",
                     latest.confidence.rawValue
                 ].joined(separator: "|")
+                if let sessionResetAt = latest.sessionResetAt {
+                    values["SessionResetAt"] = ISO8601DateFormatter().string(from: sessionResetAt)
+                }
             }
             if let weeklyPercent = latest.weeklyUtilizationPercent {
                 values["Weekly"] = [
