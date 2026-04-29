@@ -301,11 +301,15 @@ public struct MenuBarStatusFormatter: Sendable {
             return weeklyAction
         }
 
+        if let sessionAction = provider.pacingState?.sessionPace?.action {
+            return sessionAction
+        }
+
         if provider.status == .degraded || provider.status == .stale {
             return .configure
         }
 
-        return .configure
+        return .push
     }
 
     private static func countdownText(to date: Date, now: Date, includesSeconds: Bool) -> String {

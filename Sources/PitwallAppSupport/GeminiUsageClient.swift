@@ -412,11 +412,15 @@ public struct GeminiUsageClient: GeminiUsageClienting, @unchecked Sendable {
         return nil
     }
 
-    private static func dateValue(in object: [String: Any], keys: [String]) -> Date? {
+    private static let iso8601Formatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
+        return formatter
+    }()
+
+    private static func dateValue(in object: [String: Any], keys: [String]) -> Date? {
         for key in keys {
             if let value = object[key] as? String,
-               let date = formatter.date(from: value) {
+               let date = iso8601Formatter.date(from: value) {
                 return date
             }
             if let value = object[key] as? TimeInterval {
@@ -435,8 +439,14 @@ public struct GeminiUsageClient: GeminiUsageClienting, @unchecked Sendable {
             .joined(separator: "&")
     }
 
+    private static let formURLEncodedAllowed: CharacterSet = {
+        var allowed = CharacterSet()
+        allowed.insert(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+        return allowed
+    }()
+
     private static func escape(_ value: String) -> String {
-        value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
+        value.addingPercentEncoding(withAllowedCharacters: formURLEncodedAllowed) ?? value
     }
 
     private static func settingsAuthType(from object: [String: Any]?) -> String? {

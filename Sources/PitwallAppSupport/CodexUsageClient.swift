@@ -356,6 +356,7 @@ private final class CodexAppServerLineReader: @unchecked Sendable {
 
     func append(_ data: Data) {
         lock.lock()
+        defer { lock.unlock() }
         buffer.append(data)
         var lines: [String] = []
         while let newlineRange = buffer.firstRange(of: Data([0x0A])) {
@@ -365,7 +366,6 @@ private final class CodexAppServerLineReader: @unchecked Sendable {
                 lines.append(line.trimmingCharacters(in: .whitespacesAndNewlines))
             }
         }
-        lock.unlock()
 
         for line in lines where !line.isEmpty {
             onLine(line)
@@ -379,7 +379,7 @@ private final class CodexLockedDataBuffer: @unchecked Sendable {
 
     func append(_ newData: Data) {
         lock.lock()
+        defer { lock.unlock() }
         data.append(newData)
-        lock.unlock()
     }
 }

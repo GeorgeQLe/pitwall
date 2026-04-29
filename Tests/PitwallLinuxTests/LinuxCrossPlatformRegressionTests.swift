@@ -12,12 +12,12 @@ import PitwallShared
 /// import.
 final class LinuxCrossPlatformRegressionTests: XCTestCase {
     private enum Expected {
-        static let tooltip = "Claude — 42% — 1h — configure"
+        static let tooltip = "Claude — 42% — 1h — push"
         static let statusText = "Configured"
         static let confidenceText = "High confidence"
         static let metric = "42%"
         static let resetText = "1h"
-        static let recommendedAction = "configure"
+        static let recommendedAction = "push"
         static let headline = "Claude ok"
     }
 
