@@ -37,7 +37,7 @@ final class ProviderCardViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.displayName, "Claude")
         XCTAssertEqual(viewModel.statusText, "Configured")
         XCTAssertEqual(viewModel.confidenceText, "Exact")
-        XCTAssertEqual(viewModel.primaryMetric, "68.8% left")
+        XCTAssertEqual(viewModel.primaryMetric, "W:68.8%")
         XCTAssertEqual(viewModel.secondaryMetric, "27.5%/day for 2.5d")
         XCTAssertEqual(viewModel.resetText, "1h 30m")
         XCTAssertEqual(viewModel.lastUpdatedText, "Updated 5m ago")

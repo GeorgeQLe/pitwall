@@ -44,15 +44,25 @@ public struct ProviderCardViewModel: Equatable, Sendable {
     }
 
     private static func primaryMetric(for provider: ProviderState) -> String? {
+        let sessionPercent = provider.sessionUtilizationPercent
+        let weeklyPercent = provider.pacingState?.weeklyUtilizationPercent
+
+        if sessionPercent != nil || weeklyPercent != nil {
+            var parts: [String] = []
+            if let s = sessionPercent {
+                parts.append("S:\(formatPercent(100 - s))")
+            }
+            if let w = weeklyPercent {
+                parts.append("W:\(formatPercent(100 - w))")
+            }
+            return parts.joined(separator: " ")
+        }
+
         if let primaryValue = provider.primaryValue, !primaryValue.isEmpty {
             return primaryValue
         }
 
-        guard let utilization = provider.pacingState?.weeklyUtilizationPercent else {
-            return nil
-        }
-
-        return "\(Self.formatPercent(100 - utilization)) left"
+        return nil
     }
 
     private static func secondaryMetric(for provider: ProviderState) -> String? {
