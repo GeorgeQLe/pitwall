@@ -2,7 +2,25 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Compact Menu Bar Title Mode
+## Current Hotfix: Usage Calculation Accuracy Audit
+
+**Goal:** Audit and correct the numbers Pitwall tracks and displays so startup state, compact menu-bar metrics, and daily usage baselines do not show misleading values.
+
+**Scope:**
+- Trace provider-supplied usage through Claude, Codex, and Gemini parsers into provider state, menu-bar title formatting, provider cards, and history.
+- Remove hardcoded demo quota values from the initial app state so launch never displays fake tracked usage before configuration/history/refresh has loaded.
+- Make compact menu-bar titles use the provider's canonical primary metric instead of silently substituting unlabeled session percentages.
+- Align today's usage baseline with the spec by using the closest retained snapshot before local midnight when available.
+- Add focused regression coverage for each corrected accuracy path.
+
+**Acceptance Criteria:**
+- Initial app state has no configured provider with fabricated utilization or reset values.
+- Codex compact title matches the provider-card/slash-status primary metric, e.g. session remaining when that is the canonical primary value.
+- Claude compact title uses the canonical weekly primary value instead of silently preferring the five-hour session row.
+- Today's usage can use an older retained pre-midnight baseline instead of incorrectly falling back to unknown or same-day-only math.
+- Focused and full Swift tests pass.
+
+## Previous Hotfix: Compact Menu Bar Title Mode
 
 **Goal:** Keep Pitwall visible when macOS menu bar space is crowded by making the default status title compact while preserving the rich multi-segment title as an explicit user preference.
 

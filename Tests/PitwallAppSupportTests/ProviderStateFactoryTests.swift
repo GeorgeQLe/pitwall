@@ -116,10 +116,13 @@ final class ProviderStateFactoryTests: XCTestCase {
 
         XCTAssertEqual(state.selectedProviderId, .claude)
         XCTAssertEqual(state.orderedProviders.map(\.providerId), [.claude, .codex, .gemini])
-        XCTAssertEqual(state.trackedProviders.map(\.providerId), [.claude, .codex])
-        XCTAssertEqual(state.provider(for: .claude)?.confidence, .exact)
-        XCTAssertTrue(state.provider(for: .codex)?.confidenceExplanation.contains("Prompt text") == true)
+        XCTAssertTrue(state.trackedProviders.isEmpty)
+        XCTAssertEqual(state.provider(for: .claude)?.status, .missingConfiguration)
+        XCTAssertEqual(state.provider(for: .codex)?.status, .missingConfiguration)
         XCTAssertEqual(state.provider(for: .gemini)?.status, .missingConfiguration)
+        XCTAssertNil(state.provider(for: .claude)?.pacingState?.weeklyUtilizationPercent)
+        XCTAssertNil(state.provider(for: .claude)?.resetWindow?.resetsAt)
+        XCTAssertFalse(String(describing: state).contains("82%"))
     }
 
     func testTrackedProvidersExcludeSetupPlaceholdersAndEmptyConfiguredProviders() {

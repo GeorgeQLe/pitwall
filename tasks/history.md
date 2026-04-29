@@ -2,6 +2,9 @@
 
 ## 2026-04-29
 
+- Usage calculation accuracy audit shipped: removed hardcoded demo utilization/reset values from the initial app state so Pitwall no longer displays fabricated tracked usage before real configuration/history/refresh data loads. Compact menu-bar titles now use each provider's canonical `primaryValue` before derived session/weekly fallbacks, keeping Codex compact display aligned with the provider-card/slash-status session-remaining metric and Claude compact display aligned with the weekly primary metric. Today's usage now uses the closest retained snapshot before local midnight rather than only accepting snapshots from the immediately previous local day.
+- Validation: `swift test --filter DailyBudgetTests` passes **6 / 6**; `swift test --filter MenuBarStatusFormatterTests` passes **20 / 20**; `swift test --filter ProviderStateFactoryTests` passes **7 / 7**; `swift test` passes **272 / 272** with 0 failures.
+
 - Compact menu bar title mode shipped: added a persisted `MenuBarTitleMode` preference with compact/rich choices, defaulting to compact so Pitwall uses short menu bar text under crowded macOS menu bars. Display settings now expose the compact/rich selector, while rich mode preserves the existing multi-segment provider breakdown. The new preference round-trips through shared settings, macOS provider configuration storage, onboarding drafts, and Windows/Linux Codable wrappers with legacy values defaulting to compact.
 - Validation: focused formatter/configuration/settings tests pass **31 / 31**; `swift test` passes **269 / 269** with 0 failures.
 

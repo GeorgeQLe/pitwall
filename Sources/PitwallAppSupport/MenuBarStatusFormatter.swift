@@ -72,16 +72,16 @@ public struct MenuBarStatusFormatter: Sendable {
             return nil
         }
 
-        if let sessionPercent = sessionUtilizationPercent(in: provider) {
-            return "\(provider.displayName) \(Self.formatPercent(sessionPercent))"
+        if let primaryValue = provider.primaryValue, !primaryValue.isEmpty {
+            return "\(provider.displayName) \(primaryValue)"
         }
 
         if let weeklyPercent = provider.pacingState?.weeklyUtilizationPercent {
             return "\(provider.displayName) \(Self.formatPercent(weeklyPercent))"
         }
 
-        if let primaryValue = provider.primaryValue, !primaryValue.isEmpty {
-            return "\(provider.displayName) \(primaryValue)"
+        if let sessionPercent = sessionUtilizationPercent(in: provider) {
+            return "\(provider.displayName) \(Self.formatPercent(sessionPercent))"
         }
 
         return nil

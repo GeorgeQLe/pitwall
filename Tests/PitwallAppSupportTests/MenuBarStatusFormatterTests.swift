@@ -357,6 +357,50 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         XCTAssertEqual(text, "Gemini observed")
     }
 
+    func testCompactMenuBarTitleUsesProviderPrimaryMetricBeforeSessionRows() {
+        let provider = ProviderState(
+            providerId: .codex,
+            displayName: "Codex",
+            status: .configured,
+            confidence: .providerSupplied,
+            headline: "Codex usage refreshed",
+            primaryValue: "39% session left",
+            pacingState: PacingState(weeklyUtilizationPercent: 44),
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "codex-rate-limits",
+                    values: ["primary": "61|300|2023-11-14T23:13:20.000Z"]
+                )
+            ]
+        )
+
+        let text = MenuBarStatusFormatter().menuBarTitle(provider: provider)
+
+        XCTAssertEqual(text, "Codex 39% session left")
+    }
+
+    func testCompactMenuBarTitleUsesClaudePrimaryMetricBeforeSessionRows() {
+        let provider = ProviderState(
+            providerId: .claude,
+            displayName: "Claude",
+            status: .configured,
+            confidence: .exact,
+            headline: "Claude usage refreshed",
+            primaryValue: "44% used",
+            pacingState: PacingState(weeklyUtilizationPercent: 44),
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "usageRows",
+                    values: ["Session": "61|2026-04-29T17:00:00.000Z|exact"]
+                )
+            ]
+        )
+
+        let text = MenuBarStatusFormatter().menuBarTitle(provider: provider)
+
+        XCTAssertEqual(text, "Claude 44% used")
+    }
+
     func testMenuBarTitleUsesThemeForCodexWeeklyQuotaWithoutSessionPayload() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let provider = ProviderState(

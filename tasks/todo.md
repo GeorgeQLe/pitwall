@@ -12,6 +12,19 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Usage calculation accuracy audit
+  - [x] Trace provider usage values through parser, provider state, formatter, card, and history paths.
+  - [x] Remove fabricated utilization/reset values from initial app state.
+  - [x] Make compact menu-bar titles use canonical provider primary metrics.
+  - [x] Align today's usage baseline with the closest retained pre-midnight snapshot.
+  - [x] Add focused regression coverage for corrected accuracy paths.
+  - [x] Verify focused and full Swift tests pass.
+
+### Review: Usage Calculation Accuracy Audit
+
+- Result: The audit found three accuracy problems: launch state used hardcoded demo utilization/reset values before real configuration/history loaded; compact menu-bar titles silently preferred unlabeled session percentages over the provider's canonical primary metric; and today's usage only accepted a baseline from the immediately previous local day instead of the closest retained snapshot before local midnight. Pitwall now starts from setup placeholders, compact titles match provider-card primary metrics such as Codex session remaining, and daily usage uses the closest retained pre-midnight baseline.
+- Verification: `swift test --filter DailyBudgetTests` passed 6 tests; `swift test --filter MenuBarStatusFormatterTests` passed 20 tests; `swift test --filter ProviderStateFactoryTests` passed 7 tests; `swift test` passed 272 tests.
+
 - [x] Hotfix: Compact menu bar title mode
   - [x] Add persisted compact/rich menu bar title preference.
   - [x] Default menu bar titles to compact provider + metric text.

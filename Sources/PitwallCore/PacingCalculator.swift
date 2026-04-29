@@ -152,16 +152,9 @@ public struct PacingCalculator: Sendable {
         localCalendar.timeZone = timeZone
 
         let startOfToday = localCalendar.startOfDay(for: now)
-        let startOfPreviousDay = localCalendar.date(
-            byAdding: .day,
-            value: -1,
-            to: startOfToday
-        ) ?? startOfToday.addingTimeInterval(-Self.secondsPerDay)
         let sortedSnapshots = retainedSnapshots.sorted { $0.recordedAt < $1.recordedAt }
 
-        if let baseline = sortedSnapshots.last(where: {
-            $0.recordedAt < startOfToday && $0.recordedAt >= startOfPreviousDay
-        }) {
+        if let baseline = sortedSnapshots.last(where: { $0.recordedAt < startOfToday }) {
             return TodayUsage(
                 status: .exact,
                 utilizationDeltaPercent: max(0, weeklyUtilizationPercent - baseline.weeklyUtilizationPercent),
