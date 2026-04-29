@@ -12,6 +12,18 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Session-first compact menu bar and popover S:/W: display
+  - [x] Reorder `compactMenuBarTitle` to prefer session utilization over `primaryValue`.
+  - [x] Extract shared `sessionUtilizationPercent` into `ProviderState+SessionUtilization.swift`.
+  - [x] Update popover `ProviderCardViewModel.primaryMetric` to show `S:X% W:Y%` format.
+  - [x] Update compact menu bar and provider card tests.
+  - [x] Verify all 272 tests pass.
+
+### Review: Session-First Compact Menu Bar
+
+- Result: Compact menu bar titles now consistently show session utilization for all providers (Claude and Codex) instead of inconsistently using weekly-based `primaryValue` for Claude and session-based for Codex. The popover provider card primary metric now shows `S:X% W:Y%` when both session and weekly data are available. Session utilization parsing was extracted into a shared `ProviderState` extension to eliminate duplication between `MenuBarStatusFormatter` and `ProviderCardViewModel`.
+- Verification: `swift test` passed 272 / 272 with 0 failures.
+
 - [x] Hotfix: Usage calculation accuracy audit
   - [x] Trace provider usage values through parser, provider state, formatter, card, and history paths.
   - [x] Remove fabricated utilization/reset values from initial app state.

@@ -2,6 +2,9 @@
 
 ## 2026-04-29
 
+- Session-first compact menu bar and popover S:/W: display shipped: compact menu bar titles now prefer `sessionUtilizationPercent` over `primaryValue`, so Claude and Codex both consistently show session "X% left" instead of Claude showing weekly and Codex showing session. Popover provider card primary metric now shows `S:X% W:Y%` when both session and weekly data are available. Session utilization parsing extracted from `MenuBarStatusFormatter` into a shared `ProviderState+SessionUtilization.swift` extension used by both the formatter and `ProviderCardViewModel`.
+- Validation: `swift test` passes **272 / 272** with 0 failures.
+
 - Usage calculation accuracy audit shipped: removed hardcoded demo utilization/reset values from the initial app state so Pitwall no longer displays fabricated tracked usage before real configuration/history/refresh data loads. Compact menu-bar titles now use each provider's canonical `primaryValue` before derived session/weekly fallbacks, keeping Codex compact display aligned with the provider-card/slash-status session-remaining metric and Claude compact display aligned with the weekly primary metric. Today's usage now uses the closest retained snapshot before local midnight rather than only accepting snapshots from the immediately previous local day.
 - Validation: `swift test --filter DailyBudgetTests` passes **6 / 6**; `swift test --filter MenuBarStatusFormatterTests` passes **20 / 20**; `swift test --filter ProviderStateFactoryTests` passes **7 / 7**; `swift test` passes **272 / 272** with 0 failures.
 
