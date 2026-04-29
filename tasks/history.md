@@ -2,6 +2,9 @@
 
 ## 2026-04-29
 
+- F1 Quali theme emoji mapping fixed: replaced semantically broken emoji assignments with a proper F1 timing-screen color gradient (🟣→🟢→🟡→🟠→🔴→🏁). Green no longer means "warning", black circle removed for wayBehind, and limitHit now uses 🏁 checkered flag instead of 🔴 to distinguish "session over" from "danger". Target emoji changed from 🎯 to 🏎️ for thematic consistency.
+- Validation: `swift test` passes **272 / 272** with 0 failures.
+
 - Session-first compact menu bar and popover S:/W: display shipped: compact menu bar titles now prefer `sessionUtilizationPercent` over `primaryValue`, so Claude and Codex both consistently show session "X% left" instead of Claude showing weekly and Codex showing session. Popover provider card primary metric now shows `S:X% W:Y%` when both session and weekly data are available. Session utilization parsing extracted from `MenuBarStatusFormatter` into a shared `ProviderState+SessionUtilization.swift` extension used by both the formatter and `ProviderCardViewModel`.
 - Validation: `swift test` passes **272 / 272** with 0 failures.
 
