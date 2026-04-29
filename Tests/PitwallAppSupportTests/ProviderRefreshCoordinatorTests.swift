@@ -292,7 +292,7 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertEqual(codex?.primaryValue, "39% session left")
         XCTAssertEqual(codex?.pacingState?.weeklyUtilizationPercent, 44)
         XCTAssertEqual(codex?.pacingState?.sessionPace?.remainingWindowDuration, 60 * 60)
-        XCTAssertTrue(text?.contains("39%") == true)
+        XCTAssertTrue(text?.contains("61%") == true)
         XCTAssertTrue(text?.contains("44%/w") == true)
         XCTAssertTrue(text?.contains("1h 0m 0s") == true)
     }

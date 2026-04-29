@@ -2,7 +2,23 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Codex Five-Hour Session Remaining Display
+## Current Hotfix: Shared Menu Bar Usage Scheme
+
+**Goal:** Make Claude, Codex, and Gemini menu bar quota percentages and emoji colors use one consistent usage-consumed scheme.
+
+**Scope:**
+- Treat rich menu bar session, daily, and weekly percentages as used percentages across all providers.
+- Derive each segment's emoji status from the same used percentage rendered beside it.
+- Keep Codex provider-card primary metric as five-hour session remaining where that matches the provider state summary, but do not invert Codex in rich menu bar titles/tooltips.
+- Update focused formatter regression coverage.
+
+**Acceptance Criteria:**
+- Codex rich menu title displays the five-hour session bucket as used percentage, not remaining percentage.
+- Codex session emoji status is calculated from the same used percentage shown in the title.
+- Claude, Codex, and Gemini tooltip/session copy use one "used" semantic for quota percentages.
+- Focused Swift formatter tests pass.
+
+## Previous Hotfix: Codex Five-Hour Session Remaining Display
 
 **Goal:** Make Codex visible usage match slash status by showing the five-hour session remaining budget instead of the weekly/secondary used percentage as the primary value.
 

@@ -12,6 +12,18 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Shared menu bar usage scheme
+  - [x] Trace provider-specific rich menu bar percentage and emoji selection.
+  - [x] Use used-percent semantics for rich session quota display across providers.
+  - [x] Make tooltip session copy use the same "used" wording across providers.
+  - [x] Update focused formatter regression coverage.
+  - [x] Verify focused Swift tests pass.
+
+### Review: Shared Menu Bar Usage Scheme
+
+- Result: Rich menu bar titles now render session, daily, and weekly quota percentages as used percentages across Claude, Codex, and Gemini. Codex no longer displays a five-hour remaining percentage beside an emoji derived from five-hour usage; the title and tooltip both use the primary five-hour bucket as used percentage. Codex provider-card primary metrics still retain the session-left summary from provider state.
+- Verification: `swift test --filter MenuBarStatusFormatterTests` passed 18 tests; `swift test --filter ProviderRefreshCoordinatorTests` passed 15 tests; `swift test` passed 269 tests.
+
 - [x] Hotfix: Codex five-hour session remaining display
   - [x] Trace Codex primary/secondary rate-limit bucket flow into provider state and menu formatter.
   - [x] Make Codex primary visible metric use primary five-hour session remaining.

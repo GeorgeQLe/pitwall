@@ -187,7 +187,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             """
             Claude
             Claude usage refreshed
-            Session: 26%
+            Session: 26% used
             Today: 12% used / 18% target
             Weekly: 42.4%
             Recommendation: conserve
@@ -240,7 +240,7 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Codex 🏃 74% 🦥 12%/18%/day 🔥 42.4%/w 1h 30m 0s")
+        XCTAssertEqual(text, "Codex 🏃 26% 🦥 12%/18%/day 🔥 42.4%/w 1h 30m 0s")
     }
 
     func testCodexMenuBarTitleUsesPrimaryFiveHourResetCountdown() {
@@ -286,10 +286,10 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(text, "Codex 🏃 76% 🛌 6%/24.7%/day 🚶 26%/w 1h 0m 0s")
+        XCTAssertEqual(text, "Codex 🏃 24% 🛌 6%/24.7%/day 🚶 26%/w 1h 0m 0s")
     }
 
-    func testCodexMenuBarTitleShowsFiveHourSessionRemainingNotWeeklyUsed() {
+    func testCodexMenuBarTitleUsesFiveHourSessionUsedWithSharedUsageScheme() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let provider = ProviderState(
             providerId: .codex,
@@ -331,8 +331,8 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(title, "Codex 🏃 40% 🛌 8%/w 1h 0m 0s")
-        XCTAssertTrue(tooltip.contains("Session: 40% left"))
+        XCTAssertEqual(title, "Codex 🏃 60% 🛌 8%/w 1h 0m 0s")
+        XCTAssertTrue(tooltip.contains("Session: 60% used"))
         XCTAssertTrue(tooltip.contains("Weekly: 8%"))
     }
 

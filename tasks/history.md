@@ -1,5 +1,10 @@
 # History
 
+## 2026-04-29
+
+- Shared menu bar usage scheme fixed: rich menu titles and tooltips now use the same usage-consumed percentage semantics for session quota across Claude, Codex, and Gemini. Codex no longer renders a five-hour session remaining percentage beside an emoji calculated from five-hour session usage; a `60%` used five-hour bucket now displays as `60% used` in the rich menu path. Codex provider-card primary metrics still keep the separate `session left` summary from provider state.
+- Validation: `swift test --filter MenuBarStatusFormatterTests` passes **18 / 18**; `swift test --filter ProviderRefreshCoordinatorTests` passes **15 / 15**; `swift test` passes **269 / 269** with 0 failures.
+
 ## 2026-04-28
 
 - Codex five-hour display fixed: Codex provider state now uses the primary five-hour rate-limit bucket for the visible primary metric as session remaining, while retaining the secondary/weekly bucket for weekly pace and daily-budget calculations. Rich Codex menu titles and tooltips now show session remaining, so a `60%` used five-hour bucket renders as `40% left` instead of surfacing an unrelated `8%` weekly usage value.
