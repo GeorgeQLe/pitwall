@@ -744,6 +744,7 @@ public struct ProcessCodexCommandRunner: CodexCommandRunning {
         process.standardError = stderrPipe
 
         return try await withCheckedThrowingContinuation { continuation in
+            let completion = ProcessCodexCommandCompletion(continuation)
             process.terminationHandler = { process in
                 let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
                 let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
@@ -752,7 +753,7 @@ public struct ProcessCodexCommandRunner: CodexCommandRunning {
                     stderr: String(data: stderrData, encoding: .utf8) ?? "",
                     exitCode: process.terminationStatus
                 )
-                continuation.resume(returning: result)
+                completion.resume(returning: result)
             }
 
             do {
@@ -766,9 +767,49 @@ public struct ProcessCodexCommandRunner: CodexCommandRunning {
                     try process.run()
                 }
             } catch {
-                continuation.resume(throwing: error)
+                if process.isRunning {
+                    process.terminate()
+                }
+                completion.resume(throwing: error)
             }
         }
+    }
+}
+
+final class ProcessCodexCommandCompletion: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<ProcessExecutionResult, Error>?
+
+    init(_ continuation: CheckedContinuation<ProcessExecutionResult, Error>) {
+        self.continuation = continuation
+    }
+
+    @discardableResult
+    func resume(returning result: ProcessExecutionResult) -> Bool {
+        resume { continuation in
+            continuation.resume(returning: result)
+        }
+    }
+
+    @discardableResult
+    func resume(throwing error: Error) -> Bool {
+        resume { continuation in
+            continuation.resume(throwing: error)
+        }
+    }
+
+    private func resume(
+        _ perform: (CheckedContinuation<ProcessExecutionResult, Error>) -> Void
+    ) -> Bool {
+        lock.lock()
+        guard let continuation else {
+            lock.unlock()
+            return false
+        }
+        self.continuation = nil
+        lock.unlock()
+        perform(continuation)
+        return true
     }
 }
 

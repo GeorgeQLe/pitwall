@@ -267,6 +267,18 @@ final class CodexAuthControllerTests: XCTestCase {
         XCTAssertEqual(invocation?.stdin, "sk-test\n")
     }
 
+    func testProcessCommandCompletionIgnoresSecondResume() async throws {
+        let result = try await withCheckedThrowingContinuation { continuation in
+            let completion = ProcessCodexCommandCompletion(continuation)
+
+            XCTAssertTrue(completion.resume(returning: .init(stdout: "first", exitCode: 0)))
+            XCTAssertFalse(completion.resume(throwing: TestError()))
+        }
+
+        XCTAssertEqual(result.stdout, "first")
+        XCTAssertEqual(result.exitCode, 0)
+    }
+
     func testLogoutReturnsMissingState() async throws {
         let runner = StubRunner(
             responses: [
@@ -303,6 +315,8 @@ final class CodexAuthControllerTests: XCTestCase {
         return await controller.currentChatGPTLoginState()
     }
 }
+
+private struct TestError: Error {}
 
 private actor StubRunner: CodexCommandRunning {
     struct Invocation: Equatable {
