@@ -1,5 +1,10 @@
 # History
 
+## 2026-04-30
+
+- Weekly cap feasibility indicator: added `projectedWeeklyMaxPercent` to `PacingState`, computed from `paceRatio * 100` via new `PacingCalculator.projectedWeeklyMax(paceRatio:)`. Claude and Codex provider state construction now derive the projection when weekly pace is available and not capped/notEnoughWindow. The indicator surfaces in `ProviderCardViewModel.actionReasonText` (all providers) and `ClaudeUsageRowsView` weekly detail row as either "You can still max out this week." (≥100%) or "Max reachable: ~X% at current pace." (<100%). Two new unit tests cover reachable and unreachable projections.
+- Validation: `swift build` clean; `swift test` passes **277 / 277** with 0 failures; `make build` succeeds.
+
 ## 2026-04-29
 
 - Periodic auto-refresh timer: `MenuBarController` now schedules a one-shot refresh timer from `ProviderRefreshOutcome.nextClaudeRefreshAt` after every refresh outcome. The self-sustaining loop keeps usage data fresh (~5 min intervals via `PollingPolicy`) without user interaction. Only `MenuBarController.swift` modified; 275/275 tests pass.
