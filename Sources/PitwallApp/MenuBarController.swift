@@ -319,7 +319,7 @@ final class MenuBarController: NSObject {
         }
     }
 
-    private func loadConfiguration(showOnboardingIfNeeded: Bool = true) {
+    private func loadConfiguration() {
         Task {
             let snapshot = await configurationStore.load()
             let loadedPhase4Settings = await phase4SettingsStore.load()
@@ -333,11 +333,6 @@ final class MenuBarController: NSObject {
             let refreshOutcome = await refreshCoordinator.refreshProviders(trigger: .automatic)
             applyRefreshOutcome(refreshOutcome)
             await refreshGitHubHeatmapIfNeeded(trigger: .automatic)
-
-            _ = showOnboardingIfNeeded
-            // Onboarding is surfaced via handleStatusItemClick when the flag
-            // is unset; auto-presenting during launch races the status item's
-            // first layout pass.
         }
     }
 
@@ -455,7 +450,7 @@ final class MenuBarController: NSObject {
                 onFinish: { [weak self] in
                     self?.onboardingDefaults.set(true, forKey: Self.onboardingCompletedKey)
                     self?.popoverController.forceDismissOnboardingPanel()
-                    self?.loadConfiguration(showOnboardingIfNeeded: false)
+                    self?.loadConfiguration()
                 }
             )
         }
@@ -471,7 +466,7 @@ final class MenuBarController: NSObject {
                     userPreferences: snapshot.userPreferences
                 )
             }
-            loadConfiguration(showOnboardingIfNeeded: false)
+            loadConfiguration()
             return nil
         } catch {
             return "Could not save settings: \(error.localizedDescription)"
@@ -534,7 +529,7 @@ final class MenuBarController: NSObject {
     private func saveClaudeCredentials(_ input: ClaudeCredentialInput) async -> String? {
         do {
             _ = try await claudeSettings.saveCredentials(input)
-            loadConfiguration(showOnboardingIfNeeded: false)
+            loadConfiguration()
             return nil
         } catch {
             return "Could not save Claude credentials: \(error.localizedDescription)"
@@ -544,7 +539,7 @@ final class MenuBarController: NSObject {
     private func deleteClaudeCredentials(accountId: String) async -> String? {
         do {
             try await claudeSettings.deleteCredentials(accountId: accountId)
-            loadConfiguration(showOnboardingIfNeeded: false)
+            loadConfiguration()
             return nil
         } catch {
             return "Could not delete Claude credentials: \(error.localizedDescription)"
@@ -587,10 +582,9 @@ final class MenuBarController: NSObject {
 
     private func currentCodexChatGPTLoginState() async -> CodexDeviceAuthSessionState {
         let state = await codexAuthController.currentChatGPTLoginState()
-        if let finalSetupState = state.finalSetupState {
+        if state.finalSetupState != nil {
             let refresh = await refreshCoordinator.refreshProviders(trigger: .manual)
             applyRefreshOutcome(refresh)
-            _ = finalSetupState
         }
         return state
     }
@@ -883,8 +877,6 @@ final class MenuBarController: NSObject {
     }
 
     private func preferredClaudeAccountId() -> String? {
-        let claudeAccountIds = appState.providers
-        _ = claudeAccountIds
         return providerHistorySnapshots
             .filter { $0.providerId == .claude }
             .max(by: { $0.recordedAt < $1.recordedAt })?

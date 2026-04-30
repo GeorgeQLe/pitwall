@@ -376,3 +376,11 @@ Documented platform limitations carried forward from the Phase 5 CI gap. They do
 - Wire production `libayatana-appindicator` glue (plus "no tray available" fallback) on top of `LinuxTrayMenuViewModel`. _Blocked on: Linux CI host._
 - Wire real filesystem probes for Codex/Gemini presence on Windows (`FindFirstFileW`) and Linux (`stat(2)`) behind existing `*FilesystemProbing` seams. _Blocked on: Windows + Linux CI hosts._
 - Windows + Linux packaging specs analogous to `specs/pitwall-macos-packaging.md`, once real platform backends are wired.
+
+## Dead Code Cleanup (2026-04-30)
+
+- [x] Remove unused `moduleName` + `implementationScope` from 5 module namespace enums (PitwallCore, PitwallShared, PitwallAppSupport, PitwallWindows, PitwallLinux).
+- [x] Remove dead `claudeAccountIds` variable in `preferredClaudeAccountId()`.
+- [x] Remove unused `showOnboardingIfNeeded` parameter from `loadConfiguration()` and all 4 call sites.
+- [x] Replace `if let finalSetupState` with nil check in `currentCodexChatGPTLoginState()`.
+- Verification: `swift build` clean; `swift test` passes **277 / 277** with 0 failures.

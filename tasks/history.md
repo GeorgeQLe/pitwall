@@ -2,6 +2,9 @@
 
 ## 2026-04-30
 
+- Dead code cleanup: removed 8 confirmed dead code items across 6 files. Deleted unused `moduleName` and `implementationScope` static properties from all 5 module namespace enums (PitwallCore kept as empty enum). Removed dead `claudeAccountIds` variable in `MenuBarController.preferredClaudeAccountId()`. Removed unused `showOnboardingIfNeeded` parameter from `loadConfiguration()` and updated 4 call sites. Replaced `if let finalSetupState` binding with nil check in `currentCodexChatGPTLoginState()`.
+- Validation: `swift build` clean; `swift test` passes **277 / 277** with 0 failures.
+
 - Weekly cap feasibility indicator: added `projectedWeeklyMaxPercent` to `PacingState`, computed from `paceRatio * 100` via new `PacingCalculator.projectedWeeklyMax(paceRatio:)`. Claude and Codex provider state construction now derive the projection when weekly pace is available and not capped/notEnoughWindow. The indicator surfaces in `ProviderCardViewModel.actionReasonText` (all providers) and `ClaudeUsageRowsView` weekly detail row as either "You can still max out this week." (≥100%) or "Max reachable: ~X% at current pace." (<100%). Two new unit tests cover reachable and unreachable projections.
 - Validation: `swift build` clean; `swift test` passes **277 / 277** with 0 failures; `make build` succeeds.
 
