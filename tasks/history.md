@@ -2,6 +2,8 @@
 
 ## 2026-04-30
 
+- Documentation update: updated README.md (status section, module list, development commands, installation section) and CLAUDE.md (test baseline 212→277) to reflect current project state — 6 modules, 277 tests, Phase 6b in progress.
+
 - Dead code cleanup: removed 8 confirmed dead code items across 6 files. Deleted unused `moduleName` and `implementationScope` static properties from all 5 module namespace enums (PitwallCore kept as empty enum). Removed dead `claudeAccountIds` variable in `MenuBarController.preferredClaudeAccountId()`. Removed unused `showOnboardingIfNeeded` parameter from `loadConfiguration()` and updated 4 call sites. Replaced `if let finalSetupState` binding with nil check in `currentCodexChatGPTLoginState()`.
 - Validation: `swift build` clean; `swift test` passes **277 / 277** with 0 failures.
 

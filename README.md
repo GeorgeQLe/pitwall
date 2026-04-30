@@ -8,16 +8,16 @@ The product goal is simple: help power users know when to push, conserve, switch
 
 This repository is a fresh clean-room implementation. It intentionally does not copy Swift/Xcode source, assets, or release artifacts from `linuxlewis/claude-usage` or the previous `claude-usage-review` fork.
 
-Current phase:
+Phases 1–6a are shipped. Phase 6b (macOS public release) is in progress, blocked on manual prerequisites (Apple Developer enrollment, code signing, notarization).
 
-- The Swift package exposes a `PitwallCore` library target for provider-agnostic pacing models and calculations.
-- Core tests can be run locally with `swift test`.
-- The initial website lives in `docs/` and can be served by GitHub Pages.
-- The first implementation target is a native macOS menu bar app.
+- Native macOS menu bar app with real-time pacing across Claude, Codex, and Gemini.
+- 277 tests passing across all modules.
+- Local install via `make install`; signed release channel via `make release` (pending).
+- Homebrew cask formula ready (pending tap publication).
 
-### Cross-Platform Plans
+### Cross-Platform
 
-Pitwall is moving toward Windows and Linux parity after the macOS v1 feature set. Windows and Linux support is not working yet; it is planned as a set of platform-specific shells built on top of the existing `PitwallCore` Swift module. The selected approach and adapter seams are documented in `docs/cross-platform-architecture.md`.
+Windows and Linux platform shells exist in `Sources/PitwallWindows` and `Sources/PitwallLinux`, built on shared `PitwallCore` and `PitwallShared` contracts. They are not yet functional — blocked on CI hosts and platform-specific UI toolkits. Architecture decisions are documented in `docs/cross-platform-architecture.md`.
 
 ## Why Pitwall
 
@@ -42,32 +42,38 @@ Future app targets should be implemented from the repository specs, public provi
 
 ## Development
 
-Pitwall currently builds as a Swift package with a single library product:
+Pitwall builds as a Swift package (Swift 5.9, macOS 13.0+) with six modules:
 
-- `PitwallCore`: provider-agnostic pacing models and deterministic pacing calculations.
-
-Run the core test suite with:
+- `PitwallCore` — provider-agnostic pacing models, calculations, Claude parsing, secret-store protocol.
+- `PitwallShared` — cross-platform shared behavior fixtures and contracts (no AppKit).
+- `PitwallAppSupport` — macOS-host helpers (packaging version, login-item service).
+- `PitwallApp` — macOS SwiftUI + AppKit menu bar shell (executable).
+- `PitwallWindows` / `PitwallLinux` — platform shells against `PitwallShared` contracts.
 
 ```sh
-swift test
+swift build        # Build all modules
+swift test         # Run full test suite (277 tests)
+make build         # Assemble build/Pitwall.app (ad-hoc codesigned)
+make install       # Install to /Applications/Pitwall.app
+make uninstall     # Remove app (preserves user data + Keychain)
 ```
-
-The package intentionally does not contain provider credentials, provider network clients, local provider file readers, or production UI code yet.
 
 ## Installation
 
-Local macOS development builds install from source:
+From source:
 
 ```sh
 make install
 ```
 
-The public release channel is planned as a signed, notarized DMG on GitHub Releases. After the Homebrew tap and first release are published, install the cask with:
+After the first public release, via Homebrew:
 
 ```sh
 brew tap georgele/pitwall
 brew install --cask pitwall
 ```
+
+Signed DMG releases on GitHub Releases are planned once Apple Developer enrollment and notarization are complete.
 
 ## Claude Credential Setup
 

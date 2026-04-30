@@ -9,7 +9,7 @@ Pitwall is a clean-room, MIT-licensed Swift menu bar app that paces AI coding su
 ## Build / test
 
 - `swift build` — primary build gate (macOS toolchain).
-- `swift test` — full XCTest suite. **Current baseline: 212 / 212, zero regressions.** Any change must keep this green.
+- `swift test` — full XCTest suite. **Current baseline: 277 / 277, zero regressions.** Any change must keep this green.
 - `make build` — assembles `build/Pitwall.app` via `scripts/build-app-bundle.sh` (ad-hoc codesigned).
 - `make install` / `make uninstall` — install/remove `/Applications/Pitwall.app`. `uninstall` preserves `~/Library/Application Support/Pitwall/` + Keychain items; treat both as destructive of the installed copy only.
 - `bash scripts/smoke-install.sh` — packaging-artifact validator; run after any change to `scripts/build-app-bundle.sh`, `Makefile`, or `Sources/PitwallApp/Info.plist`.
