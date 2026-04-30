@@ -2,6 +2,9 @@
 
 ## 2026-04-30
 
+- CalcLLM boundary cleanup: removed the connected-mode CalcLLM auth/sync source, Settings UI, popover upsell, and CalcLLM-specific tests from the OSS Pitwall tree so this repo remains local-only. Preserved generic JWT/access-token diagnostics redaction hardening and added `tasks/monorepo-handoff.md` for the future monorepo with separate Pitwall Local and Pitwall powered by CalcLLM products.
+- Validation: `swift test` passed 280 tests with 0 failures.
+
 - Documentation update: updated README.md (status section, module list, development commands, installation section) and CLAUDE.md (test baseline 212→277) to reflect current project state — 6 modules, 277 tests, Phase 6b in progress.
 
 - Dead code cleanup: removed 8 confirmed dead code items across 6 files. Deleted unused `moduleName` and `implementationScope` static properties from all 5 module namespace enums (PitwallCore kept as empty enum). Removed dead `claudeAccountIds` variable in `MenuBarController.preferredClaudeAccountId()`. Removed unused `showOnboardingIfNeeded` parameter from `loadConfiguration()` and updated 4 call sites. Replaced `if let finalSetupState` binding with nil check in `currentCodexChatGPTLoginState()`.

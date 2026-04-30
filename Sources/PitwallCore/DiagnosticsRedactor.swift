@@ -355,7 +355,8 @@ public struct DiagnosticsRedactor: Equatable, Sendable {
             #"gh[opsu]_[A-Za-z0-9_]+"#,
             #"tok_[A-Za-z0-9_\-]+"#,
             #"acct_[A-Za-z0-9_\-]+"#,
-            #"sessionKey=[A-Za-z0-9._\-]+"#
+            #"sessionKey=[A-Za-z0-9._\-]+"#,
+            #"eyJ[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+"#
         ]
     }
 }
@@ -391,7 +392,10 @@ private extension String {
             "modelresponsedata",
             "stdout",
             "source",
-            "sourcecontent"
+            "sourcecontent",
+            "accesstoken",
+            "refreshtoken",
+            "jwttoken"
         ].contains { normalized.contains($0) }
     }
 }

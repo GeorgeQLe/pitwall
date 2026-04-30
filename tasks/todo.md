@@ -12,6 +12,15 @@
 
 ## Priority Task Queue
 
+## Code Review Fixes
+
+- [x] High — `Sources/PitwallAppSupport/CalcLLMSyncClient.swift:24`: remove the CalcLLM cloud-sync client/coordinator and related UI from this OSS repo so Pitwall remains local-only. Future connected-mode work is handed off to `tasks/monorepo-handoff.md` for a separate monorepo with local-only and powered editions.
+
+### Review: CalcLLM Boundary Cleanup
+
+- Result: Removed the CalcLLM auth/sync implementation, Settings section, popover upsell, and CalcLLM-specific tests from the OSS Pitwall tree. Kept generic JWT/access-token diagnostics redaction hardening because it protects local diagnostics without introducing a connected feature.
+- Future work: Build a new monorepo with a local-only Pitwall app and a CalcLLM-powered app as separate products; see `tasks/monorepo-handoff.md`.
+
 - [x] Hotfix: Double refresh crash
   - [x] Validate the double-refresh crash report against the current app path.
   - [x] Trace manual refresh, auto-refresh timer, and provider state mutation behavior.

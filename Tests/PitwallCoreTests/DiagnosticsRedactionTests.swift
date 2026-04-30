@@ -77,4 +77,29 @@ final class DiagnosticsRedactionTests: XCTestCase {
         XCTAssertTrue(serialized.contains("healthy"))
         XCTAssertTrue(serialized.contains("Network unavailable"))
     }
+
+    func testRedactsJWTsAndOAuthTokensFromDiagnosticEvents() {
+        let jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
+        let event = DiagnosticEvent(
+            providerId: .claude,
+            occurredAt: Date(timeIntervalSince1970: 1_800_000_000),
+            summary: "OAuth refresh with token \(jwt)",
+            details: [
+                "access_token": "some_access_value",
+                "refresh_token": "some_refresh_value",
+                "jwt_token": "some_jwt_value",
+                "safe_key": "this is safe"
+            ]
+        )
+
+        let redacted = DiagnosticsRedactor().redact(event)
+        let serialized = String(describing: redacted)
+
+        XCTAssertFalse(serialized.contains("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"))
+        XCTAssertFalse(serialized.contains("some_access_value"))
+        XCTAssertFalse(serialized.contains("some_refresh_value"))
+        XCTAssertFalse(serialized.contains("some_jwt_value"))
+        XCTAssertTrue(serialized.contains("this is safe"))
+        XCTAssertTrue(serialized.contains("[redacted]"))
+    }
 }
