@@ -43,6 +43,10 @@ public struct PacingCalculator: Sendable {
         )
     }
 
+    public func projectedWeeklyMax(paceRatio: Double) -> Double {
+        paceRatio * 100
+    }
+
     public func dailyBudget(
         weeklyUtilizationPercent: Double,
         resetAt: Date,

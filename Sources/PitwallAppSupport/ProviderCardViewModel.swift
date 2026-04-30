@@ -156,6 +156,14 @@ public struct ProviderCardViewModel: Equatable, Sendable {
             }
         }
 
+        if let projected = pacing.projectedWeeklyMaxPercent {
+            if projected >= 100 {
+                clauses.append("You can still max out this week.")
+            } else {
+                clauses.append("Max reachable: ~\(formatPercent(projected)) at current pace.")
+            }
+        }
+
         return clauses.isEmpty ? nil : clauses.joined(separator: " ")
     }
 

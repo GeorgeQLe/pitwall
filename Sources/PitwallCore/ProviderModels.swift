@@ -141,6 +141,7 @@ public struct PacingState: Equatable, Sendable {
     public var estimatedExtraUsageExposure: Double?
     public var weeklyPace: PaceEvaluation?
     public var sessionPace: PaceEvaluation?
+    public var projectedWeeklyMaxPercent: Double?
 
     public init(
         weeklyUtilizationPercent: Double? = nil,
@@ -152,7 +153,8 @@ public struct PacingState: Equatable, Sendable {
         underUseSignal: Bool = false,
         estimatedExtraUsageExposure: Double? = nil,
         weeklyPace: PaceEvaluation? = nil,
-        sessionPace: PaceEvaluation? = nil
+        sessionPace: PaceEvaluation? = nil,
+        projectedWeeklyMaxPercent: Double? = nil
     ) {
         self.weeklyUtilizationPercent = weeklyUtilizationPercent
         self.remainingWindowDuration = remainingWindowDuration
@@ -164,6 +166,7 @@ public struct PacingState: Equatable, Sendable {
         self.estimatedExtraUsageExposure = estimatedExtraUsageExposure
         self.weeklyPace = weeklyPace
         self.sessionPace = sessionPace
+        self.projectedWeeklyMaxPercent = projectedWeeklyMaxPercent
     }
 }
 

@@ -229,4 +229,16 @@ final class PacingCalculatorTests: XCTestCase {
         XCTAssertEqual(result.action, expectedAction, file: file, line: line)
         XCTAssertEqual(result.paceRatio ?? 0, expectedRatio, accuracy: 0.01, file: file, line: line)
     }
+
+    // MARK: - Projected Weekly Max
+
+    func testProjectedWeeklyMax_reachable() {
+        XCTAssertEqual(calculator.projectedWeeklyMax(paceRatio: 1.0), 100.0)
+        XCTAssertEqual(calculator.projectedWeeklyMax(paceRatio: 1.5), 150.0)
+    }
+
+    func testProjectedWeeklyMax_unreachable() {
+        XCTAssertEqual(calculator.projectedWeeklyMax(paceRatio: 0.72), 72.0)
+        XCTAssertEqual(calculator.projectedWeeklyMax(paceRatio: 0.0), 0.0)
+    }
 }

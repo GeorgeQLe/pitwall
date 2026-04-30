@@ -207,6 +207,16 @@ public struct ClaudeUsageClient: Sendable {
             )
         }
 
+        let projectedWeeklyMaxPercent: Double? = {
+            guard let pace = weeklyPace,
+                  let ratio = pace.paceRatio,
+                  pace.label != .capped,
+                  pace.label != .notEnoughWindow else {
+                return nil
+            }
+            return pacingCalculator.projectedWeeklyMax(paceRatio: ratio)
+        }()
+
         return ProviderState(
             providerId: .claude,
             displayName: "Claude",
@@ -224,7 +234,8 @@ public struct ClaudeUsageClient: Sendable {
                 todayUsage: dailyBudget?.todayUsage,
                 estimatedExtraUsageExposure: response.extraUsage?.usedCredits,
                 weeklyPace: weeklyPace,
-                sessionPace: sessionPace
+                sessionPace: sessionPace,
+                projectedWeeklyMaxPercent: projectedWeeklyMaxPercent
             ),
             confidenceExplanation: "Claude returned fresh usage data for the selected account.",
             actions: [

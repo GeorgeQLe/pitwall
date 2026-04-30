@@ -422,6 +422,16 @@ public actor ProviderRefreshCoordinator {
             )
         }
 
+        let projectedWeeklyMaxPercent: Double? = {
+            guard let pace = weeklyPace,
+                  let ratio = pace.paceRatio,
+                  pace.label != .capped,
+                  pace.label != .notEnoughWindow else {
+                return nil
+            }
+            return PacingCalculator().projectedWeeklyMax(paceRatio: ratio)
+        }()
+
         return ProviderState(
             providerId: .codex,
             displayName: "Codex",
@@ -443,7 +453,8 @@ public actor ProviderRefreshCoordinator {
                 dailyBudget: dailyBudget,
                 todayUsage: dailyBudget?.todayUsage,
                 weeklyPace: weeklyPace,
-                sessionPace: sessionPace
+                sessionPace: sessionPace,
+                projectedWeeklyMaxPercent: projectedWeeklyMaxPercent
             ),
             confidenceExplanation: "Codex returned provider-supplied rate-limit data through the local CLI app-server.",
             actions: [

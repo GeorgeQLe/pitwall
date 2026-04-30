@@ -97,7 +97,15 @@ struct ClaudeUsageRowsView: View {
                let expected = weeklyPace.expectedUtilizationPercent {
                 let delta = weeklyUtilization - expected
                 let direction = delta >= 0 ? "ahead of" : "under"
-                updated.detailText = "Expected \(formatPercent(expected)) by now; \(formatPoints(abs(delta))) pts \(direction) pace."
+                var detail = "Expected \(formatPercent(expected)) by now; \(formatPoints(abs(delta))) pts \(direction) pace."
+                if let projected = provider.pacingState?.projectedWeeklyMaxPercent {
+                    if projected >= 100 {
+                        detail += " You can still max out this week."
+                    } else {
+                        detail += " Max reachable: ~\(formatPercent(projected)) at current pace."
+                    }
+                }
+                updated.detailText = detail
             }
 
         case "Session":
