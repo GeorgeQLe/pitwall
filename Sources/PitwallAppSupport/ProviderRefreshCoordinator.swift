@@ -60,6 +60,7 @@ public actor ProviderRefreshCoordinator {
     private var claudeFailureState = RefreshFailureState()
     private var lastClaudeSnapshotByAccountId: [String: ClaudeUsageSnapshot] = [:]
     private var lastClaudeRefreshAttemptAt: Date?
+    private var inFlightRefresh: Task<ProviderRefreshOutcome, Never>?
 
     public init(
         configurationStore: ProviderConfigurationStore,
@@ -90,6 +91,25 @@ public actor ProviderRefreshCoordinator {
     }
 
     public func refreshProviders(
+        trigger: RefreshTrigger = .automatic
+    ) async -> ProviderRefreshOutcome {
+        if let inFlightRefresh {
+            return await inFlightRefresh.value
+        }
+
+        let task = Task { [weak self] in
+            guard let self else {
+                return ProviderRefreshOutcome(appState: AppProviderState())
+            }
+            return await self.performRefreshProviders(trigger: trigger)
+        }
+        inFlightRefresh = task
+        let outcome = await task.value
+        inFlightRefresh = nil
+        return outcome
+    }
+
+    private func performRefreshProviders(
         trigger: RefreshTrigger = .automatic
     ) async -> ProviderRefreshOutcome {
         let refreshDate = now()

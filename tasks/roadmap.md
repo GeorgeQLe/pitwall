@@ -2,6 +2,23 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
+## Current Hotfix: Double Refresh Crash
+
+**Goal:** Prevent Pitwall from crashing when the user triggers refresh repeatedly in quick succession.
+
+**Scope:**
+- Validate the reported crash by tracing the manual refresh path from UI/menu action through provider refresh coordination.
+- Identify any unsafe concurrent refresh, timer, popover, or main-thread state mutation behavior involved in back-to-back refresh requests.
+- Apply the smallest lifecycle/concurrency guard that preserves manual refresh behavior.
+- Add focused regression coverage for rapid consecutive refresh requests.
+- Verify focused and full Swift tests pass.
+
+**Acceptance Criteria:**
+- Two immediate refresh requests do not crash or corrupt provider state.
+- Existing auto-refresh scheduling and manual refresh behavior continue to work.
+- Focused refresh lifecycle tests pass.
+- Full Swift test suite passes.
+
 ## Current Hotfix: Usage Calculation Accuracy Audit
 
 **Goal:** Audit and correct the numbers Pitwall tracks and displays so startup state, compact menu-bar metrics, and daily usage baselines do not show misleading values.

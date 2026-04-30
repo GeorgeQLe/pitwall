@@ -480,6 +480,54 @@ final class ProviderRefreshCoordinatorTests: XCTestCase {
         XCTAssertEqual(outcome.appState.provider(for: .gemini)?.payloads.first?.values["tokenCountObserved"], "12")
     }
 
+    func testConcurrentManualRefreshesShareInFlightOutcome() async throws {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let store = ProviderConfigurationStore(userDefaults: isolatedDefaults())
+        let secretStore = InMemorySecretStore()
+        let client = FakeClaudeUsageClient(delayNanoseconds: 50_000_000)
+        let expectedState = ProviderState(
+            providerId: .claude,
+            displayName: "Claude",
+            status: .configured,
+            confidence: .exact,
+            headline: "Claude usage refreshed",
+            lastUpdatedAt: now,
+            confidenceExplanation: "Fresh exact usage."
+        )
+        await client.enqueue(.success(ClaudeUsageClientResult(
+            response: ClaudeUsageResponse(sections: []),
+            providerState: expectedState,
+            snapshot: nil
+        )))
+
+        _ = try await ClaudeAccountSettings(
+            configurationStore: store,
+            secretStore: secretStore
+        ).saveCredentials(
+            ClaudeCredentialInput(
+                accountId: "acct_1",
+                label: "Work",
+                organizationId: "org_1",
+                sessionKey: "stored-session-key"
+            )
+        )
+        let coordinator = ProviderRefreshCoordinator(
+            configurationStore: store,
+            secretStore: secretStore,
+            claudeClient: client,
+            snapshotLoader: FakeSnapshotLoader(),
+            now: { now }
+        )
+
+        async let first = coordinator.refreshProviders(trigger: .manual)
+        async let second = coordinator.refreshProviders(trigger: .manual)
+        let outcomes = await [first, second]
+        let requestedSessionKeys = await client.sessionKeys()
+
+        XCTAssertEqual(requestedSessionKeys, ["stored-session-key"])
+        XCTAssertEqual(outcomes.map { $0.appState.provider(for: .claude) }, [expectedState, expectedState])
+    }
+
     func testGeminiTelemetrySuccessUsesProviderSuppliedQuotaAndStoresHistory() async throws {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let defaults = isolatedDefaults()
@@ -743,6 +791,11 @@ private actor FakeClaudeUsageClient: ClaudeUsageClienting {
     private var responses: [Response] = []
     private var requestedSessionKeys: [String] = []
     private var requestedAccountIds: [String] = []
+    private let delayNanoseconds: UInt64
+
+    init(delayNanoseconds: UInt64 = 0) {
+        self.delayNanoseconds = delayNanoseconds
+    }
 
     func enqueue(_ response: Response) {
         responses.append(response)
@@ -762,6 +815,10 @@ private actor FakeClaudeUsageClient: ClaudeUsageClienting {
         retainedSnapshots: [UsageSnapshot],
         now: Date
     ) async throws -> ClaudeUsageClientResult {
+        if delayNanoseconds > 0 {
+            try? await Task.sleep(nanoseconds: delayNanoseconds)
+        }
+
         requestedAccountIds.append(account.id)
         requestedSessionKeys.append(sessionKey)
 

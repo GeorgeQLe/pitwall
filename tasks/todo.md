@@ -12,6 +12,18 @@
 
 ## Priority Task Queue
 
+- [x] Hotfix: Double refresh crash
+  - [x] Validate the double-refresh crash report against the current app path.
+  - [x] Trace manual refresh, auto-refresh timer, and provider state mutation behavior.
+  - [x] Apply a minimal fix for rapid consecutive refresh requests.
+  - [x] Add focused regression coverage.
+  - [x] Verify focused and full Swift tests pass.
+
+### Review: Double Refresh Crash
+
+- Result: Manual refresh clicks, settings refreshes, onboarding refreshes, and the auto-refresh timer all funnel through `ProviderRefreshCoordinator.refreshProviders`. Rapid repeated requests previously started separate refresh pipelines; because actor methods are reentrant across awaits, duplicate provider scans/client calls/history writes could overlap. The coordinator now coalesces concurrent refreshes by returning the active in-flight outcome to duplicate callers.
+- Verification: `swift test --filter ProviderRefreshCoordinatorTests` passed 16 tests; `swift test` passed 278 tests.
+
 - [x] Hotfix: Session-first compact menu bar and popover S:/W: display
   - [x] Reorder `compactMenuBarTitle` to prefer session utilization over `primaryValue`.
   - [x] Extract shared `sessionUtilizationPercent` into `ProviderState+SessionUtilization.swift`.
