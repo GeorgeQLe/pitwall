@@ -86,13 +86,11 @@ Pitwall should compute:
 Pacing labels:
 
 - underusing
-- behind pace
 - on pace
 - ahead of pace
 - warning
 - critical
 - capped
-- not enough window (returned when the elapsed or remaining window is too short for meaningful pace computation)
 
 ### Pacing Rules
 
@@ -163,7 +161,7 @@ Expected response shape:
   "seven_day_opus": { "utilization": 5.0, "resets_at": "2026-02-14T16:59:59Z" },
   "seven_day_oauth_apps": null,
   "seven_day_cowork": null,
-  "iguana_necktie": { "utilization": 0.0, "resets_at": null },   // example unknown key — must not crash parsing
+  "iguana_necktie": { "utilization": 0.0, "resets_at": null },
   "extra_usage": {
     "is_enabled": true,
     "monthly_limit": 100.0,
@@ -244,7 +242,7 @@ Passive sources:
 - `config.toml` for install/config detection.
 - `auth.json` for auth presence only; do not serialize token contents.
 - `history.jsonl` with incremental byte-offset bookmarks.
-- `sessions/**/*.jsonl` recursively where present.
+- `sessions/YYYY/MM/DD/rollout-*.jsonl` recursively where present.
 - Local logs for rate-limit, usage-limit, lockout, or reset text where present.
 
 Accuracy Mode:

@@ -42,7 +42,7 @@ Replace the author's daily-driver ClaudeUsage menu bar with Pitwall using a sing
 - `scripts/build-app-bundle.sh` — wraps `swift build --configuration release --product PitwallApp` output into `build/Pitwall.app` with the correct `Contents/MacOS`, `Contents/Resources`, `Contents/Info.plist` layout.
 - `Makefile` targets: `make build`, `make install`, `make uninstall`, `make run`.
   - `make build` — builds the release binary and wraps it into `build/Pitwall.app`.
-  - `make install` — depends on `make build` (which ad-hoc signs the bundle inside `scripts/build-app-bundle.sh`), verifies the signature with `codesign --verify`, and copies `build/Pitwall.app` into `/Applications/Pitwall.app`. Prints a final "Open Pitwall from /Applications — it will appear in your menu bar" message.
+  - `make install` — depends on `make build`, ad-hoc signs (`codesign --sign - --deep --force`), and copies `build/Pitwall.app` into `/Applications/Pitwall.app`. Prints a final "Open Pitwall from /Applications — it will appear in your menu bar" message.
   - `make uninstall` — removes `/Applications/Pitwall.app` and unregisters the login-item via `SMAppService`. Preserves `~/Library/Application Support/Pitwall/` and Keychain items so reinstall keeps state.
   - `make run` — builds and runs the bundle in place for a fast iteration loop.
 - `Sources/PitwallApp/Info.plist` updates: real `CFBundleShortVersionString` (starts at `1.0.0`), real `CFBundleVersion` (git commit count), `CFBundleExecutable = PitwallApp`, `NSHumanReadableCopyright`, keep `LSUIElement = true`, keep `LSMinimumSystemVersion = 13.0`.
@@ -195,8 +195,8 @@ No change to Phase 4.
 
 Phase 6a's first-launch health check writes two events through the existing `DiagnosticEventStore`:
 
-- `appSupportProbe` — boolean + error string if it failed.
-- `keychainProbe` — boolean + error string if it failed.
+- `packaging.firstLaunch.appSupportWritable` — boolean + error string if it failed.
+- `packaging.firstLaunch.keychainRoundTrip` — boolean + error string if it failed.
 
 These events surface through `DiagnosticsExporter` with the existing redaction rules; the probe deliberately writes and deletes a disposable Keychain item rather than touching real provider credentials.
 
