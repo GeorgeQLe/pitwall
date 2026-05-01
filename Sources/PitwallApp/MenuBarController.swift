@@ -39,6 +39,7 @@ final class MenuBarController: NSObject {
     private var providerHistorySnapshots: [ProviderHistorySnapshot]
     private var gitHubHeatmap: GitHubHeatmap?
     private var scheduledNotificationKeys: Set<String>
+    private var resetTriggeredProviders: Set<ProviderID> = []
 
     init(loginItemService: LoginItemService? = nil, updater: SPUUpdater? = nil) {
         let now = Date()
@@ -236,6 +237,22 @@ final class MenuBarController: NSObject {
             updatePopover()
         }
         updateStatusTitle()
+        checkForExpiredCountdowns()
+    }
+
+    private func checkForExpiredCountdowns() {
+        let now = Date()
+        for provider in appState.providers {
+            guard let resetsAt = provider.resetWindow?.resetsAt else { continue }
+            if now >= resetsAt && !resetTriggeredProviders.contains(provider.providerId) {
+                resetTriggeredProviders.insert(provider.providerId)
+                Task {
+                    let outcome = await refreshCoordinator.refreshProviders(trigger: .automatic)
+                    applyRefreshOutcome(outcome)
+                }
+                return
+            }
+        }
     }
 
     private func applyRotationIfNeeded(force: Bool = false) {
@@ -638,6 +655,14 @@ final class MenuBarController: NSObject {
 
     private func applyRefreshOutcome(_ outcome: ProviderRefreshOutcome) {
         appState = outcome.appState
+
+        let now = Date()
+        resetTriggeredProviders = resetTriggeredProviders.filter { id in
+            guard let provider = outcome.appState.providers.first(where: { $0.providerId == id }),
+                  let resetsAt = provider.resetWindow?.resetsAt else { return false }
+            return now >= resetsAt
+        }
+
         scheduleNotifications(for: appState)
         applyRotationIfNeeded(force: true)
         updatePopover()
