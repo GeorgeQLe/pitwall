@@ -1,5 +1,10 @@
 # History
 
+## 2026-05-01
+
+- Claude session countdown fractional-seconds fix: `claudeSessionResetDate()` failed to parse fractional-second ISO8601 dates written by `ClaudeUsageClient.formatDate()`, causing the menu bar to show the weekly reset instead of the 5-hour session reset. Fixed by using a shared `fractionalSecondsFormatter` (renamed from `codexResetFormatter`) with plain ISO8601 fallback on both `SessionResetAt` and pipe-encoded `Session` paths. Added regression test.
+- Validation: `swift test` passed **281 / 281** with 0 failures.
+
 ## 2026-04-30
 
 - CalcLLM boundary cleanup: removed the connected-mode CalcLLM auth/sync source, Settings UI, popover upsell, and CalcLLM-specific tests from the OSS Pitwall tree so this repo remains local-only. Preserved generic JWT/access-token diagnostics redaction hardening and added `tasks/monorepo-handoff.md` for the future monorepo with separate Pitwall Local and Pitwall powered by CalcLLM products.

@@ -105,6 +105,17 @@
 - Result: Rich menu bar countdown for Claude now shows the session reset window instead of the weekly reset. `menuBarResetWindow(for:)` gained a Claude-specific branch that extracts the session reset date from the `usageRows` payload — checking `SessionResetAt` key first (history path), then parsing ISO8601 from `Session` encoded value index 1 (live path). The history path now stores `SessionResetAt` as a raw ISO8601 date alongside the pre-formatted Session value.
 - Verification: `swift test` passed 275 tests with 0 failures; `make build` succeeded.
 
+- [x] Hotfix: Claude session countdown fractional-seconds date parse failure
+  - [x] Fix `claudeSessionResetDate()` to parse fractional-second ISO8601 dates from `ClaudeUsageClient`.
+  - [x] Reuse shared `fractionalSecondsFormatter` for both Codex and Claude reset date parsing.
+  - [x] Add regression test proving session reset is preferred over weekly reset with fractional-second dates.
+  - [x] Verify all tests pass (281/281).
+
+### Review: Claude Session Countdown Fractional-Seconds Fix
+
+- Result: `ClaudeUsageClient.formatDate()` writes session reset dates with fractional seconds (`.withFractionalSeconds`), but `claudeSessionResetDate()` parsed with a plain `ISO8601DateFormatter` that returns nil for fractional-second dates, causing fallback to the weekly reset. Fixed by using the shared `fractionalSecondsFormatter` (renamed from `codexResetFormatter`) with plain ISO8601 fallback on both `SessionResetAt` and pipe-encoded `Session` paths.
+- Verification: `swift test` passed 281 / 281 with 0 failures.
+
 - [x] Hotfix: Add periodic auto-refresh timer
   - [x] Add `refreshTimer` property to `MenuBarController`.
   - [x] Add `scheduleRefreshTimer(at:)` one-shot timer method.
