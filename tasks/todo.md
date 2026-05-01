@@ -116,6 +116,17 @@
 - Result: `ClaudeUsageClient.formatDate()` writes session reset dates with fractional seconds (`.withFractionalSeconds`), but `claudeSessionResetDate()` parsed with a plain `ISO8601DateFormatter` that returns nil for fractional-second dates, causing fallback to the weekly reset. Fixed by using the shared `fractionalSecondsFormatter` (renamed from `codexResetFormatter`) with plain ISO8601 fallback on both `SessionResetAt` and pipe-encoded `Session` paths.
 - Verification: `swift test` passed 281 / 281 with 0 failures.
 
+- [x] Hotfix: Auto-refresh when countdown timers reach zero
+  - [x] Add `resetTriggeredProviders` set to track which providers already triggered a reset-refresh.
+  - [x] Add `checkForExpiredCountdowns()` to `tickRotation()` to detect expired countdowns and trigger immediate refresh.
+  - [x] Clear stale entries from `resetTriggeredProviders` in `applyRefreshOutcome` when the reset window advances.
+  - [x] Verify all tests pass (281/281).
+
+### Review: Auto-Refresh on Countdown Expiry
+
+- Result: When a provider's countdown timer reaches zero, the menu bar now triggers an immediate data refresh instead of waiting for the next 5-minute polling interval. A `resetTriggeredProviders` set prevents repeated refreshes every tick after zero. After a refresh completes, entries are cleared from the set when the provider's `resetsAt` moves into the future, re-arming the trigger for the next countdown cycle.
+- Verification: `swift build` clean; `swift test` passed 281 / 281 with 0 failures.
+
 - [x] Hotfix: Add periodic auto-refresh timer
   - [x] Add `refreshTimer` property to `MenuBarController`.
   - [x] Add `scheduleRefreshTimer(at:)` one-shot timer method.

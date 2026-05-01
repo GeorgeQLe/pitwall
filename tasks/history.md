@@ -2,6 +2,9 @@
 
 ## 2026-05-01
 
+- Auto-refresh on countdown expiry: `MenuBarController.tickRotation()` now detects when a provider's reset countdown reaches zero and triggers an immediate data refresh via `checkForExpiredCountdowns()`. A `resetTriggeredProviders` set prevents repeated refreshes; entries clear when `applyRefreshOutcome` sees the reset window advance into the future.
+- Validation: `swift test` passed **281 / 281** with 0 failures.
+
 - Claude session countdown fractional-seconds fix: `claudeSessionResetDate()` failed to parse fractional-second ISO8601 dates written by `ClaudeUsageClient.formatDate()`, causing the menu bar to show the weekly reset instead of the 5-hour session reset. Fixed by using a shared `fractionalSecondsFormatter` (renamed from `codexResetFormatter`) with plain ISO8601 fallback on both `SessionResetAt` and pipe-encoded `Session` paths. Added regression test.
 - Validation: `swift test` passed **281 / 281** with 0 failures.
 
