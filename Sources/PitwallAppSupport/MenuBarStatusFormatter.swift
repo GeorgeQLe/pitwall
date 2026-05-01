@@ -3,7 +3,7 @@ import PitwallCore
 import PitwallShared
 
 public struct MenuBarStatusFormatter: Sendable {
-    private static let codexResetFormatter: ISO8601DateFormatter = {
+    private static let fractionalSecondsFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter
@@ -410,12 +410,13 @@ public struct MenuBarStatusFormatter: Sendable {
             return nil
         }
 
-        return Self.codexResetFormatter.date(from: rawReset) ?? ISO8601DateFormatter().date(from: rawReset)
+        return Self.fractionalSecondsFormatter.date(from: rawReset) ?? ISO8601DateFormatter().date(from: rawReset)
     }
 
     private func claudeSessionResetDate(from payload: ProviderSpecificPayload) -> Date? {
         if let raw = payload.values["SessionResetAt"] {
-            return ISO8601DateFormatter().date(from: raw)
+            return Self.fractionalSecondsFormatter.date(from: raw)
+                ?? ISO8601DateFormatter().date(from: raw)
         }
         guard let encodedValue = payload.values["Session"] else {
             return nil
@@ -424,7 +425,8 @@ public struct MenuBarStatusFormatter: Sendable {
         guard parts.count >= 2 else {
             return nil
         }
-        return ISO8601DateFormatter().date(from: String(parts[1]))
+        return Self.fractionalSecondsFormatter.date(from: String(parts[1]))
+            ?? ISO8601DateFormatter().date(from: String(parts[1]))
     }
 
     private func sessionStatus(for provider: ProviderState) -> MenuBarPaceStatus {

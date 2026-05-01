@@ -662,6 +662,43 @@ final class MenuBarStatusFormatterTests: XCTestCase {
         XCTAssertTrue(text.contains("24h 0m 0s") || text.contains("1d"), "Should fall back to weekly reset. Got: \(text)")
     }
 
+    func testClaudeSessionResetPreferredOverWeeklyWhenFractionalSecondsDate() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let sessionReset = now.addingTimeInterval(3 * 60 * 60)
+        let weeklyReset = now.addingTimeInterval(7 * 24 * 60 * 60)
+
+        let fractionalFormatter = ISO8601DateFormatter()
+        fractionalFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let sessionResetISO = fractionalFormatter.string(from: sessionReset)
+
+        let provider = ProviderState(
+            providerId: .claude,
+            displayName: "Claude",
+            status: .configured,
+            confidence: .exact,
+            headline: "Claude usage refreshed",
+            resetWindow: ResetWindow(resetsAt: weeklyReset),
+            pacingState: PacingState(
+                weeklyUtilizationPercent: 40,
+                weeklyPace: PaceEvaluation(label: .onPace, action: .conserve)
+            ),
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "usageRows",
+                    values: ["Session": "30|\(sessionResetISO)|exact"]
+                )
+            ]
+        )
+
+        let text = MenuBarStatusFormatter().menuBarTitle(
+            provider: provider,
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTitleMode: .rich),
+            now: now
+        )
+
+        XCTAssertTrue(text.contains("3h 0m 0s"), "Should show session reset (3h), not weekly reset (7d). Got: \(text)")
+    }
+
     private func provider(
         id: ProviderID,
         displayName: String,
