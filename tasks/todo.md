@@ -139,7 +139,7 @@
 - Result: Rich menu bar daily `today/target/day` indicators now use the same pace status mapping as session and weekly indicators when both actual usage and target are known. The F1 theme now renders far-behind pace as a black circle instead of a neutral/on-track purple circle, while high burn still uses alert colors.
 - Verification: `swift test --filter MenuBarStatusFormatterTests` passed 17 tests; `swift test --filter ProviderRefreshCoordinatorTests` passed 15 tests; `swift test` passed 268 tests.
 
-- [ ] Hotfix: Gemini passive configuration detection
+- [x] Hotfix: Gemini passive configuration detection
   - [x] Trace Gemini passive detection and provider refresh behavior.
   - [x] Require OAuth cache evidence before reporting Gemini as configured.
   - [x] Add regression coverage for settings-only Gemini snapshots.

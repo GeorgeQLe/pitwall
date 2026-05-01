@@ -2,7 +2,7 @@
 
 Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native macOS menu bar app and reaches provider parity across Claude, Codex, and Gemini before the first usable app milestone. GitHub heatmap support and cross-platform parity are in v1 scope, not indefinite stretch work.
 
-## Current Hotfix: Double Refresh Crash
+## Previous Hotfix: Double Refresh Crash
 
 **Goal:** Prevent Pitwall from crashing when the user triggers refresh repeatedly in quick succession.
 
@@ -19,7 +19,7 @@ Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native 
 - Focused refresh lifecycle tests pass.
 - Full Swift test suite passes.
 
-## Current Hotfix: Usage Calculation Accuracy Audit
+## Previous Hotfix: Usage Calculation Accuracy Audit
 
 **Goal:** Audit and correct the numbers Pitwall tracks and displays so startup state, compact menu-bar metrics, and daily usage baselines do not show misleading values.
 
@@ -258,6 +258,63 @@ Pitwall v1 is a clean-room, MIT-licensed product line that starts with a native 
 - If only one provider is configured, it is the only provider considered by automatic rotation.
 - Popover cards render only configured providers.
 - Missing or expired providers do not contribute placeholder menu-bar text or selected summary data.
+- Focused Swift tests pass.
+
+## Previous Hotfix: Session-First Compact Menu Bar
+
+**Goal:** Make compact menu bar titles consistently show session utilization for all providers and update popover cards to show S:/W: format.
+
+**Scope:**
+- Reorder `compactMenuBarTitle` to prefer session utilization over `primaryValue`.
+- Extract shared `sessionUtilizationPercent` into `ProviderState+SessionUtilization.swift`.
+- Update popover `ProviderCardViewModel.primaryMetric` to show `S:X% W:Y%` format.
+- Update compact menu bar and provider card tests.
+
+**Acceptance Criteria:**
+- Claude and Codex compact titles consistently show session utilization.
+- Popover cards show `S:X% W:Y%` when both session and weekly data are available.
+- Focused Swift tests pass.
+
+## Previous Hotfix: Rich Menu Bar Session Countdown for Claude
+
+**Goal:** Show the 5-hour session reset countdown instead of the weekly reset in Claude's rich menu bar title.
+
+**Scope:**
+- Add Claude-specific session reset extraction to `menuBarResetWindow(for:)`.
+- Store ISO8601 session reset date in history path via `SessionResetAt` key.
+- Add regression tests for Claude session countdown in rich menu bar.
+
+**Acceptance Criteria:**
+- Claude rich menu bar countdown shows the session reset window, not the weekly reset.
+- Both `SessionResetAt` key (history path) and pipe-encoded `Session` value (live path) are parsed.
+- Focused Swift tests pass.
+
+## Previous Hotfix: Claude Session Countdown Fractional-Seconds Fix
+
+**Goal:** Fix `claudeSessionResetDate()` failing to parse fractional-second ISO8601 dates written by `ClaudeUsageClient`.
+
+**Scope:**
+- Use a shared `fractionalSecondsFormatter` (renamed from `codexResetFormatter`) for both Codex and Claude reset date parsing.
+- Try fractional-seconds first, fall back to plain ISO8601, on both `SessionResetAt` and pipe-encoded `Session` paths.
+- Add regression test proving session reset is preferred over weekly reset with fractional-second dates.
+
+**Acceptance Criteria:**
+- Fractional-second ISO8601 dates from `ClaudeUsageClient.formatDate()` are parsed successfully.
+- Menu bar shows session countdown instead of falling back to weekly reset.
+- Focused Swift tests pass (281/281).
+
+## Previous Hotfix: Periodic Auto-Refresh Timer
+
+**Goal:** Keep usage data fresh without user interaction by scheduling automatic refreshes after each successful provider refresh.
+
+**Scope:**
+- Add `refreshTimer` property to `MenuBarController`.
+- Schedule a one-shot timer from `ProviderRefreshOutcome.nextClaudeRefreshAt` after each refresh.
+- Invalidate the refresh timer on `stop()`.
+
+**Acceptance Criteria:**
+- Usage data auto-refreshes at ~5 minute intervals via `PollingPolicy`.
+- Manual refreshes replace the pending timer.
 - Focused Swift tests pass.
 
 ## Phase 1: Foundation And Pacing Core
