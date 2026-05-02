@@ -1,5 +1,10 @@
 # History
 
+## 2026-05-02
+
+- Claude countdown session-over-weekly fix: flipped `resetWindow` preference in `ClaudeUsageClient.providerState()` and `MenuBarController` stale hydration to prefer session (5h) over weekly (7d) reset. Previously the popover card, auto-refresh trigger, and notification scheduling all showed the weekly countdown; only the rich menu bar title (via `menuBarResetWindow()`) was correct. Added `ClaudeUsageClientTests` with stub transport verifying session preference and weekly fallback.
+- Validation: `swift test` passed **283 / 283** with 0 failures (281 existing + 2 new).
+
 ## 2026-05-01
 
 - Auto-refresh on countdown expiry: `MenuBarController.tickRotation()` now detects when a provider's reset countdown reaches zero and triggers an immediate data refresh via `checkForExpiredCountdowns()`. A `resetTriggeredProviders` set prevents repeated refreshes; entries clear when `applyRefreshOutcome` sees the reset window advance into the future.

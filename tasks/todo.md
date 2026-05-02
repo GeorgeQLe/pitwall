@@ -116,6 +116,12 @@
 - Result: `ClaudeUsageClient.formatDate()` writes session reset dates with fractional seconds (`.withFractionalSeconds`), but `claudeSessionResetDate()` parsed with a plain `ISO8601DateFormatter` that returns nil for fractional-second dates, causing fallback to the weekly reset. Fixed by using the shared `fractionalSecondsFormatter` (renamed from `codexResetFormatter`) with plain ISO8601 fallback on both `SessionResetAt` and pipe-encoded `Session` paths.
 - Verification: `swift test` passed 281 / 281 with 0 failures.
 
+- [x] Hotfix: Claude countdown shows weekly reset instead of session reset
+  - [x] Flip `resetWindow` preference in `ClaudeUsageClient.providerState()` to session-first.
+  - [x] Flip stale hydration preference in `MenuBarController` to session-first.
+  - [x] Add `ClaudeUsageClientTests` verifying session preference and weekly fallback.
+  - [x] Verify all 283 tests pass.
+
 - [x] Hotfix: Auto-refresh when countdown timers reach zero
   - [x] Add `resetTriggeredProviders` set to track which providers already triggered a reset-refresh.
   - [x] Add `checkForExpiredCountdowns()` to `tickRotation()` to detect expired countdowns and trigger immediate refresh.
