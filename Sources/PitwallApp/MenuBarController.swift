@@ -122,6 +122,7 @@ final class MenuBarController: NSObject {
         startRotationTimer()
         runPackagingProbeIfNeeded()
         loadConfiguration()
+        observeSystemWake()
     }
 
     func stop() {
@@ -129,6 +130,7 @@ final class MenuBarController: NSObject {
         rotationTimer = nil
         refreshTimer?.invalidate()
         refreshTimer = nil
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
 
         if let statusItem {
             NSStatusBar.system.removeStatusItem(statusItem)
@@ -215,6 +217,23 @@ final class MenuBarController: NSObject {
                 let outcome = await self.refreshCoordinator.refreshProviders(trigger: .automatic)
                 self.applyRefreshOutcome(outcome)
             }
+        }
+    }
+
+    private func observeSystemWake() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(handleSystemWake),
+            name: NSWorkspace.didWakeNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleSystemWake(_ notification: Notification) {
+        resetTriggeredProviders.removeAll()
+        Task {
+            let outcome = await refreshCoordinator.refreshProviders(trigger: .automatic)
+            applyRefreshOutcome(outcome)
         }
     }
 
