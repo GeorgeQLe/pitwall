@@ -821,7 +821,7 @@ final class MenuBarController: NSObject {
             return
         }
 
-        let resetAt = latest.weeklyResetAt ?? latest.sessionResetAt
+        let resetAt = latest.sessionResetAt ?? latest.weeklyResetAt
         let retainedUsageSnapshots = providerHistorySnapshots
             .filter { $0.providerId == .claude && $0.accountId == accountId }
             .compactMap { snapshot -> UsageSnapshot? in

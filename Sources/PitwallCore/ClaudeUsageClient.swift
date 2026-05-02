@@ -225,7 +225,7 @@ public struct ClaudeUsageClient: Sendable {
             headline: "Claude usage refreshed",
             primaryValue: weekly.map { "\(Self.formatPercent(100 - $0.utilizationPercent)) left" },
             secondaryValue: account.label,
-            resetWindow: ResetWindow(resetsAt: weekly?.resetsAt ?? session?.resetsAt),
+            resetWindow: ResetWindow(resetsAt: session?.resetsAt ?? weekly?.resetsAt),
             lastUpdatedAt: now,
             pacingState: PacingState(
                 weeklyUtilizationPercent: weekly?.utilizationPercent,
