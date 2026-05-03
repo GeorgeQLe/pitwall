@@ -120,9 +120,9 @@ public struct MenuBarStatusFormatter: Sendable {
             let dailyEmoji = preferences.menuBarTheme.emoji(
                 for: paceStatus(actual: todayPercent, expected: dailyBudgetPercent)
             )
-            parts.append("\(dailyEmoji) \(Self.formatPercent(todayPercent))/\(Self.formatPercent(dailyBudgetPercent))/day")
+            parts.append("\(dailyEmoji) \(Self.formatDailyUsagePercent(todayPercent))/\(Self.formatPercent(dailyBudgetPercent))/day")
         } else if let todayPercent {
-            parts.append("\(targetEmoji) \(Self.formatPercent(todayPercent))/day")
+            parts.append("\(targetEmoji) \(Self.formatDailyUsagePercent(todayPercent))/day")
         } else if let dailyBudgetPercent {
             parts.append("\(targetEmoji) \(Self.formatPercent(dailyBudgetPercent))/day")
         }
@@ -376,6 +376,13 @@ public struct MenuBarStatusFormatter: Sendable {
         }
 
         return String(format: "%.1f%%", value)
+    }
+
+    static func formatDailyUsagePercent(_ value: Double) -> String {
+        if value > 0 && value < 0.5 {
+            return "<1%"
+        }
+        return formatPercent(value)
     }
 
     private func sessionUtilizationPercent(in provider: ProviderState) -> Double? {

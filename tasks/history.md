@@ -1,5 +1,10 @@
 # History
 
+## 2026-05-03
+
+- Daily usage `<1%` display fix: tiny positive daily usage deltas (0 < value < 0.5%) now show `<1%` instead of rounding to `0%` in the rich menu bar title. Previously, active Claude usage after midnight could show "0%/day" because the weekly utilization increase was too small to survive `formatPercent` rounding. Added `formatDailyUsagePercent()` helper and two regression tests.
+- Validation: `swift test` passed **285 / 285** with 0 failures.
+
 ## 2026-05-02
 
 - System wake refresh: added `NSWorkspace.didWakeNotification` observer in `MenuBarController` to trigger an immediate provider refresh on macOS wake from sleep. Clears `resetTriggeredProviders` so expired countdowns are re-evaluated. Updated `pitwall-macos-clean-room.md` spec with wake-refresh, countdown-expiry-refresh, and session-over-weekly countdown rules.

@@ -713,4 +713,52 @@ final class MenuBarStatusFormatterTests: XCTestCase {
             primaryValue: primaryValue
         )
     }
+
+    func testDailyUsageShowsLessThanOnePercentForTinyPositiveValues() {
+        XCTAssertEqual(MenuBarStatusFormatter.formatDailyUsagePercent(0), "0%")
+        XCTAssertEqual(MenuBarStatusFormatter.formatDailyUsagePercent(0.01), "<1%")
+        XCTAssertEqual(MenuBarStatusFormatter.formatDailyUsagePercent(0.04), "<1%")
+        XCTAssertEqual(MenuBarStatusFormatter.formatDailyUsagePercent(0.1), "<1%")
+        XCTAssertEqual(MenuBarStatusFormatter.formatDailyUsagePercent(0.49), "<1%")
+        XCTAssertEqual(MenuBarStatusFormatter.formatDailyUsagePercent(0.5), "0.5%")
+        XCTAssertEqual(MenuBarStatusFormatter.formatDailyUsagePercent(1.0), "1%")
+        XCTAssertEqual(MenuBarStatusFormatter.formatDailyUsagePercent(12), "12%")
+    }
+
+    func testRichMenuBarTitleShowsLessThanOnePercentForTinyDailyUsage() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let provider = ProviderState(
+            providerId: .claude,
+            displayName: "Claude",
+            status: .configured,
+            confidence: .exact,
+            headline: "Claude usage refreshed",
+            resetWindow: ResetWindow(resetsAt: now.addingTimeInterval(2 * 60 * 60 + 30 * 60)),
+            pacingState: PacingState(
+                weeklyUtilizationPercent: 42.4,
+                dailyBudget: DailyBudget(
+                    remainingUtilizationPercent: 57.6,
+                    daysRemaining: 2.5,
+                    dailyBudgetPercent: 18,
+                    todayUsage: TodayUsage(status: .exact, utilizationDeltaPercent: 0.03)
+                ),
+                todayUsage: TodayUsage(status: .exact, utilizationDeltaPercent: 0.03),
+                weeklyPace: PaceEvaluation(label: .warning, action: .conserve)
+            ),
+            payloads: [
+                ProviderSpecificPayload(
+                    source: "usageRows",
+                    values: ["Session": "22|2h 30m|exact"]
+                )
+            ]
+        )
+
+        let text = MenuBarStatusFormatter().menuBarTitle(
+            provider: provider,
+            preferences: UserPreferences(resetDisplayPreference: .countdown, menuBarTheme: .running, menuBarTitleMode: .rich),
+            now: now
+        )
+
+        XCTAssertTrue(text.contains("<1%/18%/day"))
+    }
 }
