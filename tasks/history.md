@@ -2,6 +2,9 @@
 
 ## 2026-05-02
 
+- System wake refresh: added `NSWorkspace.didWakeNotification` observer in `MenuBarController` to trigger an immediate provider refresh on macOS wake from sleep. Clears `resetTriggeredProviders` so expired countdowns are re-evaluated. Updated `pitwall-macos-clean-room.md` spec with wake-refresh, countdown-expiry-refresh, and session-over-weekly countdown rules.
+- Validation: `swift test` passed **283 / 283** with 0 failures.
+
 - Claude countdown session-over-weekly fix: flipped `resetWindow` preference in `ClaudeUsageClient.providerState()` and `MenuBarController` stale hydration to prefer session (5h) over weekly (7d) reset. Previously the popover card, auto-refresh trigger, and notification scheduling all showed the weekly countdown; only the rich menu bar title (via `menuBarResetWindow()`) was correct. Added `ClaudeUsageClientTests` with stub transport verifying session preference and weekly fallback.
 - Validation: `swift test` passed **283 / 283** with 0 failures (281 existing + 2 new).
 

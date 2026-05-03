@@ -375,7 +375,10 @@ Claude:
 - Default polling interval: 5 minutes.
 - Manual refresh is always available.
 - Schedule an auto-refresh at a provider reset timestamp when known.
+- When a countdown timer reaches zero, trigger an immediate automatic refresh to fetch the new window's usage.
+- On system wake (`didWakeNotification`), trigger an immediate automatic refresh and clear expired-countdown state so reset windows that passed during sleep are re-evaluated.
 - Live countdown text updates every second from local state; it must not trigger network polling every second.
+- When both session and weekly reset timestamps are available, display the sooner (session) reset in the countdown.
 
 Network backoff:
 
