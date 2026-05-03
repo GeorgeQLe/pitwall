@@ -483,6 +483,7 @@ final class MenuBarController: NSObject {
                         detail: "Codex status could not be refreshed."
                     )
                 },
+                loginItemService: loginItemService,
                 onFinish: { [weak self] in
                     self?.onboardingDefaults.set(true, forKey: Self.onboardingCompletedKey)
                     self?.popoverController.forceDismissOnboardingPanel()

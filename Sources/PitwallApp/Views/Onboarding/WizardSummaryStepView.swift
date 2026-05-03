@@ -6,6 +6,7 @@ struct WizardSummaryStepView: View {
     let selectedProviders: Set<ProviderID>
     let preferences: UserPreferences
     let claudeAccountCount: Int
+    let launchAtLoginEnabled: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -21,6 +22,7 @@ struct WizardSummaryStepView: View {
                 section("Claude credentials", body: claudeSummary)
                 section("Rotation", body: rotationSummary)
                 section("Reset display", body: resetSummary)
+                section("Launch at login", body: launchAtLoginEnabled ? "Enabled" : "Disabled")
             }
             .padding(.top, 4)
 

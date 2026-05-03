@@ -93,6 +93,7 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         onConnectCodexAPIKey: @escaping (String) async -> CodexConnectionOutcome,
         onDisconnectCodex: @escaping () async -> CodexConnectionOutcome,
         onRefreshCodexStatus: @escaping () async -> CodexSetupState,
+        loginItemService: LoginItemService? = nil,
         onFinish: @escaping () -> Void
     ) {
         let wizard = OnboardingWizardView(
@@ -109,6 +110,7 @@ final class PopoverController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             onConnectCodexAPIKey: onConnectCodexAPIKey,
             onDisconnectCodex: onDisconnectCodex,
             onRefreshCodexStatus: onRefreshCodexStatus,
+            loginItemService: loginItemService,
             onFinish: onFinish,
             onUnsavedSensitiveInputChanged: { [weak self] hasUnsavedInput in
                 self?.onboardingHasUnsavedSensitiveInput = hasUnsavedInput

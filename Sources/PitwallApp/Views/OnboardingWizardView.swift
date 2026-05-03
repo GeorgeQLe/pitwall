@@ -15,6 +15,7 @@ struct OnboardingWizardView: View {
     let onConnectCodexAPIKey: (String) async -> CodexConnectionOutcome
     let onDisconnectCodex: () async -> CodexConnectionOutcome
     let onRefreshCodexStatus: () async -> CodexSetupState
+    let loginItemService: LoginItemService?
     let onFinish: () -> Void
     let onUnsavedSensitiveInputChanged: (Bool) -> Void
 
@@ -45,6 +46,7 @@ struct OnboardingWizardView: View {
         onConnectCodexAPIKey: @escaping (String) async -> CodexConnectionOutcome,
         onDisconnectCodex: @escaping () async -> CodexConnectionOutcome,
         onRefreshCodexStatus: @escaping () async -> CodexSetupState,
+        loginItemService: LoginItemService? = nil,
         onFinish: @escaping () -> Void,
         onUnsavedSensitiveInputChanged: @escaping (Bool) -> Void = { _ in }
     ) {
@@ -60,6 +62,7 @@ struct OnboardingWizardView: View {
         self.onConnectCodexAPIKey = onConnectCodexAPIKey
         self.onDisconnectCodex = onDisconnectCodex
         self.onRefreshCodexStatus = onRefreshCodexStatus
+        self.loginItemService = loginItemService
         self.onFinish = onFinish
         self.onUnsavedSensitiveInputChanged = onUnsavedSensitiveInputChanged
 
@@ -159,12 +162,13 @@ struct OnboardingWizardView: View {
         case .credentials(let providerId):
             GenericProviderStepView(providerId: providerId, profiles: $profiles)
         case .preferences:
-            PreferencesStepView(preferences: $preferences)
+            PreferencesStepView(preferences: $preferences, loginItemService: loginItemService)
         case .summary:
             WizardSummaryStepView(
                 selectedProviders: selectedProviders,
                 preferences: preferences,
-                claudeAccountCount: savedClaudeAccountIds.count
+                claudeAccountCount: savedClaudeAccountIds.count,
+                launchAtLoginEnabled: loginItemService?.isEnabled ?? false
             )
         }
     }
