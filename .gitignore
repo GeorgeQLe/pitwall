@@ -3,3 +3,6 @@
 DerivedData/
 build/
 .release-config
+
+# Separate nested git repositories
+/pitwall-redux/
